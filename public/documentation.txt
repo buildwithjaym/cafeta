@@ -1,0 +1,600 @@
+## What is CAFÉTA?
+
+**CAFÉTA is a local café and milk-tea discovery platform.**
+
+In simple words:
+
+> **CAFÉTA helps people find where to get coffee or milk tea, see what other people experienced there, and discover new places around them.**
+
+The name comes from:
+
+**CAFÉ + TA = CAFÉTA**
+Think: **“Kape tayo.” / “Café tayo.”**
+
+The main idea is not just **“find the nearest café.”**
+
+It is:
+
+> **“Where should we go for coffee?” → Check CAFÉTA.**
+
+CAFÉTA starts in **Basilan**, with the possibility of expanding to other places later.
+
+---
+
+# Main Features of CAFÉTA
+
+For the first version, I would keep it to these **7 core features**.
+
+### 1. Explore Map
+
+The heart of CAFÉTA.
+
+Users open a map and see nearby:
+
+* Coffee shops
+* Milk-tea shops
+* New places
+* Popular places
+
+Tap a marker → see a small preview → open the café.
+
+### 2. Search & Filters
+
+Search for:
+
+> “coffee near me”
+> “milk tea”
+> “Café ABC”
+
+Keep filters simple:
+
+**Coffee | Milk Tea | Open Now | Nearby**
+
+Don't add 15+ filters yet.
+
+### 3. Café Profiles
+
+Every place gets its own page containing:
+
+* Cover photo
+* Business name
+* Coffee/Milk Tea category
+* Location
+* Distance
+* Opening hours
+* Price range
+* Short description
+* Menu
+* Community Moments
+* Save button
+* Directions
+
+### 4. CAFÉTA Moments
+
+This should be your special feature.
+
+Instead of traditional long reviews, users share a **Moment**.
+
+For example:
+
+> 📷 *photo of iced coffee*
+>
+> **“Found this after class. Their Spanish latte was worth the walk.”**
+>
+> @jayms · Café ABC
+
+Each Moment contains:
+
+**1 photo + short caption + café/location**
+
+This helps someone understand **what the experience at the café is actually like**.
+
+### 5. Discover
+
+A simple discovery feed with sections such as:
+
+**Near You**
+**Trending Now**
+**New Places**
+**Hidden Gems**
+**Recent Moments**
+
+This gives people a reason to browse even when they don't know what café they want.
+
+### 6. Saved Places
+
+Users tap ♥ to save places.
+
+Call the page something simple like:
+
+### **Saved**
+
+Inside:
+
+**Want to Visit**
+**Favorites**
+
+You could introduce custom collections later.
+
+### 7. User Profile
+
+A simple profile:
+
+**@username**
+
+**12** Places Discovered
+**6** Moments
+
+Then show:
+
+**Moments | Saved**
+
+Don't build followers, messaging, complicated XP systems, etc. yet.
+
+---
+
+# What map should CAFÉTA use?
+
+For your stack and budget, my recommendation is:
+
+## **MapLibre + OpenStreetMap**
+
+![Image](https://images.openai.com/static-rsc-4/r2cdJyo5QuYpcWk8ererbLrbPbhZjdgqwgs1kd6EtW4l3jN-dvwSQZhZTJjRI8ZSto977bmrnDgYRQSHYQoifVa1mQs0YWO__qcr6uFOQrFkP2YJ-hw0DMYLS_hnMrLafzC6l977X3wwwcpjGc1MzBTBqjRExudKBm2epy-njd92e_cBQG3lUyt3FFNkI3e0?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/rjWtko00-trdUxXxIgmn1qqC9WFDrxEqm-OCosoZgS6qeUudH5M_xTinfeaeCd_s-GsAT6gjBwg0iM4qGH7zGBHECwbnBceTp3yJqqJEUso69gEc8nqWwkRNP-Qw7Cwq8ZCNLULSyLXa6dKJ9ysLSXtcm-NbeZQp_u5e4_2BcjqQwnubndZ38z4n2clMOSJX?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/xLTAlvhb1ICLYw8zeFp3vZIWlpYOZqdSmrUarBbTuJB1DKiHHksCiS2I--ke2TjzO3dx7pNZvbfm4kM6UoBzALOTtO43oUPmtqFvG5bNMFQTDx0VJaHC8oF-IlZ1tnrTHgsuaMpA0AelYwvXJcDgKClPU6dm1y0UtM7AKt4zG6G9qx731zZu8gYWkyyNGjXF?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/pge4lGFNkXgYUdX4MNq6mHkscaVKTT3fg63DEhq7qEINtyG3EQilTW2SpemZeeQiN1jAoNOtv3CzWjGrvElL97HCI9Vi_YIorPqpiMkzxZyPtnuzMSFDRCS8eUOXM1FbC6NQ8gEDNe-5NNQItWGSqOfaCinaOOfPTm6tMFy_F0dvqRt4GRcmP46w_F9XORti?purpose=fullsize)
+
+Think of them as two different pieces:
+
+**OpenStreetMap** provides the geographic/map data.
+
+**MapLibre** is the library you use to display and interact with the map in your Next.js application.
+
+So your architecture becomes:
+
+**CAFÉTA**
+↓
+**MapLibre**
+↓
+**Map tiles/provider based on OpenStreetMap data**
+
+Why MapLibre? It's open-source, customizable, works well for a custom map experience, and avoids locking the core UI into a proprietary map SDK.
+
+One important technical note: don't treat the public OpenStreetMap tile servers as free production hosting for unlimited traffic. For an MVP you can start carefully, but choose a proper OSM-compatible tile provider as usage grows.
+
+---
+
+# CAFÉTA Navbar
+
+Don't overload the navigation.
+
+For **desktop**, I'd use:
+
+**CAFÉTA Logo | Explore | Discover | Saved | + Share a Moment | Profile**
+
+For **mobile**, I would make it even simpler with a bottom navigation:
+
+**Explore | Discover | + | Saved | Profile**
+
+The center **+** is for creating a Moment.
+
+---
+
+# 1. EXPLORE
+
+This should be the **default/main page**.
+
+### Navbar
+
+**Explore**
+
+### Page headline
+
+> **Where to, today?**
+
+Supporting text:
+
+> Discover coffee and milk tea around you.
+
+Then:
+
+**[ Search cafés, milk tea, or places... ]**
+
+Quick filters:
+
+`Coffee` `Milk Tea` `Open Now` `Nearby`
+
+And then the large interactive map.
+
+### Map markers
+
+☕ = Coffee
+🧋 = Milk Tea
+
+You don't necessarily need literal emoji markers in the final UI; custom CAFÉTA marker icons would look more premium.
+
+When a marker is tapped:
+
+> **CAFÉ ABC**
+>
+> Coffee · 650m
+> Open until 9 PM
+>
+> 8 recent Moments
+>
+> ♡ Save  **View Place →**
+
+That's enough.
+
+---
+
+# 2. DISCOVER
+
+This is where users browse without using the map.
+
+### Navbar
+
+**Discover**
+
+### Header
+
+> **Discover your next cup.**
+
+Then sections such as:
+
+### Near You
+
+Horizontal café cards.
+
+**Café ABC**
+650m · Coffee · Open
+
+### Trending Now
+
+Places receiving recent community activity.
+
+### New Places
+
+Recently added cafés and milk-tea shops.
+
+### Hidden Gems
+
+Less obvious places worth discovering.
+
+### Recent Moments
+
+Community photos and short experiences.
+
+This page should be highly visual.
+
+---
+
+# 3. CREATE — “+”
+
+The middle button opens:
+
+## Share a Moment
+
+Keep this extremely simple.
+
+**Photo**
+
+`[ Upload Photo ]`
+
+**Where were you?**
+
+`Search café...`
+
+**Share your Moment**
+
+`What did you discover?`
+
+**0 / 250**
+
+Then:
+
+**Share Moment**
+
+That's it.
+
+Don't turn it into an Instagram post creator with dozens of options.
+
+---
+
+# 4. SAVED
+
+### Navbar
+
+**Saved**
+
+### Header
+
+> **Places you want to remember.**
+
+Show saved café cards:
+
+**[Image]**
+
+**Café ABC**
+Coffee · 1.2 km
+Open until 10 PM
+
+`View` `Directions` `♡`
+
+Empty state:
+
+> **Your coffee list is waiting.**
+>
+> Save cafés while exploring and they'll appear here.
+>
+> **Explore cafés →**
+
+---
+
+# 5. PROFILE
+
+### Navbar
+
+**Profile**
+
+Example:
+
+> **@jayms**
+>
+> Exploring Basilan one cup at a time.
+>
+> **12** Places Discovered  **6** Moments
+
+Then two tabs:
+
+**Moments | Saved**
+
+Below it, show the user's Moments as photo cards.
+
+Eventually you can add the **CAFÉTA Passport**, badges, achievements, etc., but I wouldn't make those important in V1.
+
+---
+
+# What happens when I click a café?
+
+This isn't necessarily a navbar item.
+
+It's the **Business Profile**.
+
+I'd design it like:
+
+### Hero
+
+**[Large beautiful café photo]**
+
+# Café ABC
+
+**Coffee · ₱₱ · 650m**
+
+**Open until 9 PM**
+
+`Directions` `♡ Save` `Share`
+
+---
+
+### About
+
+> A cozy neighborhood café serving coffee, pastries and quick bites.
+
+**Location**
+Isabela City, Basilan
+
+**Hours**
+8:00 AM – 9:00 PM
+
+**Price**
+₱₱
+
+---
+
+### The Vibe
+
+Community-generated tags:
+
+`Study Friendly` `Cozy` `Wi-Fi` `Budget Friendly`
+
+---
+
+### Moments
+
+> **See what people experienced here.**
+
+Then photo cards containing real CAFÉTA Moments.
+
+**View All Moments →**
+
+---
+
+### Menu
+
+Keep this simple initially.
+
+**Coffee**
+
+Spanish Latte — ₱120
+Americano — ₱90
+Cappuccino — ₱110
+
+**View Menu →**
+
+---
+
+### Map
+
+Small map showing the exact location.
+
+**Get Directions →**
+
+---
+
+# What about business owners?
+
+Don't put **Business Dashboard** in the normal user navbar.
+
+At the bottom of a business profile:
+
+> **Own this business?**
+>
+> Claim this place to manage information, photos, menu and opening hours.
+>
+> **Claim Business →**
+
+Once approved, the owner gets a separate simple dashboard:
+
+**Overview | Business Info | Menu | Photos | Community**
+
+No complicated analytics system initially.
+
+---
+
+# Landing Page
+
+You also need a public `/` page before users enter the application.
+
+I'd make the hero extremely straightforward.
+
+## **Where should we get coffee?**
+
+> Discover cafés, milk-tea shops, and real experiences shared by people around Basilan.
+
+**Explore CAFÉTA**
+
+**[Open interactive map preview]**
+
+Then:
+
+### Discover
+
+> Find cafés and milk-tea shops around you.
+
+### Experience
+
+> See real Moments shared by people who have been there.
+
+### Share
+
+> Found somewhere worth discovering? Share your Moment.
+
+Then show:
+
+### Trending around Basilan
+
+**Café A**
+**Café B**
+**Café C**
+
+Followed by recent community Moments.
+
+Finally:
+
+# **Kape tayo.**
+
+> Your next favorite place might be closer than you think.
+
+**Explore CAFÉTA**
+
+---
+
+# Final Site Structure
+
+I'd structure the actual application like this:
+
+```text
+CAFÉTA
+│
+├── Landing
+│
+├── Explore
+│   ├── Map
+│   ├── Search
+│   ├── Filters
+│   └── Café Preview
+│
+├── Discover
+│   ├── Near You
+│   ├── Trending
+│   ├── New Places
+│   ├── Hidden Gems
+│   └── Recent Moments
+│
+├── Business Profile
+│   ├── About
+│   ├── Moments
+│   ├── Menu
+│   ├── Hours
+│   └── Location
+│
+├── Create Moment
+│
+├── Saved
+│
+└── Profile
+    ├── My Moments
+    └── Saved Places
+```
+
+Then separate protected areas:
+
+```text
+BUSINESS OWNER
+├── Overview
+├── Business Info
+├── Menu
+├── Photos
+└── Community
+
+ADMIN
+├── Dashboard
+├── Businesses
+├── Claims
+├── Moments
+└── Reports
+```
+
+## The product in one picture
+
+The whole CAFÉTA experience should revolve around:
+
+**“Where should we get coffee?”**
+
+↓
+
+**Open CAFÉTA**
+
+↓
+
+**Explore Map**
+
+↓
+
+**Discover a Café**
+
+↓
+
+**See Café Moments**
+
+↓
+
+**Visit**
+
+↓
+
+**Share Your Moment**
+
+↓
+
+**Someone Else Discovers It**
+
+↓
+
+**Repeat**
+
+That is the version I would build. The **map finds the place; Moments make someone want to visit it.** Everything else should support those two things rather than competing with them.
