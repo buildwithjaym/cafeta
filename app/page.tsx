@@ -158,7 +158,7 @@ export default function Home() {
 
           <div className="flex items-center gap-2">
             <Link
-              href="/login"
+              href="/auth/login"
               className="hidden h-11 items-center px-5 text-sm font-semibold sm:inline-flex"
             >
               Sign in
@@ -806,7 +806,7 @@ export default function Home() {
             </p>
 
             <Link
-              href="/login"
+              href="/auth/login"
               className="group mt-8 inline-flex items-center gap-2 font-semibold text-brand-green"
             >
               Create your account
@@ -935,7 +935,7 @@ export default function Home() {
               </div>
 
               <Link
-                href="/login?type=business"
+                href="/auth/login?next=/business"
                 className="group inline-flex h-14 items-center justify-center gap-2 rounded-full bg-white px-7 font-semibold text-brand-espresso"
               >
                 <Building2 className="size-[18px]" />
@@ -1026,12 +1026,12 @@ export default function Home() {
                 </p>
 
                 <div className="mt-5 flex flex-col gap-3 text-sm">
-                  <Link href="/login" className="hover:text-brand-green">
+                  <Link href="/auth/login" className="hover:text-brand-green">
                     Sign in
                   </Link>
 
                   <Link
-                    href="/login?type=business"
+                    href="/auth/login?next=/business"
                     className="hover:text-brand-green"
                   >
                     Business
