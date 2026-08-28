@@ -1,4 +1,9 @@
-export type BusinessCategory =
+import type {
+  BusinessMemoryActivity,
+  MemoryActivityLabel,
+} from "@/lib/memories/types";
+
+export type MapBusinessCategory =
   | "coffee_shop"
   | "cafe"
   | "milk_tea"
@@ -11,7 +16,7 @@ export type MapBusiness = {
   name: string;
   slug: string;
 
-  category: BusinessCategory;
+  category: MapBusinessCategory;
 
   description: string | null;
 
@@ -27,12 +32,21 @@ export type MapBusiness = {
   longitude: number;
 
   is_verified: boolean;
+
+  memoryActivity:
+    | BusinessMemoryActivity
+    | null;
+
+  memoryActivityLabel:
+    MemoryActivityLabel;
 };
 
 export type MapFilter =
   | "all"
   | "coffee"
   | "milk-tea"
+  | "memories"
+  | "trending"
   | "nearby";
 
 export type MapStatus =
