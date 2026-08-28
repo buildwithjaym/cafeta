@@ -4,7 +4,6 @@ import Link from "next/link";
 
 import {
   BadgeCheck,
-  Clock3,
   MapPin,
   Star,
 } from "lucide-react";
@@ -56,9 +55,7 @@ type Business = {
 
   today_is_closed: boolean;
 
-  total_count:
-    | number
-    | string;
+  created_at?: string;
 };
 
 type Props = {
@@ -93,40 +90,54 @@ export function ExploreBusinessCard({
     <article
       style={{
         animationDelay: `${Math.min(
-          index * 55,
-          330,
+          index * 45,
+          270,
         )}ms`,
         animationFillMode:
           "both",
       }}
       className="
         group
+
         animate-in
         fade-in
         slide-in-from-bottom-3
+
         overflow-hidden
-        rounded-[26px]
+
+        rounded-[22px]
+
         border
-        border-black/[0.06]
+        border-black/[0.055]
+
         bg-white
-        duration-500
-        transition-[transform,box-shadow,border-color]
+
+        shadow-[0_4px_18px_rgba(0,0,0,0.025)]
+
+        transition-all
+        duration-300
+
         hover:-translate-y-1
-        hover:border-black/[0.09]
-        hover:shadow-[0_22px_55px_rgba(0,0,0,0.08)]
+        hover:border-black/[0.08]
+        hover:shadow-[0_18px_45px_rgba(0,0,0,0.08)]
       "
     >
       <div
         className="
           relative
-          aspect-[4/3]
+
+          aspect-[16/10]
           overflow-hidden
+
           bg-[#e9eeeb]
         "
       >
         <Link
           href={`/place/${business.slug}`}
-          className="block size-full"
+          className="
+            block
+            size-full
+          "
         >
           {business.cover_url ? (
             <img
@@ -136,65 +147,78 @@ export function ExploreBusinessCard({
               alt={business.name}
               loading="lazy"
               className="
+                block
                 size-full
+
                 object-cover
+
                 transition-transform
                 duration-700
                 ease-out
-                group-hover:scale-[1.035]
+
+                group-hover:scale-[1.04]
+              "
+            />
+          ) : business.logo_url ? (
+            <img
+              src={
+                business.logo_url
+              }
+              alt={business.name}
+              loading="lazy"
+              className="
+                block
+                size-full
+
+                object-cover
+
+                transition-transform
+                duration-700
+                ease-out
+
+                group-hover:scale-[1.04]
               "
             />
           ) : (
             <div
               className="
-                flex size-full
+                flex
+                size-full
                 items-center
                 justify-center
+
                 bg-gradient-to-br
                 from-[#edf5f1]
-                to-[#e5ece8]
+                to-[#dcebe3]
               "
             >
-              {business.logo_url ? (
-                <img
-                  src={
-                    business.logo_url
-                  }
-                  alt=""
-                  loading="lazy"
-                  className="
-                    size-20
-                    rounded-[20px]
-                    object-cover
-                    shadow-sm
-                  "
-                />
-              ) : (
-                <span
-                  className="
-                    text-3xl
-                    font-black
-                    tracking-[-0.06em]
-                    text-[#006241]/25
-                  "
-                >
-                  CAFÉTA
-                </span>
-              )}
+              <span
+                className="
+                  text-2xl
+                  font-black
+                  tracking-[-0.06em]
+                  text-[#006241]/25
+                "
+              >
+                CAFÉTA
+              </span>
             </div>
           )}
         </Link>
 
         <div
           className="
+            pointer-events-none
+
             absolute
             inset-x-0
             top-0
-            h-24
+
+            h-20
+
             bg-gradient-to-b
-            from-black/15
+            from-black/20
             to-transparent
-            pointer-events-none
           "
         />
 
@@ -203,6 +227,8 @@ export function ExploreBusinessCard({
             absolute
             right-3
             top-3
+
+            z-10
           "
         >
           <SaveBusinessButton
@@ -214,115 +240,105 @@ export function ExploreBusinessCard({
             }
           />
         </div>
-
-        {!business.today_is_closed && (
-          <div
-            className="
-              absolute
-              bottom-3
-              left-3
-              flex items-center
-              gap-1.5
-              rounded-full
-              bg-white/95
-              px-3
-              py-1.5
-              text-[10px]
-              font-bold
-              text-[#006241]
-              shadow-sm
-              backdrop-blur
-            "
-          >
-            <span
-              className="
-                size-1.5
-                rounded-full
-                bg-[#006241]
-              "
-            />
-
-            Open today
-          </div>
-        )}
       </div>
 
-      <div className="p-5">
+      <div className="p-4">
         <div
           className="
             flex
             items-start
             justify-between
-            gap-4
+            gap-3
           "
         >
           <div className="min-w-0">
+            <p
+              className="
+                text-[9px]
+                font-bold
+                uppercase
+                tracking-[0.13em]
+                text-[#006241]
+              "
+            >
+              {formatCategory(
+                business.category,
+              )}
+            </p>
+
             <div
               className="
+                mt-1
+
                 flex
+                min-w-0
                 items-center
                 gap-1.5
               "
             >
-              <p
-                className="
-                  text-[10px]
-                  font-bold
-                  uppercase
-                  tracking-[0.13em]
-                  text-[#006241]
-                "
+              <Link
+                href={`/place/${business.slug}`}
+                className="min-w-0"
               >
-                {formatCategory(
-                  business.category,
-                )}
-              </p>
-
-              {business.is_verified && (
-                <BadgeCheck
+                <h3
                   className="
-                    size-3.5
-                    fill-[#006241]
+                    truncate
+
+                    text-[17px]
+                    font-black
+                    tracking-[-0.035em]
+                    text-[#17211c]
+
+                    transition-colors
+                    duration-200
+
+                    group-hover:text-[#006241]
+                  "
+                >
+                  {business.name}
+                </h3>
+              </Link>
+
+              {business.is_verified ===
+                true && (
+                <BadgeCheck
+                  aria-label="Verified business"
+                  className="
+                    size-[16px]
+                    shrink-0
+
+                    fill-[#1683f3]
                     text-white
                   "
                 />
               )}
             </div>
-
-            <Link
-              href={`/place/${business.slug}`}
-            >
-              <h3
-                className="
-                  mt-1
-                  truncate
-                  text-lg
-                  font-black
-                  tracking-[-0.03em]
-                  text-[#17211c]
-                  transition-colors
-                  group-hover:text-[#006241]
-                "
-              >
-                {business.name}
-              </h3>
-            </Link>
           </div>
 
           {reviews > 0 && (
             <div
               className="
-                flex shrink-0
+                flex
+                shrink-0
                 items-center
                 gap-1
-                text-xs
+
+                rounded-full
+
+                bg-[#f4f7f5]
+
+                px-2
+                py-1
+
+                text-[11px]
                 font-bold
                 text-[#17211c]
               "
             >
               <Star
                 className="
-                  size-3.5
+                  size-3
+
                   fill-[#006241]
                   text-[#006241]
                 "
@@ -339,9 +355,11 @@ export function ExploreBusinessCard({
           <p
             className="
               mt-2
+
               line-clamp-2
-              text-xs
-              leading-5
+
+              text-[11px]
+              leading-[18px]
               text-black/40
             "
           >
@@ -353,69 +371,60 @@ export function ExploreBusinessCard({
 
         <div
           className="
-            mt-4 flex
+            mt-3
+
+            flex
             items-center
             justify-between
             gap-3
+
             border-t
             border-black/[0.05]
+
             pt-3
-            text-[11px]
+
+            text-[10px]
             text-black/40
           "
         >
-          <span
+          <div
             className="
-              flex min-w-0
+              flex
+              min-w-0
               items-center
               gap-1.5
             "
           >
-            <MapPin className="size-3.5 shrink-0" />
+            <MapPin
+              className="
+                size-3.5
+                shrink-0
+
+                text-[#006241]
+              "
+            />
 
             <span className="truncate">
               {location ||
                 business.address}
             </span>
+          </div>
+
+          <span
+            className="
+              shrink-0
+              font-medium
+            "
+          >
+            {reviews > 0
+              ? `${reviews} ${
+                  reviews === 1
+                    ? "review"
+                    : "reviews"
+                }`
+              : "New"}
           </span>
-
-          {reviews > 0 ? (
-            <span className="shrink-0">
-              {reviews}{" "}
-              {reviews === 1
-                ? "review"
-                : "reviews"}
-            </span>
-          ) : (
-            <span className="shrink-0">
-              New
-            </span>
-          )}
         </div>
-
-        {business.today_opens_at &&
-          business.today_closes_at && (
-            <div
-              className="
-                mt-2
-                flex items-center
-                gap-1.5
-                text-[10px]
-                font-medium
-                text-black/35
-              "
-            >
-              <Clock3 className="size-3" />
-
-              {business.today_is_closed
-                ? "Closed today"
-                : `${formatTime(
-                    business.today_opens_at,
-                  )} – ${formatTime(
-                    business.today_closes_at,
-                  )}`}
-            </div>
-          )}
       </div>
     </article>
   );
@@ -428,14 +437,20 @@ function formatCategory(
     case "coffee_shop":
       return "Coffee Shop";
 
-    case "milk_tea":
-      return "Milk Tea";
-
     case "cafe":
       return "Café";
 
-    case "bakery":
-      return "Bakery";
+    case "milk_tea":
+      return "Milk Tea";
+
+    case "bakery_cafe":
+      return "Bakery Café";
+
+    case "restaurant_cafe":
+      return "Restaurant Café";
+
+    case "other":
+      return "Local Spot";
 
     default:
       return category.replace(
@@ -443,31 +458,4 @@ function formatCategory(
         " ",
       );
   }
-}
-
-function formatTime(
-  value: string,
-) {
-  const [
-    hours,
-    minutes,
-  ] = value.split(":");
-
-  const date =
-    new Date();
-
-  date.setHours(
-    Number(hours),
-    Number(minutes),
-    0,
-    0,
-  );
-
-  return new Intl.DateTimeFormat(
-    "en-PH",
-    {
-      hour: "numeric",
-      minute: "2-digit",
-    },
-  ).format(date);
 }
