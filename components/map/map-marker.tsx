@@ -1,6 +1,7 @@
 import {
   Coffee,
   CupSoda,
+  Flame,
 } from "lucide-react";
 
 import {
@@ -20,9 +21,12 @@ export function createBusinessMarker(
   active = false,
 ) {
   const button =
-    document.createElement("button");
+    document.createElement(
+      "button",
+    );
 
-  button.type = "button";
+  button.type =
+    "button";
 
   button.setAttribute(
     "aria-label",
@@ -34,27 +38,74 @@ export function createBusinessMarker(
     business.id,
   );
 
+  const isTrending =
+    business.memoryActivityLabel ===
+    "trending";
+
+  const isActiveToday =
+    business.memoryActivityLabel ===
+    "active";
+
   const Icon =
-    business.category === "milk_tea"
-      ? CupSoda
-      : Coffee;
+    isTrending
+      ? Flame
+      : business.category ===
+          "milk_tea"
+        ? CupSoda
+        : Coffee;
 
   button.innerHTML =
     renderToStaticMarkup(
-      createElement(Icon, {
-        size: active ? 20 : 17,
-        strokeWidth: 2.3,
-      }),
+      createElement(
+        Icon,
+        {
+          size:
+            active
+              ? 20
+              : 17,
+
+          strokeWidth:
+            2.3,
+        },
+      ),
     );
 
   button.className = [
     "cafeta-map-marker",
+
     active
       ? "cafeta-map-marker-active"
+      : "",
+
+    isTrending
+      ? "cafeta-map-marker-trending"
+      : "",
+
+    isActiveToday
+      ? "cafeta-map-marker-memory-active"
       : "",
   ]
     .filter(Boolean)
     .join(" ");
+
+  if (
+    isTrending ||
+    isActiveToday
+  ) {
+    const pulse =
+      document.createElement(
+        "span",
+      );
+
+    pulse.className =
+      isTrending
+        ? "cafeta-marker-pulse cafeta-marker-pulse-trending"
+        : "cafeta-marker-pulse";
+
+    button.appendChild(
+      pulse,
+    );
+  }
 
   return button;
 }
