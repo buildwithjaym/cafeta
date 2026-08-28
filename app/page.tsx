@@ -27,23 +27,7 @@ import {
   X,
 } from "lucide-react";
 
-/**
- * COLOR TOKENS (Starbucks-derived palette)
- * ------------------------------------------------
- * Green (primary)   #00704A
- * Green (hover/dark) #00563A
- * Black (ink/dark bg) #27251F
- * Cream (soft surface) #F3EFE7
- * Mist (cool surface)  #EAF3EE
- *
- * If your tailwind.config.js defines brand-green / brand-espresso /
- * brand-cream, point them at these hexes so the rest of the app stays
- * in sync:
- *   brand-green:      "#00704A"
- *   brand-green-dark: "#00563A"
- *   brand-espresso:   "#27251F"
- *   brand-cream:      "#F3EFE7"
- */
+
 
 const quickDiscover = [
   {
