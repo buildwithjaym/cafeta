@@ -1,10 +1,10 @@
 "use client";
 
 import {
+  useEffect,
   useState,
 } from "react";
 
-import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -14,10 +14,14 @@ import {
 import {
   BadgeCheck,
   Building2,
+  CheckCircle2,
   ChevronRight,
   CircleUserRound,
+  Clock3,
   Heart,
+  Hourglass,
   LogOut,
+  MapPin,
   MessageSquareText,
   Pencil,
   Plus,
@@ -25,9 +29,13 @@ import {
   ShieldCheck,
   Store,
   UserRound,
+  X,
+  XCircle,
 } from "lucide-react";
 
-import { toast } from "sonner";
+import {
+  toast,
+} from "sonner";
 
 import {
   ChangeUsernameModal,
@@ -62,7 +70,8 @@ type Props = {
 
 export function ProfilePageClient({
   user,
-  profile: initialProfile,
+  profile:
+    initialProfile,
   businesses,
   stats,
 }: Props) {
@@ -72,31 +81,54 @@ export function ProfilePageClient({
   const [
     profile,
     setProfile,
-  ] = useState<CafetaProfile>(
-    initialProfile,
-  );
+  ] =
+    useState<CafetaProfile>(
+      initialProfile,
+    );
 
   const [
     editProfileOpen,
     setEditProfileOpen,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     usernameOpen,
     setUsernameOpen,
-  ] = useState(false);
+  ] =
+    useState(false);
+
+  const [
+    pendingBusiness,
+    setPendingBusiness,
+  ] =
+    useState<ProfileBusiness | null>(
+      null,
+    );
 
   const [
     signingOut,
     setSigningOut,
-  ] = useState(false);
+  ] =
+    useState(false);
+
+  useEffect(() => {
+    setProfile(
+      initialProfile,
+    );
+  }, [
+    initialProfile,
+  ]);
 
   function handleProfileUpdated(
-    updatedProfile: CafetaProfile,
+    updatedProfile:
+      CafetaProfile,
   ) {
     setProfile(
       updatedProfile,
     );
+
+    router.refresh();
   }
 
   async function handleSignOut() {
@@ -104,14 +136,19 @@ export function ProfilePageClient({
       return;
     }
 
-    setSigningOut(true);
+    setSigningOut(
+      true,
+    );
 
     try {
       const supabase =
         createClient();
 
-      const { error } =
-        await supabase.auth.signOut();
+      const {
+        error,
+      } =
+        await supabase.auth
+          .signOut();
 
       if (error) {
         toast.error(
@@ -125,10 +162,26 @@ export function ProfilePageClient({
         return;
       }
 
-      router.replace("/");
+      router.replace(
+        "/",
+      );
+
       router.refresh();
+    } catch (
+      error
+    ) {
+      console.error(
+        "[CAFÉTA] Sign out failed:",
+        error,
+      );
+
+      toast.error(
+        "Couldn't sign you out",
+      );
     } finally {
-      setSigningOut(false);
+      setSigningOut(
+        false,
+      );
     }
   }
 
@@ -139,6 +192,7 @@ export function ProfilePageClient({
           min-h-[calc(100dvh-64px)]
           bg-[#f7f8f6]
           pb-28
+
           md:min-h-[calc(100dvh-72px)]
           md:pb-12
         "
@@ -148,18 +202,31 @@ export function ProfilePageClient({
             mx-auto
             w-full
             max-w-[1180px]
-            px-4 py-6
+
+            px-4
+            py-6
+
             sm:px-6
+
             md:py-9
+
             lg:px-8
           "
         >
           <header
             className="
               mb-6
-              flex items-end
+
+              flex
+              items-end
               justify-between
               gap-4
+
+              animate-in
+              fade-in
+              slide-in-from-bottom-2
+              duration-500
+
               md:mb-8
             "
           >
@@ -167,8 +234,10 @@ export function ProfilePageClient({
               <p
                 className="
                   text-[10px]
-                  font-bold uppercase
+                  font-bold
+                  uppercase
                   tracking-[0.18em]
+
                   text-[#006241]
                 "
               >
@@ -178,10 +247,13 @@ export function ProfilePageClient({
               <h1
                 className="
                   mt-2
+
                   text-3xl
                   font-black
                   tracking-[-0.045em]
+
                   text-[#17211c]
+
                   md:text-[36px]
                 "
               >
@@ -193,27 +265,38 @@ export function ProfilePageClient({
               href="/profile/settings"
               aria-label="Profile settings"
               className="
-                flex size-10
+                flex
+                size-10
                 items-center
                 justify-center
+
                 rounded-full
+
                 border
                 border-black/[0.06]
+
                 bg-white
+
                 text-[#4f5b54]
+
                 shadow-sm
+
                 transition-all
                 duration-200
+
                 hover:-translate-y-0.5
                 hover:border-[#006241]/20
                 hover:text-[#006241]
                 hover:shadow-md
+
                 active:translate-y-0
                 active:scale-95
               "
             >
               <Settings
-                className="size-[17px]"
+                className="
+                  size-[17px]
+                "
               />
             </Link>
           </header>
@@ -223,19 +306,30 @@ export function ProfilePageClient({
               grid
               items-start
               gap-5
+
               lg:grid-cols-[360px_minmax(0,1fr)]
             "
           >
             <ProfileCard
-              user={user}
-              profile={profile}
-              stats={stats}
-              onEdit={() =>
-                setEditProfileOpen(true)
+              user={
+                user
               }
-              onUsername={() =>
-                setUsernameOpen(true)
+              profile={
+                profile
               }
+              stats={
+                stats
+              }
+              onEdit={() => {
+                setEditProfileOpen(
+                  true,
+                );
+              }}
+              onUsername={() => {
+                setUsernameOpen(
+                  true,
+                );
+              }}
             />
 
             <div
@@ -246,12 +340,22 @@ export function ProfilePageClient({
             >
               <section
                 className="
+                  animate-in
+                  fade-in
+                  slide-in-from-bottom-2
+                  duration-500
+
                   rounded-[28px]
+
                   border
                   border-black/[0.05]
+
                   bg-white
+
                   p-5
+
                   shadow-[0_10px_35px_rgba(23,33,28,0.04)]
+
                   md:p-6
                 "
               >
@@ -267,8 +371,10 @@ export function ProfilePageClient({
                     <p
                       className="
                         text-[10px]
-                        font-bold uppercase
+                        font-bold
+                        uppercase
                         tracking-[0.16em]
+
                         text-[#006241]
                       "
                     >
@@ -278,28 +384,36 @@ export function ProfilePageClient({
                     <h2
                       className="
                         mt-1.5
+
                         text-lg
                         font-bold
                         tracking-[-0.025em]
+
                         text-[#17211c]
                       "
                     >
-                      Your CAFÉTA identity
+                      Your CAFÉTA
+                      identity
                     </h2>
                   </div>
 
                   <div
                     className="
-                      flex size-10
+                      flex
+                      size-10
                       items-center
                       justify-center
+
                       rounded-[14px]
+
                       bg-[#e8f2ed]
                       text-[#006241]
                     "
                   >
                     <UserRound
-                      className="size-[18px]"
+                      className="
+                        size-[18px]
+                      "
                     />
                   </div>
                 </div>
@@ -307,6 +421,7 @@ export function ProfilePageClient({
                 <div
                   className="
                     mt-5
+
                     divide-y
                     divide-black/[0.05]
                   "
@@ -321,16 +436,21 @@ export function ProfilePageClient({
                         ? `@${profile.username}`
                         : "Set your username"
                     }
-                    onClick={() =>
-                      setUsernameOpen(true)
-                    }
+                    onClick={() => {
+                      setUsernameOpen(
+                        true,
+                      );
+                    }}
                   />
 
                   <ProfileRow
-                    icon={Heart}
+                    icon={
+                      Heart
+                    }
                     label="Saved places"
                     value={`${stats.saved} ${
-                      stats.saved === 1
+                      stats.saved ===
+                      1
                         ? "place"
                         : "places"
                     }`}
@@ -343,7 +463,8 @@ export function ProfilePageClient({
                     }
                     label="Your reviews"
                     value={`${stats.reviews} ${
-                      stats.reviews === 1
+                      stats.reviews ===
+                      1
                         ? "review"
                         : "reviews"
                     }`}
@@ -356,20 +477,38 @@ export function ProfilePageClient({
                 businesses={
                   businesses
                 }
+                onPendingBusiness={(
+                  business,
+                ) => {
+                  setPendingBusiness(
+                    business,
+                  );
+                }}
               />
 
               <section
                 className="
+                  animate-in
+                  fade-in
+                  slide-in-from-bottom-2
+                  duration-500
+
                   rounded-[28px]
+
                   border
                   border-black/[0.05]
+
                   bg-white
+
                   p-3
+
                   shadow-[0_10px_35px_rgba(23,33,28,0.04)]
                 "
               >
                 <ProfileRow
-                  icon={Settings}
+                  icon={
+                    Settings
+                  }
                   label="Settings"
                   value="Account & preferences"
                   href="/profile/settings"
@@ -384,35 +523,49 @@ export function ProfilePageClient({
                     signingOut
                   }
                   className="
-                    group flex
+                    group
+
+                    flex
                     w-full
                     items-center
                     gap-3
+
                     rounded-[18px]
-                    px-3 py-3.5
+
+                    px-3
+                    py-3.5
+
                     text-left
+
                     transition-all
                     duration-200
+
                     hover:bg-red-50
+
+                    active:scale-[0.995]
+
                     disabled:pointer-events-none
                     disabled:opacity-50
                   "
                 >
                   <div
                     className="
-                      flex size-9
+                      flex
+                      size-9
                       shrink-0
                       items-center
                       justify-center
+
                       rounded-[12px]
+
                       bg-red-50
                       text-red-600
-                      transition-transform
-                      group-active:scale-95
                     "
                   >
                     <LogOut
-                      className="size-4"
+                      className="
+                        size-4
+                      "
                     />
                   </div>
 
@@ -437,6 +590,7 @@ export function ProfilePageClient({
                     <p
                       className="
                         mt-0.5
+
                         text-[11px]
                         text-black/35
                       "
@@ -453,26 +607,49 @@ export function ProfilePageClient({
       </main>
 
       <EditProfileModal
-        open={editProfileOpen}
+        open={
+          editProfileOpen
+        }
         onOpenChange={
           setEditProfileOpen
         }
-        profile={profile}
-        email={user.email}
+        profile={
+          profile
+        }
+        email={
+          user.email
+        }
         onUpdated={
           handleProfileUpdated
         }
       />
 
       <ChangeUsernameModal
-        open={usernameOpen}
-        profile={profile}
-        onClose={() =>
-          setUsernameOpen(false)
+        open={
+          usernameOpen
         }
+        profile={
+          profile
+        }
+        onClose={() => {
+          setUsernameOpen(
+            false,
+          );
+        }}
         onUpdated={
           handleProfileUpdated
         }
+      />
+
+      <PendingBusinessModal
+        business={
+          pendingBusiness
+        }
+        onClose={() => {
+          setPendingBusiness(
+            null,
+          );
+        }}
       />
     </>
   );
@@ -485,28 +662,79 @@ function ProfileCard({
   onEdit,
   onUsername,
 }: {
-  user: Props["user"];
-  profile: CafetaProfile;
-  stats: ProfileStats;
-  onEdit: () => void;
-  onUsername: () => void;
+  user:
+    Props["user"];
+
+  profile:
+    CafetaProfile;
+
+  stats:
+    ProfileStats;
+
+  onEdit:
+    () => void;
+
+  onUsername:
+    () => void;
 }) {
+  const [
+    avatarFailed,
+    setAvatarFailed,
+  ] =
+    useState(false);
+
+  useEffect(() => {
+    setAvatarFailed(
+      false,
+    );
+  }, [
+    profile.avatar_url,
+  ]);
+
+  const displayName =
+    profile.full_name?.trim() ||
+    profile.username?.trim() ||
+    user.email.split(
+      "@",
+    )[0] ||
+    "CAFÉTA User";
+
+  const showAvatar =
+    Boolean(
+      profile.avatar_url,
+    ) &&
+    !avatarFailed;
+
   return (
     <section
       className="
+        group
+
         overflow-hidden
+
         rounded-[30px]
+
         border
         border-black/[0.05]
+
         bg-white
+
         shadow-[0_12px_40px_rgba(23,33,28,0.05)]
+
+        animate-in
+        fade-in
+        slide-in-from-bottom-2
+        duration-500
       "
     >
       <div
         className="
           relative
+
           h-[105px]
+
           overflow-hidden
+
           bg-[#006241]
         "
       >
@@ -515,8 +743,11 @@ function ProfileCard({
             absolute
             -right-12
             -top-20
+
             size-52
+
             rounded-full
+
             border-[32px]
             border-white/[0.06]
           "
@@ -526,119 +757,209 @@ function ProfileCard({
       <div
         className="
           relative
-          px-5 pb-6
+
+          px-5
+          pb-6
         "
       >
         <div
           className="
             -mt-11
-            flex items-end
+
+            flex
+            items-end
             justify-between
           "
         >
           <div
             className="
               relative
-              size-[88px]
-              overflow-hidden
-              rounded-full
-              border-[5px]
-              border-white
-              bg-[#e8f2ed]
-              shadow-sm
             "
           >
-            {profile.avatar_url ? (
-              <Image
-                src={
-                  profile.avatar_url
-                }
-                alt={
-                  profile.full_name ??
-                  "CAFÉTA profile"
-                }
-                fill
-                priority
-                sizes="88px"
-                className="object-cover"
-              />
-            ) : (
-              <div
+            <div
+              className="
+                relative
+
+                size-[88px]
+
+                overflow-hidden
+
+                rounded-full
+
+                border-[5px]
+                border-white
+
+                bg-[#e8f2ed]
+
+                shadow-[0_6px_20px_rgba(0,0,0,0.10)]
+              "
+            >
+              {showAvatar ? (
+                <img
+                  key={
+                    profile.avatar_url
+                  }
+                  src={
+                    profile.avatar_url!
+                  }
+                  alt={`${displayName} profile`}
+                  loading="eager"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                  onError={() => {
+                    setAvatarFailed(
+                      true,
+                    );
+                  }}
+                  className="
+                    block
+                    size-full
+                    object-cover
+                  "
+                />
+              ) : (
+                <div
+                  className="
+                    flex
+                    size-full
+                    items-center
+                    justify-center
+
+                    bg-gradient-to-br
+                    from-[#edf5f1]
+                    to-[#dcebe3]
+
+                    text-xl
+                    font-black
+                    text-[#006241]
+                  "
+                >
+                  {getInitials(
+                    displayName,
+                  )}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={
+                onEdit
+              }
+              aria-label="Change profile photo"
+              className="
+                absolute
+                bottom-0
+                right-0
+
+                flex
+                size-8
+                items-center
+                justify-center
+
+                rounded-full
+
+                border-[3px]
+                border-white
+
+                bg-[#006241]
+                text-white
+
+                shadow-sm
+
+                transition-all
+
+                hover:scale-110
+                hover:bg-[#00754a]
+              "
+            >
+              <Pencil
                 className="
-                  flex h-full
-                  w-full
-                  items-center
-                  justify-center
-                  text-xl
-                  font-black
-                  text-[#006241]
+                  size-3
                 "
-              >
-                {getInitials(
-                  profile.full_name,
-                )}
-              </div>
-            )}
+              />
+            </button>
           </div>
 
           <button
             type="button"
-            onClick={onEdit}
-            aria-label="Edit profile"
+            onClick={
+              onEdit
+            }
             className="
               mb-1
-              flex size-9
+
+              flex
+              h-9
               items-center
-              justify-center
+              gap-1.5
+
               rounded-full
+
               border
               border-black/[0.07]
+
               bg-white
-              text-black/55
+
+              px-3.5
+
+              text-[11px]
+              font-bold
+              text-[#39443e]
+
+              shadow-sm
+
               transition-all
-              duration-200
-              hover:-translate-y-0.5
-              hover:border-[#006241]/20
+
               hover:bg-[#f4f8f6]
               hover:text-[#006241]
-              hover:shadow-md
-              active:translate-y-0
-              active:scale-90
             "
           >
             <Pencil
-              className="size-3.5"
+              className="
+                size-3
+              "
             />
+
+            Edit
           </button>
         </div>
 
-        <div className="mt-4">
+        <div
+          className="
+            mt-4
+          "
+        >
           <div
             className="
-              flex items-center
+              flex
+              min-w-0
+              items-center
               gap-1.5
             "
           >
             <h2
               className="
                 truncate
+
                 text-xl
-                font-bold
-                tracking-[-0.03em]
+                font-black
+                tracking-[-0.035em]
+
                 text-[#17211c]
               "
             >
-              {profile.full_name ||
-                "CAFÉTA User"}
+              {displayName}
             </h2>
 
             {profile.role ===
               "admin" && (
               <ShieldCheck
                 className="
-                  size-4
-                  shrink-0
-                  text-[#006241]
+                  size-[17px]
+
+                  fill-[#1689e8]
+                  text-white
                 "
               />
             )}
@@ -646,14 +967,16 @@ function ProfileCard({
 
           <button
             type="button"
-            onClick={onUsername}
+            onClick={
+              onUsername
+            }
             className="
               mt-1
-              text-left
+
               text-sm
               font-medium
               text-[#006241]
-              transition
+
               hover:underline
             "
           >
@@ -664,7 +987,10 @@ function ProfileCard({
 
           <p
             className="
-              mt-1 truncate
+              mt-1
+
+              truncate
+
               text-xs
               text-black/35
             "
@@ -676,7 +1002,9 @@ function ProfileCard({
             <p
               className="
                 mt-4
+
                 whitespace-pre-line
+
                 text-sm
                 leading-6
                 text-[#59635e]
@@ -687,14 +1015,17 @@ function ProfileCard({
           ) : (
             <button
               type="button"
-              onClick={onEdit}
+              onClick={
+                onEdit
+              }
               className="
                 mt-4
+
                 text-left
                 text-sm
                 leading-6
                 text-black/35
-                transition
+
                 hover:text-[#006241]
               "
             >
@@ -708,21 +1039,31 @@ function ProfileCard({
         <div
           className="
             mt-6
-            grid grid-cols-3
+
+            grid
+            grid-cols-3
             divide-x
             divide-black/[0.06]
+
             rounded-[20px]
+
             bg-[#f7f8f6]
-            px-2 py-4
+
+            px-2
+            py-4
           "
         >
           <ProfileStat
-            value={stats.saved}
+            value={
+              stats.saved
+            }
             label="Saved"
           />
 
           <ProfileStat
-            value={stats.reviews}
+            value={
+              stats.reviews
+            }
             label="Reviews"
           />
 
@@ -740,24 +1081,42 @@ function ProfileCard({
 
 function BusinessSection({
   businesses,
+  onPendingBusiness,
 }: {
-  businesses: ProfileBusiness[];
+  businesses:
+    ProfileBusiness[];
+
+  onPendingBusiness: (
+    business:
+      ProfileBusiness,
+  ) => void;
 }) {
   return (
     <section
       className="
+        animate-in
+        fade-in
+        slide-in-from-bottom-2
+        duration-500
+
         rounded-[28px]
+
         border
         border-black/[0.05]
+
         bg-white
+
         p-5
+
         shadow-[0_10px_35px_rgba(23,33,28,0.04)]
+
         md:p-6
       "
     >
       <div
         className="
-          flex items-start
+          flex
+          items-start
           justify-between
           gap-4
         "
@@ -766,8 +1125,10 @@ function BusinessSection({
           <p
             className="
               text-[10px]
-              font-bold uppercase
+              font-bold
+              uppercase
               tracking-[0.16em]
+
               text-[#006241]
             "
           >
@@ -777,9 +1138,11 @@ function BusinessSection({
           <h2
             className="
               mt-1.5
+
               text-lg
               font-bold
               tracking-[-0.025em]
+
               text-[#17211c]
             "
           >
@@ -789,14 +1152,15 @@ function BusinessSection({
           <p
             className="
               mt-1
+
               text-xs
               leading-5
               text-black/40
             "
           >
-            Create and manage places
-            connected to your CAFÉTA
-            account.
+            Create and manage
+            businesses connected to
+            your CAFÉTA account.
           </p>
         </div>
 
@@ -804,25 +1168,35 @@ function BusinessSection({
           href="/business/create"
           aria-label="Create business"
           className="
-            flex size-10
+            flex
+            size-10
             shrink-0
             items-center
             justify-center
+
             rounded-[14px]
+
             bg-[#006241]
             text-white
+
+            shadow-sm
+
             transition-all
+
+            hover:-translate-y-0.5
             hover:bg-[#004f35]
-            active:scale-95
           "
         >
           <Plus
-            className="size-[18px]"
+            className="
+              size-[18px]
+            "
           />
         </Link>
       </div>
 
-      {businesses.length > 0 ? (
+      {businesses.length >
+      0 ? (
         <div
           className="
             mt-5
@@ -830,214 +1204,1374 @@ function BusinessSection({
           "
         >
           {businesses.map(
-            (business) => (
-              <Link
-                key={business.id}
-                href={`/business/${business.slug}`}
-                className="
-                  group flex
-                  items-center
-                  gap-3
-                  rounded-[20px]
-                  border
-                  border-black/[0.05]
-                  p-3
-                  transition-all
-                  duration-200
-                  hover:border-[#006241]/15
-                  hover:bg-[#fafcfb]
-                "
-              >
-                <div
-                  className="
-                    relative
-                    size-12
-                    shrink-0
-                    overflow-hidden
-                    rounded-[15px]
-                    bg-[#e8f2ed]
-                  "
-                >
-                  {business.logo_url ? (
-                    <Image
-                      src={
-                        business.logo_url
-                      }
-                      alt={
-                        business.name
-                      }
-                      fill
-                      sizes="48px"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div
-                      className="
-                        flex h-full
-                        items-center
-                        justify-center
-                        text-[#006241]
-                      "
-                    >
-                      <Store
-                        className="size-5"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div
-                  className="
-                    min-w-0
-                    flex-1
-                  "
-                >
-                  <div
-                    className="
-                      flex
-                      items-center
-                      gap-1.5
-                    "
-                  >
-                    <h3
-                      className="
-                        truncate
-                        text-sm
-                        font-bold
-                        text-[#17211c]
-                      "
-                    >
-                      {business.name}
-                    </h3>
-
-                    {business.is_verified && (
-                      <BadgeCheck
-                        className="
-                          size-3.5
-                          shrink-0
-                          text-[#006241]
-                        "
-                      />
-                    )}
-                  </div>
-
-                  <p
-                    className="
-                      mt-1
-                      truncate
-                      text-[10px]
-                      text-black/40
-                    "
-                  >
-                    {formatCategory(
-                      business.category,
-                    )}
-                    {" • "}
-                    {formatMemberRole(
-                      business.memberRole,
-                    )}
-                    {" • "}
-                    {business.status}
-                  </p>
-                </div>
-
-                <ChevronRight
-                  className="
-                    size-4
-                    shrink-0
-                    text-black/20
-                    transition
-                    group-hover:text-[#006241]
-                  "
-                />
-              </Link>
+            (
+              business,
+              index,
+            ) => (
+              <BusinessListItem
+                key={
+                  business.id
+                }
+                business={
+                  business
+                }
+                index={
+                  index
+                }
+                onPending={() => {
+                  onPendingBusiness(
+                    business,
+                  );
+                }}
+              />
             ),
           )}
         </div>
       ) : (
+        <EmptyBusinessState />
+      )}
+    </section>
+  );
+}
+
+function BusinessListItem({
+  business,
+  index,
+  onPending,
+}: {
+  business:
+    ProfileBusiness;
+
+  index:
+    number;
+
+  onPending:
+    () => void;
+}) {
+  const approved =
+    business.status ===
+    "approved";
+
+  const pending =
+    business.status ===
+    "pending";
+
+  const content = (
+    <>
+      <BusinessLogo
+        business={
+          business
+        }
+      />
+
+      <div
+        className="
+          min-w-0
+          flex-1
+        "
+      >
         <div
           className="
-            mt-5
-            rounded-[22px]
-            border
-            border-dashed
-            border-[#006241]/15
-            bg-[#f8fbf9]
-            px-5 py-7
-            text-center
+            flex
+            min-w-0
+            items-center
+            gap-1.5
+          "
+        >
+          <h3
+            className="
+              truncate
+
+              text-sm
+              font-bold
+              tracking-[-0.015em]
+
+              text-[#17211c]
+            "
+          >
+            {business.name}
+          </h3>
+
+          {business.is_verified &&
+            approved && (
+              <BadgeCheck
+                aria-label="Verified business"
+                className="
+                  size-[15px]
+                  shrink-0
+
+                  fill-[#1689e8]
+                  text-white
+                "
+                strokeWidth={
+                  2.4
+                }
+              />
+            )}
+        </div>
+
+        <div
+          className="
+            mt-1.5
+
+            flex
+            flex-wrap
+            items-center
+            gap-1.5
+          "
+        >
+          <span
+            className="
+              text-[10px]
+              text-black/40
+            "
+          >
+            {formatCategory(
+              business.category,
+            )}
+          </span>
+
+          <span
+            className="
+              text-black/15
+            "
+          >
+            •
+          </span>
+
+          <span
+            className="
+              text-[10px]
+              text-black/40
+            "
+          >
+            {formatMemberRole(
+              business.memberRole,
+            )}
+          </span>
+
+          <BusinessStatusBadge
+            status={
+              business.status
+            }
+          />
+        </div>
+      </div>
+
+      {pending ? (
+        <Hourglass
+          className="
+            size-4
+            shrink-0
+
+            text-amber-500
+          "
+        />
+      ) : (
+        <ChevronRight
+          className="
+            size-4
+            shrink-0
+
+            text-black/20
+
+            transition-all
+
+            group-hover:translate-x-0.5
+            group-hover:text-[#006241]
+          "
+        />
+      )}
+    </>
+  );
+
+  const className = `
+    group
+
+    flex
+    w-full
+    items-center
+    gap-3
+
+    animate-in
+    fade-in
+    slide-in-from-bottom-2
+
+    rounded-[20px]
+
+    border
+    border-black/[0.05]
+
+    p-3
+
+    text-left
+
+    duration-500
+
+    transition-all
+
+    hover:-translate-y-0.5
+    hover:border-[#006241]/15
+    hover:bg-[#fafcfb]
+    hover:shadow-[0_8px_24px_rgba(23,33,28,0.05)]
+
+    active:translate-y-0
+    active:scale-[0.995]
+  `;
+
+  const style = {
+    animationDelay:
+      `${Math.min(
+        index * 60,
+        300,
+      )}ms`,
+
+    animationFillMode:
+      "both" as const,
+  };
+
+  if (approved) {
+    return (
+      <Link
+        href={`/business/${encodeURIComponent(
+          business.slug,
+        )}`}
+        style={
+          style
+        }
+        className={
+          className
+        }
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  if (pending) {
+    return (
+      <button
+        type="button"
+        onClick={
+          onPending
+        }
+        style={
+          style
+        }
+        className={`
+          ${className}
+
+          border-amber-200/70
+
+          bg-gradient-to-r
+          from-white
+          to-amber-50/30
+
+          hover:border-amber-300
+          hover:bg-amber-50/40
+        `}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  /*
+   * Draft/rejected businesses are
+   * intentionally not sent to the
+   * public approved-business route.
+   */
+  return (
+    <div
+      style={
+        style
+      }
+      className={`
+        ${className}
+
+        cursor-default
+
+        hover:translate-y-0
+        hover:shadow-none
+      `}
+    >
+      {content}
+    </div>
+  );
+}
+
+function BusinessStatusBadge({
+  status,
+}: {
+  status:
+    string;
+}) {
+  if (
+    status ===
+    "approved"
+  ) {
+    return (
+      <span
+        className="
+          inline-flex
+          items-center
+          gap-1
+
+          rounded-full
+
+          bg-emerald-50
+
+          px-2
+          py-0.5
+
+          text-[9px]
+          font-bold
+
+          text-emerald-700
+        "
+      >
+        <CheckCircle2
+          className="
+            size-2.5
+          "
+        />
+
+        Active
+      </span>
+    );
+  }
+
+  if (
+    status ===
+    "pending"
+  ) {
+    return (
+      <span
+        className="
+          inline-flex
+          items-center
+          gap-1
+
+          rounded-full
+
+          border
+          border-amber-200
+
+          bg-amber-50
+
+          px-2
+          py-0.5
+
+          text-[9px]
+          font-bold
+
+          text-amber-700
+        "
+      >
+        <Clock3
+          className="
+            size-2.5
+          "
+        />
+
+        Pending
+      </span>
+    );
+  }
+
+  if (
+    status ===
+    "rejected"
+  ) {
+    return (
+      <span
+        className="
+          inline-flex
+          items-center
+          gap-1
+
+          rounded-full
+
+          bg-red-50
+
+          px-2
+          py-0.5
+
+          text-[9px]
+          font-bold
+
+          text-red-600
+        "
+      >
+        <XCircle
+          className="
+            size-2.5
+          "
+        />
+
+        Rejected
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className="
+        inline-flex
+        items-center
+        gap-1
+
+        rounded-full
+
+        bg-black/[0.045]
+
+        px-2
+        py-0.5
+
+        text-[9px]
+        font-bold
+
+        text-black/45
+      "
+    >
+      <Pencil
+        className="
+          size-2.5
+        "
+      />
+
+      {formatStatus(
+        status,
+      )}
+    </span>
+  );
+}
+function PendingBusinessModal({
+  business,
+  onClose,
+}: {
+  business:
+    ProfileBusiness | null;
+
+  onClose:
+    () => void;
+}) {
+  useEffect(() => {
+    if (!business) {
+      return;
+    }
+
+    const previousOverflow =
+      document.body.style.overflow;
+
+    document.body.style.overflow =
+      "hidden";
+
+    function handleKeyDown(
+      event: KeyboardEvent,
+    ) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+
+    window.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
+
+    return () => {
+      document.body.style.overflow =
+        previousOverflow;
+
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
+    };
+  }, [
+    business,
+    onClose,
+  ]);
+
+  if (!business) {
+    return null;
+  }
+
+  const location = [
+    business.barangay,
+    business.city,
+    business.province,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return (
+    <div
+      className="
+        fixed
+        inset-0
+        z-[120]
+
+        flex
+        items-center
+        justify-center
+
+        overflow-y-auto
+
+        bg-[#111814]/50
+
+        p-4
+
+        backdrop-blur-[4px]
+
+        animate-in
+        fade-in-0
+        duration-200
+
+        sm:p-6
+      "
+      onMouseDown={(event) => {
+        if (
+          event.target ===
+          event.currentTarget
+        ) {
+          onClose();
+        }
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pending-business-title"
+        aria-describedby="pending-business-description"
+        className="
+          relative
+
+          my-auto
+
+          w-full
+          max-w-[390px]
+
+          overflow-hidden
+
+          rounded-[24px]
+
+          border
+          border-black/[0.06]
+
+          bg-white
+
+          shadow-[0_28px_80px_rgba(0,0,0,0.22)]
+
+          animate-in
+          fade-in-0
+          zoom-in-95
+          slide-in-from-bottom-3
+          duration-300
+        "
+      >
+        <div
+          className="
+            relative
+
+            h-[112px]
+
+            overflow-hidden
+
+            bg-[#e7efe9]
+          "
+        >
+          {business.cover_url ? (
+            <img
+              src={
+                business.cover_url
+              }
+              alt=""
+              loading="eager"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              className="
+                size-full
+                object-cover
+              "
+            />
+          ) : (
+            <BusinessCoverFallback />
+          )}
+
+          <div
+            className="
+              absolute
+              inset-0
+
+              bg-gradient-to-b
+              from-black/15
+              via-transparent
+              to-black/35
+            "
+          />
+
+          <button
+            type="button"
+            onClick={
+              onClose
+            }
+            aria-label="Close pending business dialog"
+            className="
+              absolute
+              right-3
+              top-3
+
+              flex
+              size-8
+              items-center
+              justify-center
+
+              rounded-full
+
+              border
+              border-white/20
+
+              bg-black/30
+
+              text-white
+
+              shadow-sm
+
+              backdrop-blur-md
+
+              transition-all
+              duration-200
+
+              hover:bg-black/45
+
+              active:scale-90
+            "
+          >
+            <X
+              className="
+                size-3.5
+              "
+            />
+          </button>
+        </div>
+
+        <div
+          className="
+            relative
+
+            px-5
+            pb-5
           "
         >
           <div
             className="
-              mx-auto
-              flex size-11
-              items-center
-              justify-center
-              rounded-[16px]
-              bg-[#e8f2ed]
-              text-[#006241]
+              -mt-[30px]
+
+              flex
+              items-end
+              justify-between
+              gap-3
             "
           >
-            <Building2
-              className="size-5"
+            <BusinessModalLogo
+              business={
+                business
+              }
             />
+
+            <div
+              className="
+                mb-1
+
+                inline-flex
+                shrink-0
+                items-center
+                gap-1.5
+
+                rounded-full
+
+                border
+                border-amber-200
+
+                bg-amber-50
+
+                px-2.5
+                py-1.5
+
+                text-[9px]
+                font-bold
+
+                text-amber-700
+              "
+            >
+              <Clock3
+                className="
+                  size-3
+                "
+              />
+
+              Pending review
+            </div>
           </div>
 
-          <h3
+          <div
             className="
-              mt-3
-              text-sm
-              font-bold
-              text-[#17211c]
+              mt-3.5
             "
           >
-            Have a café or milk tea
-            shop?
-          </h3>
+            <p
+              className="
+                text-[8px]
+                font-black
+                uppercase
+                tracking-[0.17em]
 
-          <p
+                text-[#006241]
+              "
+            >
+              Business submission
+            </p>
+
+            <div
+              className="
+                mt-1
+
+                flex
+                min-w-0
+                items-center
+                gap-1.5
+              "
+            >
+              <h2
+                id="pending-business-title"
+                className="
+                  truncate
+
+                  text-[21px]
+                  font-black
+                  tracking-[-0.04em]
+
+                  text-[#17211c]
+                "
+              >
+                {business.name}
+              </h2>
+
+              {business.is_verified && (
+                <BadgeCheck
+                  className="
+                    size-4
+                    shrink-0
+
+                    fill-[#1689e8]
+                    text-white
+                  "
+                />
+              )}
+            </div>
+
+            <p
+              className="
+                mt-0.5
+
+                text-[11px]
+                font-medium
+
+                text-black/40
+              "
+            >
+              {formatCategory(
+                business.category,
+              )}
+            </p>
+
+            {location && (
+              <div
+                className="
+                  mt-2
+
+                  flex
+                  min-w-0
+                  items-center
+                  gap-1.5
+
+                  text-[10px]
+                  text-black/40
+                "
+              >
+                <MapPin
+                  className="
+                    size-3
+                    shrink-0
+
+                    text-[#006241]
+                  "
+                />
+
+                <span
+                  className="
+                    truncate
+                  "
+                >
+                  {location}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div
             className="
-              mx-auto
-              mt-1.5
-              max-w-sm
-              text-xs
-              leading-5
-              text-black/40
+              my-4
+
+              h-px
+
+              bg-black/[0.055]
+            "
+          />
+
+          <div
+            className="
+              flex
+              items-start
+              gap-3
             "
           >
-            Create your business page
-            and make it discoverable
-            across CAFÉTA.
-          </p>
+            <div
+              className="
+                flex
+                size-9
+                shrink-0
+                items-center
+                justify-center
 
-          <Link
-            href="/business/create"
+                rounded-full
+
+                bg-amber-50
+
+                text-amber-600
+              "
+            >
+              <Hourglass
+                className="
+                  size-4
+                "
+              />
+            </div>
+
+            <div
+              className="
+                min-w-0
+                pt-0.5
+              "
+            >
+              <h3
+                className="
+                  text-[13px]
+                  font-bold
+                  tracking-[-0.015em]
+
+                  text-[#17211c]
+                "
+              >
+                We&apos;re reviewing
+                your business
+              </h3>
+
+              <p
+                id="pending-business-description"
+                className="
+                  mt-1
+
+                  text-[10px]
+                  leading-[17px]
+
+                  text-black/45
+                "
+              >
+                Your submission is
+                waiting for approval.
+                Once approved, your
+                business will become
+                discoverable across
+                CAFÉTA.
+              </p>
+            </div>
+          </div>
+
+          <div
             className="
               mt-4
-              inline-flex
-              h-9
-              items-center
-              gap-1.5
-              rounded-full
-              bg-[#006241]
-              px-4
-              text-xs
-              font-bold
-              text-white
-              transition-all
-              hover:bg-[#004f35]
-              active:scale-[0.97]
+
+              flex
+              items-start
+              gap-2
+
+              rounded-[14px]
+
+              bg-[#f5f7f5]
+
+              px-3
+              py-2.5
             "
           >
-            <Plus
-              className="size-3.5"
+            <ShieldCheck
+              className="
+                mt-[1px]
+
+                size-3.5
+                shrink-0
+
+                text-[#006241]
+              "
             />
 
-            Create your business
-          </Link>
+            <p
+              className="
+                text-[9px]
+                leading-[15px]
+
+                text-black/40
+              "
+            >
+              No action is needed
+              while your submission
+              is being reviewed.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={
+              onClose
+            }
+            className="
+              mt-4
+
+              flex
+              h-10
+              w-full
+              items-center
+              justify-center
+
+              rounded-[13px]
+
+              bg-[#006241]
+
+              text-[11px]
+              font-bold
+              text-white
+
+              shadow-[0_5px_16px_rgba(0,98,65,0.14)]
+
+              transition-all
+              duration-200
+
+              hover:-translate-y-0.5
+              hover:bg-[#00754a]
+              hover:shadow-[0_7px_20px_rgba(0,98,65,0.18)]
+
+              active:translate-y-0
+              active:scale-[0.985]
+            "
+          >
+            Got it
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function BusinessModalLogo({
+  business,
+}: {
+  business:
+    ProfileBusiness;
+}) {
+  const [
+    failed,
+    setFailed,
+  ] =
+    useState(false);
+
+  useEffect(() => {
+    setFailed(
+      false,
+    );
+  }, [
+    business.id,
+    business.logo_url,
+  ]);
+
+  const showLogo =
+    Boolean(
+      business.logo_url,
+    ) &&
+    !failed;
+
+  return (
+    <div
+      className="
+        size-[62px]
+        shrink-0
+
+        overflow-hidden
+
+        rounded-[18px]
+
+        border-[4px]
+        border-white
+
+        bg-[#e8f2ed]
+
+        shadow-[0_6px_18px_rgba(0,0,0,0.13)]
+      "
+    >
+      {showLogo ? (
+        <img
+          src={
+            business.logo_url!
+          }
+          alt={`${business.name} logo`}
+          loading="eager"
+          decoding="async"
+          referrerPolicy="no-referrer"
+          onError={() => {
+            setFailed(
+              true,
+            );
+          }}
+          className="
+            block
+            size-full
+            object-cover
+          "
+        />
+      ) : (
+        <div
+          className="
+            flex
+            size-full
+            items-center
+            justify-center
+
+            bg-gradient-to-br
+            from-[#edf5f1]
+            to-[#dcebe3]
+
+            text-[#006241]
+          "
+        >
+          <Store
+            className="
+              size-5
+            "
+          />
         </div>
       )}
-    </section>
+    </div>
+  );
+}
+
+function BusinessLogo({
+  business,
+}: {
+  business:
+    ProfileBusiness;
+}) {
+  const [
+    logoFailed,
+    setLogoFailed,
+  ] =
+    useState(false);
+
+  useEffect(() => {
+    setLogoFailed(
+      false,
+    );
+  }, [
+    business.id,
+    business.logo_url,
+  ]);
+
+  const showLogo =
+    Boolean(
+      business.logo_url,
+    ) &&
+    !logoFailed;
+
+  return (
+    <div
+      className="
+        relative
+
+        size-12
+        shrink-0
+        overflow-hidden
+
+        rounded-[15px]
+
+        border
+        border-black/[0.05]
+
+        bg-[#e8f2ed]
+
+        shadow-sm
+      "
+    >
+      {showLogo ? (
+        <img
+          src={
+            business.logo_url!
+          }
+          alt={`${business.name} logo`}
+          loading="lazy"
+          decoding="async"
+          referrerPolicy="no-referrer"
+          onError={() => {
+            setLogoFailed(
+              true,
+            );
+          }}
+          className="
+            block
+            size-full
+            object-cover
+          "
+        />
+      ) : (
+        <div
+          className="
+            flex
+            size-full
+            items-center
+            justify-center
+
+            bg-gradient-to-br
+            from-[#edf5f1]
+            to-[#e3ede8]
+
+            text-[#006241]
+          "
+        >
+          <Store
+            className="
+              size-5
+            "
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+function BusinessCoverFallback() {
+  return (
+    <div
+      className="
+        relative
+
+        size-full
+        overflow-hidden
+
+        bg-gradient-to-br
+        from-[#006241]
+        via-[#006b47]
+        to-[#00452e]
+      "
+    >
+      <div
+        className="
+          absolute
+          -right-8
+          -top-14
+
+          size-40
+
+          rounded-full
+
+          border-[24px]
+          border-white/[0.06]
+        "
+      />
+
+      <div
+        className="
+          absolute
+          -bottom-14
+          -left-8
+
+          size-32
+
+          rounded-full
+
+          border-[20px]
+          border-white/[0.045]
+        "
+      />
+
+      <div
+        className="
+          absolute
+          bottom-4
+          right-5
+
+          flex
+          items-center
+          gap-1.5
+
+          text-[9px]
+          font-bold
+          tracking-[0.08em]
+
+          text-white/45
+        "
+      >
+        <Store
+          className="
+            size-3
+          "
+        />
+
+        CAFÉTA
+      </div>
+    </div>
+  );
+}
+
+function EmptyBusinessState() {
+  return (
+    <div
+      className="
+        mt-5
+
+        rounded-[22px]
+
+        border
+        border-dashed
+        border-[#006241]/15
+
+        bg-[#f8fbf9]
+
+        px-5
+        py-7
+
+        text-center
+      "
+    >
+      <div
+        className="
+          mx-auto
+
+          flex
+          size-11
+          items-center
+          justify-center
+
+          rounded-[16px]
+
+          bg-[#e8f2ed]
+          text-[#006241]
+        "
+      >
+        <Building2
+          className="
+            size-5
+          "
+        />
+      </div>
+
+      <h3
+        className="
+          mt-3
+
+          text-sm
+          font-bold
+          text-[#17211c]
+        "
+      >
+        Have a café or milk tea
+        shop?
+      </h3>
+
+      <p
+        className="
+          mx-auto
+          mt-1.5
+          max-w-sm
+
+          text-xs
+          leading-5
+          text-black/40
+        "
+      >
+        Create your business page and
+        make it discoverable across
+        CAFÉTA.
+      </p>
+
+      <Link
+        href="/business/create"
+        className="
+          mt-4
+
+          inline-flex
+          h-9
+          items-center
+          gap-1.5
+
+          rounded-full
+
+          bg-[#006241]
+
+          px-4
+
+          text-xs
+          font-bold
+          text-white
+        "
+      >
+        <Plus
+          className="
+            size-3.5
+          "
+        />
+
+        Create your business
+      </Link>
+    </div>
+  );
+}
+
+function CoffeePattern() {
+  return (
+    <>
+      <div
+        className="
+          absolute
+          bottom-5
+          left-6
+
+          flex
+          size-12
+          items-center
+          justify-center
+
+          rounded-full
+
+          bg-white/[0.08]
+
+          text-white/50
+        "
+      >
+        <Store
+          className="
+            size-5
+          "
+        />
+      </div>
+    </>
   );
 }
 
@@ -1045,16 +2579,24 @@ function ProfileStat({
   value,
   label,
 }: {
-  value: number;
-  label: string;
+  value:
+    number;
+
+  label:
+    string;
 }) {
   return (
-    <div className="text-center">
+    <div
+      className="
+        text-center
+      "
+    >
       <p
         className="
           text-lg
           font-black
           tracking-[-0.04em]
+
           text-[#17211c]
         "
       >
@@ -1064,6 +2606,7 @@ function ProfileStat({
       <p
         className="
           mt-0.5
+
           text-[10px]
           font-medium
           text-black/40
@@ -1076,42 +2619,61 @@ function ProfileStat({
 }
 
 function ProfileRow({
-  icon: Icon,
+  icon:
+    Icon,
   label,
   value,
   href,
 }: {
-  icon: typeof UserRound;
-  label: string;
-  value: string;
-  href: string;
+  icon:
+    typeof UserRound;
+
+  label:
+    string;
+
+  value:
+    string;
+
+  href:
+    string;
 }) {
   return (
     <Link
-      href={href}
+      href={
+        href
+      }
       className="
-        group flex
+        group
+
+        flex
         items-center
         gap-3
+
         py-3.5
+
         first:pt-0
         last:pb-0
       "
     >
       <div
         className="
-          flex size-9
+          flex
+          size-9
           shrink-0
           items-center
           justify-center
+
           rounded-[12px]
+
           bg-[#f2f6f4]
           text-[#006241]
-          transition-all
-          group-hover:bg-[#e8f2ed]
         "
       >
-        <Icon className="size-4" />
+        <Icon
+          className="
+            size-4
+          "
+        />
       </div>
 
       <div
@@ -1134,6 +2696,7 @@ function ProfileRow({
           className="
             mt-0.5
             truncate
+
             text-[11px]
             text-black/35
           "
@@ -1145,10 +2708,8 @@ function ProfileRow({
       <ChevronRight
         className="
           size-4
-          shrink-0
+
           text-black/20
-          transition
-          group-hover:text-[#006241]
         "
       />
     </Link>
@@ -1156,45 +2717,65 @@ function ProfileRow({
 }
 
 function ProfileActionRow({
-  icon: Icon,
+  icon:
+    Icon,
   label,
   value,
   onClick,
 }: {
-  icon: typeof UserRound;
-  label: string;
-  value: string;
-  onClick: () => void;
+  icon:
+    typeof UserRound;
+
+  label:
+    string;
+
+  value:
+    string;
+
+  onClick:
+    () => void;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={
+        onClick
+      }
       className="
-        group flex
+        group
+
+        flex
         w-full
         items-center
         gap-3
+
         py-3.5
+
         text-left
+
         first:pt-0
         last:pb-0
       "
     >
       <div
         className="
-          flex size-9
+          flex
+          size-9
           shrink-0
           items-center
           justify-center
+
           rounded-[12px]
+
           bg-[#f2f6f4]
           text-[#006241]
-          transition-all
-          group-hover:bg-[#e8f2ed]
         "
       >
-        <Icon className="size-4" />
+        <Icon
+          className="
+            size-4
+          "
+        />
       </div>
 
       <div
@@ -1217,6 +2798,7 @@ function ProfileActionRow({
           className="
             mt-0.5
             truncate
+
             text-[11px]
             text-black/35
           "
@@ -1228,10 +2810,8 @@ function ProfileActionRow({
       <ChevronRight
         className="
           size-4
-          shrink-0
+
           text-black/20
-          transition
-          group-hover:text-[#006241]
         "
       />
     </button>
@@ -1239,40 +2819,78 @@ function ProfileActionRow({
 }
 
 function getInitials(
-  name: string | null,
+  name:
+    string | null,
 ) {
-  if (!name?.trim()) {
+  if (
+    !name?.trim()
+  ) {
     return "C";
   }
 
   return name
     .trim()
     .split(/\s+/)
-    .slice(0, 2)
-    .map((part) =>
-      part.charAt(0),
+    .slice(
+      0,
+      2,
+    )
+    .map(
+      (part) =>
+        part.charAt(
+          0,
+        ),
     )
     .join("")
     .toUpperCase();
 }
 
 function formatCategory(
-  category: string,
+  category:
+    string,
 ) {
   return category
-    .replaceAll("_", " ")
+    .replaceAll(
+      "_",
+      " ",
+    )
     .replace(
       /\b\w/g,
-      (letter) =>
+      (
+        letter,
+      ) =>
         letter.toUpperCase(),
     );
 }
 
 function formatMemberRole(
-  role: string,
+  role:
+    string,
 ) {
+  if (!role) {
+    return "Member";
+  }
+
   return (
-    role.charAt(0).toUpperCase() +
+    role
+      .charAt(0)
+      .toUpperCase() +
     role.slice(1)
+  );
+}
+
+function formatStatus(
+  status:
+    string,
+) {
+  if (!status) {
+    return "";
+  }
+
+  return (
+    status
+      .charAt(0)
+      .toUpperCase() +
+    status.slice(1)
   );
 }
