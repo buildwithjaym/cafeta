@@ -1,36 +1,26 @@
 "use client";
 
 import {
+  ChangeEvent,
   FormEvent,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
-import Image from "next/image";
-
 import {
   Camera,
-  Check,
+  ImagePlus,
   LoaderCircle,
+  Trash2,
+  UserRound,
   X,
 } from "lucide-react";
 
 import { toast } from "sonner";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
 import type {
   CafetaProfile,
-} from "@/lib/profile/types";
-
-import {
-  PROFILE_SELECT,
 } from "@/lib/profile/types";
 
 import {
@@ -42,14 +32,21 @@ type Props = {
   onOpenChange: (
     open: boolean,
   ) => void;
-
   profile: CafetaProfile;
   email: string;
-
   onUpdated: (
     profile: CafetaProfile,
   ) => void;
 };
+
+const MAX_AVATAR_SIZE =
+  5 * 1024 * 1024;
+
+const ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+];
 
 export function EditProfileModal({
   open,
@@ -58,17 +55,53 @@ export function EditProfileModal({
   email,
   onUpdated,
 }: Props) {
-  const [fullName, setFullName] =
-    useState("");
+  const fileInputRef =
+    useRef<HTMLInputElement | null>(
+      null,
+    );
 
-  const [bio, setBio] =
-    useState("");
+  const [
+    fullName,
+    setFullName,
+  ] = useState(
+    profile.full_name ?? "",
+  );
 
-  const [saving, setSaving] =
-    useState(false);
+  const [
+    bio,
+    setBio,
+  ] = useState(
+    profile.bio ?? "",
+  );
 
-  const [error, setError] =
-    useState("");
+  const [
+    selectedFile,
+    setSelectedFile,
+  ] = useState<File | null>(
+    null,
+  );
+
+  const [
+    previewUrl,
+    setPreviewUrl,
+  ] = useState<string | null>(
+    profile.avatar_url,
+  );
+
+  const [
+    avatarFailed,
+    setAvatarFailed,
+  ] = useState(false);
+
+  const [
+    removeAvatar,
+    setRemoveAvatar,
+  ] = useState(false);
+
+  const [
+    saving,
+    setSaving,
+  ] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -83,73 +116,328 @@ export function EditProfileModal({
       profile.bio ?? "",
     );
 
-    setError("");
+    setSelectedFile(null);
+
+    setPreviewUrl(
+      profile.avatar_url,
+    );
+
+    setAvatarFailed(false);
+    setRemoveAvatar(false);
   }, [
     open,
     profile.full_name,
     profile.bio,
+    profile.avatar_url,
   ]);
 
-  const initials =
-    profile.full_name
-      ?.trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((part) =>
-        part.charAt(0),
+  useEffect(() => {
+    return () => {
+      if (
+        previewUrl?.startsWith(
+          "blob:",
+        )
+      ) {
+        URL.revokeObjectURL(
+          previewUrl,
+        );
+      }
+    };
+  }, [previewUrl]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handleKeyDown(
+      event: KeyboardEvent,
+    ) {
+      if (
+        event.key ===
+          "Escape" &&
+        !saving
+      ) {
+        onOpenChange(false);
+      }
+    }
+
+    document.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
+    };
+  }, [
+    open,
+    saving,
+    onOpenChange,
+  ]);
+
+  if (!open) {
+    return null;
+  }
+
+  const displayName =
+    fullName.trim() ||
+    profile.username?.trim() ||
+    email.split("@")[0] ||
+    "CAFÉTA User";
+
+  const showAvatar =
+    Boolean(previewUrl) &&
+    !avatarFailed &&
+    !removeAvatar;
+
+  function closeModal() {
+    if (saving) {
+      return;
+    }
+
+    onOpenChange(false);
+  }
+
+  function openFilePicker() {
+    if (saving) {
+      return;
+    }
+
+    fileInputRef.current?.click();
+  }
+
+  function handleFileChange(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file =
+      event.target.files?.[0];
+
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    if (
+      !ALLOWED_IMAGE_TYPES.includes(
+        file.type,
       )
-      .join("")
-      .toUpperCase() || "CT";
+    ) {
+      toast.error(
+        "Unsupported image",
+        {
+          description:
+            "Please choose a JPG, PNG, or WebP image.",
+        },
+      );
 
-  const cleanFullName =
-    fullName.trim();
+      return;
+    }
 
-  const cleanBio =
-    bio.trim();
+    if (
+      file.size >
+      MAX_AVATAR_SIZE
+    ) {
+      toast.error(
+        "Image is too large",
+        {
+          description:
+            "Your profile photo must be 5 MB or smaller.",
+        },
+      );
 
-  const unchanged =
-    cleanFullName ===
-      (profile.full_name ?? "") &&
-    cleanBio ===
-      (profile.bio ?? "");
+      return;
+    }
+
+    if (
+      previewUrl?.startsWith(
+        "blob:",
+      )
+    ) {
+      URL.revokeObjectURL(
+        previewUrl,
+      );
+    }
+
+    const objectUrl =
+      URL.createObjectURL(
+        file,
+      );
+
+    setSelectedFile(file);
+    setPreviewUrl(objectUrl);
+    setRemoveAvatar(false);
+    setAvatarFailed(false);
+  }
+
+  function handleRemoveAvatar() {
+    if (
+      previewUrl?.startsWith(
+        "blob:",
+      )
+    ) {
+      URL.revokeObjectURL(
+        previewUrl,
+      );
+    }
+
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setRemoveAvatar(true);
+    setAvatarFailed(false);
+  }
+
+  async function uploadAvatar(
+    userId: string,
+    file: File,
+  ) {
+    const supabase =
+      createClient();
+
+    const extension =
+      getFileExtension(file);
+
+    const objectPath =
+      `${userId}/avatar.${extension}`;
+
+    const {
+      error: uploadError,
+    } =
+      await supabase.storage
+        .from("avatars")
+        .upload(
+          objectPath,
+          file,
+          {
+            upsert: true,
+            contentType:
+              file.type,
+            cacheControl:
+              "3600",
+          },
+        );
+
+    if (uploadError) {
+      throw new Error(
+        uploadError.message,
+      );
+    }
+
+    const { data } =
+      supabase.storage
+        .from("avatars")
+        .getPublicUrl(
+          objectPath,
+        );
+
+    if (!data.publicUrl) {
+      throw new Error(
+        "Unable to create avatar URL.",
+      );
+    }
+
+    return addCacheBuster(
+      data.publicUrl,
+    );
+  }
+
+  async function deleteCurrentAvatar(
+    userId: string,
+  ) {
+    const avatarUrl =
+      profile.avatar_url;
+
+    if (!avatarUrl) {
+      return;
+    }
+
+    const storagePath =
+      getAvatarStoragePath(
+        avatarUrl,
+      );
+
+    if (!storagePath) {
+      return;
+    }
+
+    if (
+      !storagePath.startsWith(
+        `${userId}/`,
+      )
+    ) {
+      return;
+    }
+
+    const supabase =
+      createClient();
+
+    const { error } =
+      await supabase.storage
+        .from("avatars")
+        .remove([
+          storagePath,
+        ]);
+
+    if (error) {
+      console.warn(
+        "[CAFÉTA] Failed to remove old avatar:",
+        error.message,
+      );
+    }
+  }
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
-    if (
-      saving ||
-      unchanged
-    ) {
+    if (saving) {
       return;
     }
 
-    setError("");
+    const cleanedName =
+      fullName.trim();
 
-    if (!cleanFullName) {
-      setError(
-        "Please enter your full name.",
+    const cleanedBio =
+      bio.trim();
+
+    if (!cleanedName) {
+      toast.error(
+        "Enter your name",
       );
 
       return;
     }
 
     if (
-      cleanFullName.length > 80
+      cleanedName.length >
+      80
     ) {
-      setError(
-        "Full name must be 80 characters or less.",
+      toast.error(
+        "Name is too long",
+        {
+          description:
+            "Use 80 characters or fewer.",
+        },
       );
 
       return;
     }
 
     if (
-      cleanBio.length > 160
+      cleanedBio.length >
+      300
     ) {
-      setError(
-        "Bio must be 160 characters or less.",
+      toast.error(
+        "Bio is too long",
+        {
+          description:
+            "Use 300 characters or fewer.",
+        },
       );
 
       return;
@@ -162,75 +450,127 @@ export function EditProfileModal({
         createClient();
 
       const {
-        data,
-        error: updateError,
-      } = await supabase
-        .from("profiles")
-        .update({
-          full_name:
-            cleanFullName,
+        data: { user },
+        error: userError,
+      } =
+        await supabase.auth.getUser();
 
-          bio:
-            cleanBio || null,
-        })
-        .eq(
-          "id",
-          profile.id,
-        )
-        .select(
-          PROFILE_SELECT,
-        )
-        .maybeSingle();
+      if (
+        userError ||
+        !user
+      ) {
+        throw new Error(
+          "Your session is unavailable. Please sign in again.",
+        );
+      }
+
+      if (
+        user.id !== profile.id
+      ) {
+        throw new Error(
+          "You cannot update this profile.",
+        );
+      }
+
+      let avatarUrl =
+        profile.avatar_url;
+
+      if (selectedFile) {
+        avatarUrl =
+          await uploadAvatar(
+            user.id,
+            selectedFile,
+          );
+      } else if (
+        removeAvatar
+      ) {
+        await deleteCurrentAvatar(
+          user.id,
+        );
+
+        avatarUrl = null;
+      }
+
+      const {
+        data:
+          updatedProfile,
+        error:
+          updateError,
+      } =
+        await supabase
+          .from("profiles")
+          .update({
+            full_name:
+              cleanedName,
+            bio:
+              cleanedBio ||
+              null,
+            avatar_url:
+              avatarUrl,
+          })
+          .eq(
+            "id",
+            user.id,
+          )
+          .select(`
+            id,
+            full_name,
+            username,
+            bio,
+            avatar_url,
+            role,
+            created_at,
+            updated_at
+          `)
+          .single();
 
       if (updateError) {
-        console.error(
-          "Failed to update profile:",
-          updateError,
+        throw new Error(
+          updateError.message,
         );
-
-        setError(
-          "We couldn't update your profile. Please try again.",
-        );
-
-        return;
       }
 
-      if (!data) {
-        console.error(
-          "Profile update returned no row.",
+      if (
+        !updatedProfile
+      ) {
+        throw new Error(
+          "Profile update returned no data.",
         );
-
-        setError(
-          "Your profile could not be updated. Please refresh and try again.",
-        );
-
-        return;
       }
 
-      const updatedProfile =
-        data as CafetaProfile;
+      const nextProfile =
+        updatedProfile as CafetaProfile;
 
       onUpdated(
-        updatedProfile,
+        nextProfile,
       );
-
-      onOpenChange(false);
 
       toast.success(
         "Profile updated",
         {
           description:
-            "Your CAFÉTA profile has been saved.",
+            "Your changes have been saved.",
         },
       );
-    } catch (submitError) {
+
+      onOpenChange(false);
+    } catch (error) {
       console.error(
-        "Unexpected profile update error:",
-        submitError,
+        "[CAFÉTA] Edit profile failed:",
+        error,
       );
 
-      setError(
-        "Something went wrong. Please try again.",
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while updating your profile.";
+
+      toast.error(
+        "Couldn't update profile",
+        {
+          description:
+            message,
+        },
       );
     } finally {
       setSaving(false);
@@ -238,448 +578,758 @@ export function EditProfileModal({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(value) => {
-        if (!saving) {
-          onOpenChange(value);
+    <div
+      className="
+        fixed
+        inset-0
+        z-[100]
+
+        flex
+        items-center
+        justify-center
+
+        bg-black/35
+
+        p-3
+
+        backdrop-blur-[3px]
+
+        animate-in
+        fade-in
+        duration-200
+
+        sm:p-4
+      "
+      onMouseDown={(
+        event,
+      ) => {
+        if (
+          event.target ===
+          event.currentTarget
+        ) {
+          closeModal();
         }
       }}
     >
-      <DialogContent
-        showCloseButton={false}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-profile-title"
         className="
+          relative
+
+          flex
+          w-full
+          max-w-[430px]
           max-h-[calc(100dvh-24px)]
-          overflow-y-auto
-          rounded-[28px]
+          flex-col
+
+          overflow-hidden
+
+          rounded-[24px]
+
+          border
           border-black/[0.06]
+
           bg-white
-          p-0
-          shadow-[0_30px_90px_rgba(0,0,0,0.18)]
-          sm:max-w-[520px]
-          sm:rounded-[32px]
+
+          shadow-[0_24px_70px_rgba(0,0,0,0.18)]
+
+          animate-in
+          fade-in
+          zoom-in-95
+          duration-200
+
+          sm:max-h-[680px]
         "
       >
-        <DialogHeader
+        <div
           className="
-            relative
+            flex
+            shrink-0
+            items-center
+            justify-between
+
             border-b
             border-black/[0.05]
-            px-6 pb-5 pt-6
-            text-left
+
+            bg-white
+
+            px-5
+            py-3.5
           "
         >
+          <div>
+            <p
+              className="
+                text-[9px]
+                font-bold
+                uppercase
+                tracking-[0.16em]
+                text-[#006241]
+              "
+            >
+              Your account
+            </p>
+
+            <h2
+              id="edit-profile-title"
+              className="
+                mt-0.5
+
+                text-[17px]
+                font-black
+                tracking-[-0.03em]
+                text-[#17211c]
+              "
+            >
+              Edit profile
+            </h2>
+          </div>
+
           <button
             type="button"
-            onClick={() =>
-              onOpenChange(false)
-            }
+            onClick={closeModal}
             disabled={saving}
-            aria-label="Close"
+            aria-label="Close edit profile"
             className="
-              absolute right-5 top-5
-              flex size-9
+              flex
+              size-8
               items-center
               justify-center
+
               rounded-full
-              bg-[#f4f6f4]
-              text-black/45
+
+              bg-[#f3f5f3]
+
+              text-black/40
+
               transition-all
               duration-200
-              hover:bg-[#edf2ef]
+
+              hover:scale-105
+              hover:bg-[#e8eeea]
               hover:text-[#17211c]
-              active:scale-90
+
+              active:scale-95
+
               disabled:pointer-events-none
-              disabled:opacity-50
+              disabled:opacity-40
             "
           >
-            <X className="size-4" />
+            <X
+              className="size-3.5"
+            />
           </button>
-
-          <p
-            className="
-              text-[10px]
-              font-bold uppercase
-              tracking-[0.18em]
-              text-[#006241]
-            "
-          >
-            Your profile
-          </p>
-
-          <DialogTitle
-            className="
-              mt-1
-              text-[22px]
-              font-bold
-              tracking-[-0.04em]
-              text-[#17211c]
-            "
-          >
-            Edit profile
-          </DialogTitle>
-
-          <DialogDescription
-            className="
-              mt-1 max-w-sm
-              text-xs leading-5
-              text-black/40
-            "
-          >
-            Update how you appear
-            across CAFÉTA.
-          </DialogDescription>
-        </DialogHeader>
+        </div>
 
         <form
-          onSubmit={handleSubmit}
-          className="px-6 pb-6"
+          onSubmit={
+            handleSubmit
+          }
+          className="
+            flex
+            min-h-0
+            flex-1
+            flex-col
+          "
         >
           <div
             className="
-              flex items-center
-              gap-4 py-5
+              min-h-0
+              flex-1
+              overflow-y-auto
+
+              px-5
+              py-4
             "
           >
+            <input
+              ref={
+                fileInputRef
+              }
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={
+                handleFileChange
+              }
+              className="hidden"
+            />
+
             <div
               className="
-                group relative
-                shrink-0
+                flex
+                items-center
+                gap-3.5
+
+                rounded-[18px]
+
+                bg-[#f7f9f7]
+
+                p-3
               "
             >
               <div
                 className="
-                  relative flex
-                  size-[82px]
-                  items-center
-                  justify-center
-                  overflow-hidden
-                  rounded-full
-                  border-[4px]
-                  border-white
-                  bg-[#e7f1ec]
-                  shadow-[0_5px_18px_rgba(0,0,0,0.10)]
+                  group
+                  relative
+                  shrink-0
                 "
               >
-                {profile.avatar_url ? (
-                  <Image
-                    src={
-                      profile.avatar_url
-                    }
-                    alt={
-                      profile.full_name ??
-                      "Profile photo"
-                    }
-                    fill
-                    sizes="82px"
-                    className="object-cover"
-                  />
-                ) : (
-                  <span
-                    className="
-                      text-lg
-                      font-black
-                      text-[#006241]
-                    "
-                  >
-                    {initials}
-                  </span>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  toast(
-                    "Profile photo upload will be available soon.",
-                  )
-                }
-                aria-label="Change profile photo"
-                className="
-                  absolute
-                  -bottom-0.5
-                  -right-0.5
-                  flex size-8
-                  items-center
-                  justify-center
-                  rounded-full
-                  border-[3px]
-                  border-white
-                  bg-[#006241]
-                  text-white
-                  shadow-sm
-                  transition-all
-                  duration-200
-                  hover:scale-105
-                  hover:bg-[#00754a]
-                  active:scale-90
-                "
-              >
-                <Camera className="size-3.5" />
-              </button>
-            </div>
-
-            <div className="min-w-0">
-              <p
-                className="
-                  text-sm font-bold
-                  text-[#17211c]
-                "
-              >
-                Profile photo
-              </p>
-
-              <p
-                className="
-                  mt-1
-                  text-xs leading-5
-                  text-black/40
-                "
-              >
-                Your current CAFÉTA
-                profile photo.
-              </p>
-
-              {profile.username && (
-                <p
+                <button
+                  type="button"
+                  onClick={
+                    openFilePicker
+                  }
+                  disabled={
+                    saving
+                  }
+                  aria-label="Choose profile photo"
                   className="
-                    mt-1
-                    truncate
-                    text-xs
-                    font-semibold
-                    text-[#006241]
+                    relative
+
+                    block
+                    size-[72px]
+                    overflow-hidden
+
+                    rounded-full
+
+                    border-[3px]
+                    border-white
+
+                    bg-[#e8f2ed]
+
+                    shadow-[0_5px_18px_rgba(23,33,28,0.10)]
+
+                    transition-all
+                    duration-200
+
+                    hover:scale-[1.02]
+
+                    disabled:pointer-events-none
                   "
                 >
-                  @{profile.username}
-                </p>
-              )}
-            </div>
-          </div>
+                  {showAvatar ? (
+                    <img
+                      key={
+                        previewUrl
+                      }
+                      src={
+                        previewUrl!
+                      }
+                      alt={`${displayName} profile`}
+                      referrerPolicy="no-referrer"
+                      onError={() => {
+                        setAvatarFailed(
+                          true,
+                        );
+                      }}
+                      className="
+                        block
+                        size-full
+                        object-cover
 
-          <div className="h-px bg-black/[0.05]" />
+                        transition-transform
+                        duration-300
 
-          <div className="space-y-4 pt-5">
-            <Field>
-              <FieldLabel
-                htmlFor="fullName"
-              >
-                Full name
-              </FieldLabel>
+                        group-hover:scale-[1.04]
+                      "
+                    />
+                  ) : (
+                    <div
+                      className="
+                        flex
+                        size-full
+                        items-center
+                        justify-center
 
-              <input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(event) =>
-                  setFullName(
-                    event.target.value,
-                  )
-                }
-                autoComplete="name"
-                maxLength={80}
-                placeholder="Your full name"
-                className={
-                  inputClassName
-                }
-              />
-            </Field>
+                        bg-gradient-to-br
+                        from-[#edf5f1]
+                        to-[#dcebe3]
 
-            <Field>
+                        text-lg
+                        font-black
+                        tracking-[-0.04em]
+                        text-[#006241]
+                      "
+                    >
+                      {getInitials(
+                        displayName,
+                      )}
+                    </div>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={
+                    openFilePicker
+                  }
+                  disabled={
+                    saving
+                  }
+                  aria-label="Change profile photo"
+                  className="
+                    absolute
+                    bottom-0
+                    right-0
+
+                    flex
+                    size-7
+                    items-center
+                    justify-center
+
+                    rounded-full
+
+                    border-[2px]
+                    border-white
+
+                    bg-[#006241]
+                    text-white
+
+                    shadow-[0_4px_10px_rgba(0,98,65,0.22)]
+
+                    transition-all
+                    duration-200
+
+                    hover:scale-110
+                    hover:bg-[#00754a]
+
+                    active:scale-95
+
+                    disabled:pointer-events-none
+                  "
+                >
+                  <Camera
+                    className="size-3"
+                  />
+                </button>
+              </div>
+
               <div
                 className="
-                  flex items-center
-                  justify-between
+                  min-w-0
+                  flex-1
                 "
               >
-                <FieldLabel htmlFor="bio">
+                <p
+                  className="
+                    text-[13px]
+                    font-bold
+                    text-[#17211c]
+                  "
+                >
+                  Profile photo
+                </p>
+
+                <p
+                  className="
+                    mt-0.5
+
+                    text-[10px]
+                    text-black/35
+                  "
+                >
+                  JPG, PNG or WebP ·
+                  Max 5 MB
+                </p>
+
+                <div
+                  className="
+                    mt-2.5
+
+                    flex
+                    flex-wrap
+                    items-center
+                    gap-1.5
+                  "
+                >
+                  <button
+                    type="button"
+                    onClick={
+                      openFilePicker
+                    }
+                    disabled={
+                      saving
+                    }
+                    className="
+                      inline-flex
+                      h-7
+                      items-center
+                      gap-1.5
+
+                      rounded-full
+
+                      bg-[#e5f1eb]
+
+                      px-2.5
+
+                      text-[10px]
+                      font-bold
+                      text-[#006241]
+
+                      transition-all
+                      duration-200
+
+                      hover:bg-[#dcebe3]
+
+                      active:scale-[0.97]
+
+                      disabled:pointer-events-none
+                      disabled:opacity-50
+                    "
+                  >
+                    <ImagePlus
+                      className="size-3"
+                    />
+
+                    {showAvatar
+                      ? "Change"
+                      : "Add photo"}
+                  </button>
+
+                  {(
+                    profile.avatar_url ||
+                    selectedFile
+                  ) && (
+                    <button
+                      type="button"
+                      onClick={
+                        handleRemoveAvatar
+                      }
+                      disabled={
+                        saving
+                      }
+                      className="
+                        inline-flex
+                        h-7
+                        items-center
+                        gap-1.5
+
+                        rounded-full
+
+                        bg-red-50
+
+                        px-2.5
+
+                        text-[10px]
+                        font-bold
+                        text-red-600
+
+                        transition-all
+                        duration-200
+
+                        hover:bg-red-100
+
+                        active:scale-[0.97]
+
+                        disabled:pointer-events-none
+                        disabled:opacity-50
+                      "
+                    >
+                      <Trash2
+                        className="size-3"
+                      />
+
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label
+                htmlFor="profile-full-name"
+                className="
+                  text-[11px]
+                  font-bold
+                  text-[#25312b]
+                "
+              >
+                Full name
+              </label>
+
+              <div
+                className="
+                  relative
+                  mt-1.5
+                "
+              >
+                <UserRound
+                  className="
+                    pointer-events-none
+
+                    absolute
+                    left-3.5
+                    top-1/2
+
+                    size-3.5
+
+                    -translate-y-1/2
+
+                    text-black/25
+                  "
+                />
+
+                <input
+                  id="profile-full-name"
+                  value={
+                    fullName
+                  }
+                  onChange={(
+                    event,
+                  ) => {
+                    setFullName(
+                      event.target
+                        .value,
+                    );
+                  }}
+                  maxLength={80}
+                  disabled={
+                    saving
+                  }
+                  autoComplete="name"
+                  placeholder="Your full name"
+                  className="
+                    h-11
+                    w-full
+
+                    rounded-[14px]
+
+                    border
+                    border-black/[0.07]
+
+                    bg-[#fafbfa]
+
+                    pl-10
+                    pr-3.5
+
+                    text-[13px]
+                    font-medium
+                    text-[#17211c]
+
+                    outline-none
+
+                    transition-all
+                    duration-200
+
+                    placeholder:text-black/25
+
+                    focus:border-[#006241]/30
+                    focus:bg-white
+                    focus:ring-4
+                    focus:ring-[#006241]/[0.05]
+
+                    disabled:opacity-60
+                  "
+                />
+              </div>
+            </div>
+
+            <div className="mt-3.5">
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-between
+                  gap-3
+                "
+              >
+                <label
+                  htmlFor="profile-bio"
+                  className="
+                    text-[11px]
+                    font-bold
+                    text-[#25312b]
+                  "
+                >
                   Bio
-                </FieldLabel>
+                </label>
 
                 <span
                   className="
-                    text-[10px]
-                    font-medium
-                    text-black/30
+                    text-[9px]
+                    text-black/25
                   "
                 >
-                  {bio.length}/160
+                  {bio.length}/300
                 </span>
               </div>
 
               <textarea
-                id="bio"
+                id="profile-bio"
                 value={bio}
-                onChange={(event) =>
+                onChange={(
+                  event,
+                ) => {
                   setBio(
-                    event.target.value,
-                  )
-                }
-                maxLength={160}
+                    event.target
+                      .value,
+                  );
+                }}
+                maxLength={300}
                 rows={3}
+                disabled={
+                  saving
+                }
                 placeholder="Tell the CAFÉTA community a little about yourself..."
                 className="
-                  min-h-[100px]
+                  mt-1.5
+
+                  min-h-[84px]
                   w-full
                   resize-none
-                  rounded-[16px]
+
+                  rounded-[14px]
+
                   border
-                  border-black/[0.08]
+                  border-black/[0.07]
+
                   bg-[#fafbfa]
-                  px-4 py-3
-                  text-sm
-                  leading-6
+
+                  px-3.5
+                  py-3
+
+                  text-[13px]
+                  leading-5
                   text-[#17211c]
+
                   outline-none
+
                   transition-all
                   duration-200
+
                   placeholder:text-black/25
-                  hover:border-black/[0.12]
-                  focus:border-[#006241]/40
+
+                  focus:border-[#006241]/30
                   focus:bg-white
                   focus:ring-4
-                  focus:ring-[#006241]/[0.06]
+                  focus:ring-[#006241]/[0.05]
+
+                  disabled:opacity-60
                 "
               />
-            </Field>
+            </div>
 
-            <Field>
-              <FieldLabel>
-                Username
-              </FieldLabel>
+            <div
+              className="
+                mt-3.5
 
+                flex
+                items-center
+                gap-3
+
+                rounded-[14px]
+
+                bg-[#f5f7f5]
+
+                px-3.5
+                py-2.5
+              "
+            >
               <div
                 className="
-                  flex h-12
+                  flex
+                  size-7
+                  shrink-0
                   items-center
-                  rounded-[16px]
-                  border
-                  border-black/[0.05]
-                  bg-[#f6f7f6]
-                  px-4
+                  justify-center
+
+                  rounded-[9px]
+
+                  bg-white
+
+                  text-[#006241]
+
+                  shadow-sm
                 "
               >
-                <span
-                  className="
-                    truncate
-                    text-sm
-                    font-semibold
-                    text-[#006241]
-                  "
-                >
-                  {profile.username
-                    ? `@${profile.username}`
-                    : "Not set"}
-                </span>
+                <UserRound
+                  className="size-3.5"
+                />
               </div>
 
-              <p
-                className="
-                  mt-1.5
-                  text-[10px]
-                  leading-4
-                  text-black/35
-                "
-              >
-                Change your username
-                from the Username section
-                on your profile.
-              </p>
-            </Field>
-
-            <Field>
-              <FieldLabel>
-                Email address
-              </FieldLabel>
-
               <div
                 className="
-                  flex h-12
-                  items-center
-                  justify-between
-                  rounded-[16px]
-                  border
-                  border-black/[0.05]
-                  bg-[#f6f7f6]
-                  px-4
+                  min-w-0
+                  flex-1
                 "
               >
-                <span
+                <p
                   className="
+                    text-[8px]
+                    font-bold
+                    uppercase
+                    tracking-[0.12em]
+                    text-black/25
+                  "
+                >
+                  Email
+                </p>
+
+                <p
+                  className="
+                    mt-0.5
                     truncate
-                    text-sm
-                    text-black/45
+
+                    text-[11px]
+                    font-medium
+                    text-[#59635e]
                   "
                 >
                   {email}
-                </span>
-
-                <span
-                  className="
-                    ml-3 shrink-0
-                    rounded-full
-                    bg-[#e7f1ec]
-                    px-2.5 py-1
-                    text-[9px]
-                    font-bold uppercase
-                    tracking-[0.08em]
-                    text-[#006241]
-                  "
-                >
-                  Account
-                </span>
+                </p>
               </div>
-            </Field>
-          </div>
-
-          {error && (
-            <div
-              role="alert"
-              className="
-                mt-4
-                rounded-[14px]
-                border
-                border-red-200
-                bg-red-50
-                px-4 py-3
-                text-xs
-                leading-5
-                text-red-700
-              "
-            >
-              {error}
             </div>
-          )}
+          </div>
 
           <div
             className="
-              mt-6 flex
-              items-center
-              justify-end
+              grid
+              shrink-0
+              grid-cols-2
               gap-2
+
               border-t
               border-black/[0.05]
-              pt-5
+
+              bg-white
+
+              px-5
+              py-3
             "
           >
             <button
               type="button"
-              disabled={saving}
-              onClick={() =>
-                onOpenChange(false)
+              onClick={
+                closeModal
+              }
+              disabled={
+                saving
               }
               className="
-                h-11
-                rounded-full
-                border
-                border-black/[0.08]
-                px-5
-                text-xs
+                flex
+                h-10
+                items-center
+                justify-center
+
+                rounded-[13px]
+
+                bg-[#f1f4f2]
+
+                text-[11px]
                 font-bold
-                text-[#39443e]
+                text-[#455049]
+
                 transition-all
                 duration-200
-                hover:bg-[#f5f7f5]
-                active:scale-95
+
+                hover:bg-[#e8ece9]
+
+                active:scale-[0.98]
+
+                disabled:pointer-events-none
                 disabled:opacity-50
               "
             >
@@ -689,106 +1339,133 @@ export function EditProfileModal({
             <button
               type="submit"
               disabled={
-                saving ||
-                unchanged ||
-                !cleanFullName
+                saving
               }
               className="
-                flex h-11
-                min-w-[130px]
+                flex
+                h-10
                 items-center
                 justify-center
-                gap-2
-                rounded-full
+                gap-1.5
+
+                rounded-[13px]
+
                 bg-[#006241]
-                px-5
-                text-xs
+
+                text-[11px]
                 font-bold
                 text-white
-                shadow-[0_6px_18px_rgba(0,98,65,0.18)]
+
+                shadow-[0_5px_14px_rgba(0,98,65,0.15)]
+
                 transition-all
                 duration-200
+
                 hover:-translate-y-0.5
                 hover:bg-[#00754a]
+
                 active:translate-y-0
-                active:scale-[0.97]
+                active:scale-[0.98]
+
                 disabled:pointer-events-none
-                disabled:opacity-40
+                disabled:opacity-60
               "
             >
-              {saving ? (
-                <>
-                  <LoaderCircle
-                    className="
-                      size-4
-                      animate-spin
-                    "
-                  />
-
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Check className="size-4" />
-
-                  Save changes
-                </>
+              {saving && (
+                <LoaderCircle
+                  className="
+                    size-3.5
+                    animate-spin
+                  "
+                />
               )}
+
+              {saving
+                ? "Saving..."
+                : "Save changes"}
             </button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
 
-function Field({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <div>{children}</div>;
+function getInitials(
+  name: string,
+) {
+  const cleaned =
+    name.trim();
+
+  if (!cleaned) {
+    return "C";
+  }
+
+  return cleaned
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) =>
+      part.charAt(0),
+    )
+    .join("")
+    .toUpperCase();
 }
 
-function FieldLabel({
-  children,
-  htmlFor,
-}: {
-  children: React.ReactNode;
-  htmlFor?: string;
-}) {
-  return (
-    <label
-      htmlFor={htmlFor}
-      className="
-        mb-1.5 block
-        text-[11px]
-        font-bold
-        text-[#344039]
-      "
-    >
-      {children}
-    </label>
-  );
+function getFileExtension(
+  file: File,
+) {
+  switch (file.type) {
+    case "image/png":
+      return "png";
+
+    case "image/webp":
+      return "webp";
+
+    case "image/jpeg":
+    default:
+      return "jpg";
+  }
 }
 
-const inputClassName = `
-  h-12
-  w-full
-  rounded-[16px]
-  border
-  border-black/[0.08]
-  bg-[#fafbfa]
-  px-4
-  text-sm
-  text-[#17211c]
-  outline-none
-  transition-all
-  duration-200
-  placeholder:text-black/25
-  hover:border-black/[0.12]
-  focus:border-[#006241]/40
-  focus:bg-white
-  focus:ring-4
-  focus:ring-[#006241]/[0.06]
-`;
+function addCacheBuster(
+  url: string,
+) {
+  const separator =
+    url.includes("?")
+      ? "&"
+      : "?";
+
+  return `${url}${separator}v=${Date.now()}`;
+}
+
+function getAvatarStoragePath(
+  avatarUrl: string,
+) {
+  try {
+    const url =
+      new URL(avatarUrl);
+
+    const marker =
+      "/storage/v1/object/public/avatars/";
+
+    const markerIndex =
+      url.pathname.indexOf(
+        marker,
+      );
+
+    if (
+      markerIndex === -1
+    ) {
+      return null;
+    }
+
+    return decodeURIComponent(
+      url.pathname.slice(
+        markerIndex +
+          marker.length,
+      ),
+    );
+  } catch {
+    return null;
+  }
+}
