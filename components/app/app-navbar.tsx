@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+
 import {
   useEffect,
   useState,
@@ -13,8 +13,13 @@ import {
   Compass,
   Heart,
   Map,
+  PlusCircle,
   UserRound,
 } from "lucide-react";
+
+import {
+  usePathname,
+} from "next/navigation";
 
 import {
   NavbarSearch,
@@ -48,6 +53,11 @@ const navigation = [
     icon: Map,
   },
   {
+    name: "Memory",
+    href: "/memories/create",
+    icon: PlusCircle,
+  },
+  {
     name: "Saved",
     href: "/saved",
     icon: Heart,
@@ -55,7 +65,8 @@ const navigation = [
 ];
 
 export function AppNavbar() {
-  const pathname = usePathname();
+  const pathname =
+    usePathname();
 
   const [
     profile,
@@ -81,7 +92,8 @@ export function AppNavbar() {
           data: { user },
           error: userError,
         } =
-          await supabase.auth.getUser();
+          await supabase.auth
+            .getUser();
 
         if (
           userError ||
@@ -114,7 +126,7 @@ export function AppNavbar() {
 
         if (error) {
           console.error(
-            "Unable to load navbar profile:",
+            "[CAFÉTA] Unable to load navbar profile:",
             error,
           );
 
@@ -128,7 +140,7 @@ export function AppNavbar() {
         }
       } catch (error) {
         console.error(
-          "Unable to load navbar:",
+          "[CAFÉTA] Unable to load navbar:",
           error,
         );
       } finally {
@@ -140,7 +152,7 @@ export function AppNavbar() {
       }
     }
 
-    loadProfile();
+    void loadProfile();
 
     return () => {
       mounted = false;
@@ -192,10 +204,13 @@ export function AppNavbar() {
           items-center
 
           px-6
+
           lg:px-8
+
           xl:px-10
         "
       >
+        {/* Logo */}
         <Link
           href="/explore"
           aria-label="CAFÉTA home"
@@ -223,6 +238,7 @@ export function AppNavbar() {
               rounded-full
 
               bg-[#006241]
+
               text-white
 
               shadow-[0_5px_16px_rgba(0,98,65,0.16)]
@@ -231,11 +247,14 @@ export function AppNavbar() {
               duration-200
 
               group-hover:bg-[#00754A]
+
               group-hover:shadow-[0_7px_20px_rgba(0,98,65,0.20)]
             "
           >
             <Coffee
-              className="size-[18px]"
+              className="
+                size-[18px]
+              "
               strokeWidth={2.2}
             />
           </div>
@@ -258,16 +277,19 @@ export function AppNavbar() {
           </span>
         </Link>
 
+        {/* Main navigation */}
         <nav
           aria-label="Main navigation"
           className="
-            ml-10
+            ml-8
             flex
+            min-w-0
             items-center
             gap-1
 
-            lg:ml-12
-            xl:ml-14
+            lg:ml-10
+
+            xl:ml-12
           "
         >
           {navigation.map(
@@ -297,12 +319,13 @@ export function AppNavbar() {
 
                     flex
                     h-[44px]
+                    shrink-0
                     items-center
                     gap-2
 
                     rounded-full
 
-                    px-4
+                    px-3.5
 
                     text-[13px]
                     font-bold
@@ -313,15 +336,19 @@ export function AppNavbar() {
 
                     active:scale-[0.96]
 
+                    lg:px-4
+
                     ${
                       active
                         ? `
                           bg-[#006241]/[0.075]
                           text-[#006241]
+
                           shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]
                         `
                         : `
                           text-[#59635e]
+
                           hover:bg-black/[0.025]
                           hover:text-[#006241]
                         `
@@ -331,6 +358,7 @@ export function AppNavbar() {
                   <Icon
                     className={`
                       size-[17px]
+
                       transition-all
                       duration-200
 
@@ -363,6 +391,7 @@ export function AppNavbar() {
                         -translate-x-1/2
 
                         rounded-full
+
                         bg-[#006241]
                       "
                     />
@@ -373,6 +402,7 @@ export function AppNavbar() {
           )}
         </nav>
 
+        {/* Right side */}
         <div
           className="
             ml-auto
@@ -382,17 +412,20 @@ export function AppNavbar() {
             gap-3
           "
         >
+          {/* Search */}
           <div
             className="
               hidden
               min-w-0
 
               md:block
-              md:w-[200px]
+              md:w-[170px]
 
-              lg:w-[250px]
+              lg:w-[220px]
 
-              xl:w-[300px]
+              xl:w-[280px]
+
+              2xl:w-[320px]
             "
           >
             <NavbarSearch />
@@ -404,12 +437,14 @@ export function AppNavbar() {
               hidden
               h-7
               w-px
+
               bg-black/[0.06]
 
               lg:block
             "
           />
 
+          {/* Profile */}
           {loadingProfile ? (
             <NavbarProfileSkeleton />
           ) : (
@@ -436,22 +471,26 @@ export function AppNavbar() {
 
                 py-1
                 pl-1
-                pr-2.5
+                pr-2
 
                 transition-all
                 duration-200
 
                 active:scale-[0.97]
 
+                lg:pr-2.5
+
                 ${
                   profileActive
                     ? `
                       border-[#006241]/10
                       bg-[#edf6f1]
+
                       shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]
                     `
                     : `
                       border-transparent
+
                       hover:border-black/[0.05]
                       hover:bg-[#f5f7f5]
                     `
@@ -473,6 +512,7 @@ export function AppNavbar() {
                   rounded-full
 
                   bg-[#e7f0eb]
+
                   text-[#006241]
 
                   ring-1
@@ -509,7 +549,9 @@ export function AppNavbar() {
                   />
                 ) : (
                   <UserRound
-                    className="size-[18px]"
+                    className="
+                      size-[18px]
+                    "
                     strokeWidth={2}
                   />
                 )}
@@ -540,7 +582,7 @@ export function AppNavbar() {
               >
                 <p
                   className="
-                    max-w-[120px]
+                    max-w-[110px]
                     truncate
 
                     text-[13px]
@@ -549,6 +591,8 @@ export function AppNavbar() {
                     tracking-[-0.018em]
 
                     text-[#1d2822]
+
+                    xl:max-w-[130px]
                   "
                 >
                   {firstName}
@@ -618,8 +662,11 @@ function NavbarProfileSkeleton() {
       <div
         className="
           size-[42px]
+
           animate-pulse
+
           rounded-full
+
           bg-black/[0.055]
         "
       />
@@ -636,8 +683,11 @@ function NavbarProfileSkeleton() {
           className="
             h-3
             w-[68px]
+
             animate-pulse
+
             rounded-full
+
             bg-black/[0.055]
           "
         />
@@ -646,8 +696,11 @@ function NavbarProfileSkeleton() {
           className="
             h-2
             w-11
+
             animate-pulse
+
             rounded-full
+
             bg-black/[0.04]
           "
         />
