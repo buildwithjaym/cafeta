@@ -1,7 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+
+import {
+  FormEvent,
+  useState,
+} from "react";
+
 import {
   ArrowRight,
   Eye,
@@ -10,42 +15,118 @@ import {
   LockKeyhole,
   Mail,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 
-import { createClient } from "@/lib/supabase/client";
-import { GoogleAuthButton } from "@/components/auth/google-auth-button";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
+
+import {
+  GoogleAuthButton,
+} from "@/components/auth/google-auth-button";
+
+import {
+  createClient,
+} from "@/lib/supabase/client";
 
 export function LoginForm() {
-  const router = useRouter();
+  const router =
+    useRouter();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const searchParams =
+    useSearchParams();
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [email, setEmail] =
+    useState("");
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const [password, setPassword] =
+    useState("");
+
+  const [
+    showPassword,
+    setShowPassword,
+  ] = useState(false);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const requestedNext =
+    searchParams.get("next");
+
+  const next =
+    requestedNext &&
+    requestedNext.startsWith("/") &&
+    !requestedNext.startsWith("//")
+      ? requestedNext
+      : "/explore";
+
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
+
+    if (loading) {
+      return;
+    }
 
     setError("");
     setLoading(true);
 
-    const supabase = createClient();
+    try {
+      const supabase =
+        createClient();
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+      const {
+        data,
+        error:
+          signInError,
+      } =
+        await supabase.auth
+          .signInWithPassword({
+            email:
+              email
+                .trim()
+                .toLowerCase(),
 
-    if (error) {
-      setError(error.message);
+            password,
+          });
+
+      if (signInError) {
+        setError(
+          signInError.message,
+        );
+
+        return;
+      }
+
+      if (
+        !data.user ||
+        !data.session
+      ) {
+        setError(
+          "CAFÉTA could not establish your session. Please try again.",
+        );
+
+        return;
+      }
+
+      router.replace(next);
+      router.refresh();
+    } catch (error) {
+      console.error(
+        "[CAFÉTA] Sign in failed:",
+        error,
+      );
+
+      setError(
+        "Something went wrong while signing in. Please try again.",
+      );
+    } finally {
       setLoading(false);
-      return;
     }
-
-    router.push("/explore");
-    router.refresh();
   }
 
   return (
@@ -60,7 +141,8 @@ export function LoginForm() {
         </h2>
 
         <p className="mt-2 text-sm leading-6 text-black/45">
-          Pick up where you left off and keep discovering.
+          Pick up where you left off
+          and keep discovering.
         </p>
       </div>
 
@@ -78,7 +160,10 @@ export function LoginForm() {
         <div className="h-px flex-1 bg-black/[0.07]" />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4"
+      >
         <div>
           <label
             htmlFor="email"
@@ -96,7 +181,11 @@ export function LoginForm() {
               autoComplete="email"
               required
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) =>
+                setEmail(
+                  event.target.value,
+                )
+              }
               placeholder="you@example.com"
               className="h-12 w-full rounded-xl border border-black/[0.09] bg-white pl-11 pr-4 text-sm outline-none transition placeholder:text-black/25 focus:border-[#006241]/50 focus:ring-4 focus:ring-[#006241]/[0.07]"
             />
@@ -125,19 +214,36 @@ export function LoginForm() {
 
             <input
               id="password"
-              type={showPassword ? "text" : "password"}
+              type={
+                showPassword
+                  ? "text"
+                  : "password"
+              }
               autoComplete="current-password"
               required
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) =>
+                setPassword(
+                  event.target.value,
+                )
+              }
               placeholder="Enter your password"
               className="h-12 w-full rounded-xl border border-black/[0.09] bg-white pl-11 pr-12 text-sm outline-none transition placeholder:text-black/25 focus:border-[#006241]/50 focus:ring-4 focus:ring-[#006241]/[0.07]"
             />
 
             <button
               type="button"
-              onClick={() => setShowPassword((value) => !value)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              onClick={() =>
+                setShowPassword(
+                  (value) =>
+                    !value,
+                )
+              }
+              aria-label={
+                showPassword
+                  ? "Hide password"
+                  : "Show password"
+              }
               className="absolute right-4 top-1/2 -translate-y-1/2 text-black/30 transition hover:text-black/60"
             >
               {showPassword ? (
@@ -168,6 +274,7 @@ export function LoginForm() {
           ) : (
             <>
               Sign in
+
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
             </>
           )}
@@ -176,6 +283,7 @@ export function LoginForm() {
 
       <p className="mt-6 text-center text-sm text-black/45">
         New to CAFÉTA?{" "}
+
         <Link
           href="/auth/register"
           className="font-semibold text-[#006241] hover:underline"
