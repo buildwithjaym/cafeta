@@ -6,8 +6,9 @@ import {
 } from "react";
 
 import {
+  Coffee,
   Search,
-  SlidersHorizontal,
+  Store,
   X,
 } from "lucide-react";
 
@@ -17,9 +18,11 @@ import {
 
 type BusinessCategory =
   | "coffee_shop"
-  | "milk_tea"
   | "cafe"
-  | "bakery";
+  | "milk_tea"
+  | "bakery_cafe"
+  | "restaurant_cafe"
+  | "other";
 
 type Props = {
   search: string;
@@ -30,30 +33,34 @@ type Props = {
 };
 
 const categories: {
-  label: string;
   value:
     | BusinessCategory
     | null;
+  label: string;
 }[] = [
   {
-    label: "All",
     value: null,
+    label: "All",
   },
   {
-    label: "Coffee",
     value: "coffee_shop",
+    label: "Coffee",
   },
   {
-    label: "Milk Tea",
-    value: "milk_tea",
-  },
-  {
-    label: "Café",
     value: "cafe",
+    label: "Cafés",
   },
   {
+    value: "milk_tea",
+    label: "Milk Tea",
+  },
+  {
+    value: "bakery_cafe",
     label: "Bakery",
-    value: "bakery",
+  },
+  {
+    value: "restaurant_cafe",
+    label: "Restaurant Café",
   },
 ];
 
@@ -64,10 +71,12 @@ export function ExploreControls({
   const router =
     useRouter();
 
-  const [value, setValue] =
-    useState(search);
+  const [
+    query,
+    setQuery,
+  ] = useState(search);
 
-  function navigate(
+  function buildUrl(
     nextSearch: string,
     nextCategory:
       | BusinessCategory
@@ -76,13 +85,13 @@ export function ExploreControls({
     const params =
       new URLSearchParams();
 
-    const normalizedSearch =
+    const cleanedSearch =
       nextSearch.trim();
 
-    if (normalizedSearch) {
+    if (cleanedSearch) {
       params.set(
         "q",
-        normalizedSearch,
+        cleanedSearch,
       );
     }
 
@@ -93,14 +102,12 @@ export function ExploreControls({
       );
     }
 
-    const query =
+    const queryString =
       params.toString();
 
-    router.push(
-      query
-        ? `/explore?${query}`
-        : "/explore",
-    );
+    return queryString
+      ? `/explore?${queryString}`
+      : "/explore";
   }
 
   function handleSubmit(
@@ -108,151 +115,181 @@ export function ExploreControls({
   ) {
     event.preventDefault();
 
-    navigate(
-      value,
-      category,
+    router.push(
+      buildUrl(
+        query,
+        category,
+      ),
+    );
+  }
+
+  function handleCategory(
+    nextCategory:
+      | BusinessCategory
+      | null,
+  ) {
+    router.push(
+      buildUrl(
+        query,
+        nextCategory,
+      ),
     );
   }
 
   function clearSearch() {
-    setValue("");
+    setQuery("");
 
-    navigate(
-      "",
-      category,
+    router.push(
+      buildUrl(
+        "",
+        category,
+      ),
     );
   }
 
   return (
-    <>
+    <div
+      className="
+        w-full
+        max-w-[900px]
+      "
+    >
       <form
-        onSubmit={handleSubmit}
+        onSubmit={
+          handleSubmit
+        }
         className="
-          flex max-w-3xl
+          group
+
+          flex
+          h-14
           items-center
-          rounded-2xl
+          gap-3
+
+          rounded-[18px]
+
           border
-          border-black/[0.08]
-          bg-[#fafaf7]
-          p-1.5
-          shadow-[0_10px_35px_rgba(0,0,0,0.04)]
+          border-black/[0.07]
+
+          bg-white
+
+          px-4
+
+          shadow-[0_8px_30px_rgba(0,0,0,0.05)]
+
           transition-all
           duration-200
+
           focus-within:border-[#006241]/20
-          focus-within:bg-white
-          focus-within:shadow-[0_14px_40px_rgba(0,0,0,0.07)]
-          focus-within:ring-4
-          focus-within:ring-[#006241]/[0.035]
-          sm:rounded-full
+          focus-within:shadow-[0_10px_35px_rgba(0,98,65,0.08)]
+
+          sm:h-16
+          sm:rounded-[22px]
+          sm:px-5
         "
       >
-        <div
+        <Search
           className="
-            flex min-w-0
-            flex-1
-            items-center
-          "
-        >
-          <Search
-            className="
-              ml-4
-              size-[18px]
-              shrink-0
-              text-[#006241]
-            "
-          />
-
-          <input
-            type="search"
-            value={value}
-            onChange={(
-              event,
-            ) =>
-              setValue(
-                event.target
-                  .value,
-              )
-            }
-            placeholder="Search coffee, milk tea, or a place..."
-            className="
-              h-11
-              min-w-0
-              flex-1
-              bg-transparent
-              px-3
-              text-sm
-              text-[#17211c]
-              outline-none
-              placeholder:text-black/30
-            "
-          />
-
-          {value && (
-            <button
-              type="button"
-              onClick={
-                clearSearch
-              }
-              aria-label="Clear search"
-              className="
-                mr-1 flex
-                size-8
-                shrink-0
-                items-center
-                justify-center
-                rounded-full
-                text-black/30
-                transition
-                hover:bg-black/[0.05]
-                hover:text-black/60
-              "
-            >
-              <X className="size-4" />
-            </button>
-          )}
-        </div>
-
-        <button
-          type="button"
-          aria-label="More filters"
-          className="
-            flex size-11
+            size-[19px]
             shrink-0
-            items-center
-            justify-center
-            rounded-full
-            border
-            border-black/[0.07]
-            bg-white
-            text-[#17211c]
-            transition-all
-            duration-200
-            hover:border-[#006241]/25
-            hover:text-[#006241]
-            active:scale-95
+
+            text-[#17211c]/50
+
+            transition-colors
+
+            group-focus-within:text-[#006241]
           "
-        >
-          <SlidersHorizontal className="size-4" />
-        </button>
+        />
+
+        <input
+          type="search"
+          value={query}
+          onChange={(
+            event,
+          ) => {
+            setQuery(
+              event.target
+                .value,
+            );
+          }}
+          placeholder="Search cafés, milk tea, or places..."
+          className="
+            min-w-0
+            flex-1
+
+            bg-transparent
+
+            text-sm
+            font-medium
+            text-[#17211c]
+
+            outline-none
+
+            placeholder:font-normal
+            placeholder:text-black/30
+
+            sm:text-[15px]
+          "
+        />
+
+        {query && (
+          <button
+            type="button"
+            onClick={
+              clearSearch
+            }
+            aria-label="Clear search"
+            className="
+              flex
+              size-8
+              shrink-0
+              items-center
+              justify-center
+
+              rounded-full
+
+              text-black/30
+
+              transition-all
+              duration-200
+
+              hover:bg-black/[0.04]
+              hover:text-[#17211c]
+            "
+          >
+            <X className="size-4" />
+          </button>
+        )}
 
         <button
           type="submit"
           className="
-            ml-1 hidden
-            h-11
+            flex
+            h-9
+            shrink-0
             items-center
             justify-center
+
             rounded-full
+
             bg-[#006241]
-            px-6
-            text-sm
+
+            px-4
+
+            text-[11px]
             font-bold
             text-white
+
             transition-all
             duration-200
+
             hover:bg-[#00754a]
+
             active:scale-[0.97]
-            sm:flex
+
+            sm:h-10
+            sm:px-5
+            sm:text-xs
           "
         >
           Search
@@ -261,10 +298,15 @@ export function ExploreControls({
 
       <div
         className="
-          mt-5 flex
+          mt-4
+
+          flex
           gap-2
+
           overflow-x-auto
+
           pb-1
+
           [scrollbar-width:none]
           [&::-webkit-scrollbar]:hidden
         "
@@ -278,42 +320,118 @@ export function ExploreControls({
             return (
               <button
                 key={
-                  item.label
+                  item.value ??
+                  "all"
                 }
                 type="button"
-                aria-pressed={
-                  active
-                }
-                onClick={() =>
-                  navigate(
-                    value,
+                onClick={() => {
+                  handleCategory(
                     item.value,
-                  )
-                }
+                  );
+                }}
                 className={`
+                  flex
+                  h-10
                   shrink-0
+                  items-center
+                  gap-2
+
                   rounded-full
+
                   border
-                  px-4 py-2
-                  text-xs
+
+                  px-4
+
+                  text-[11px]
                   font-bold
+
                   transition-all
                   duration-200
-                  active:scale-95
+
+                  active:scale-[0.97]
 
                   ${
                     active
-                      ? "border-[#006241] bg-[#006241] text-white shadow-[0_5px_16px_rgba(0,98,65,0.14)]"
-                      : "border-black/[0.07] bg-white text-black/55 hover:border-[#006241]/25 hover:text-[#006241]"
+                      ? `
+                        border-[#006241]
+                        bg-[#006241]
+                        text-white
+                        shadow-[0_5px_16px_rgba(0,98,65,0.15)]
+                      `
+                      : `
+                        border-black/[0.06]
+                        bg-white
+                        text-[#39433e]
+
+                        hover:border-[#006241]/20
+                        hover:bg-[#edf5f1]
+                        hover:text-[#006241]
+                      `
                   }
                 `}
               >
+                <CategoryIcon
+                  category={
+                    item.value
+                  }
+                />
+
                 {item.label}
               </button>
             );
           },
         )}
       </div>
-    </>
+    </div>
   );
+}
+
+function CategoryIcon({
+  category,
+}: {
+  category:
+    | BusinessCategory
+    | null;
+}) {
+  switch (category) {
+    case "coffee_shop":
+    case "cafe":
+      return (
+        <Coffee className="size-3.5" />
+      );
+
+    case "milk_tea":
+      return (
+        <span
+          className="
+            text-[13px]
+            leading-none
+          "
+        >
+          ◇
+        </span>
+      );
+
+    case "bakery_cafe":
+      return (
+        <span
+          className="
+            text-[12px]
+            leading-none
+          "
+        >
+          ♨
+        </span>
+      );
+
+    case "restaurant_cafe":
+      return (
+        <Store className="size-3.5" />
+      );
+
+    default:
+      return (
+        <Coffee className="size-3.5" />
+      );
+  }
 }
