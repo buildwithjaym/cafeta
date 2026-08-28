@@ -1,7 +1,3 @@
-import type {
-  BusinessCategory,
-} from "@/lib/business/types";
-
 export type UserRole =
   | "user"
   | "business_owner"
@@ -18,6 +14,18 @@ export type BusinessStatus =
   | "approved"
   | "rejected"
   | "suspended";
+
+/*
+ * Must match the business_category
+ * enum used by the database.
+ */
+export type BusinessCategory =
+  | "coffee_shop"
+  | "cafe"
+  | "milk_tea"
+  | "bakery_cafe"
+  | "restaurant_cafe"
+  | "other";
 
 export type CafetaProfile = {
   id: string;
@@ -52,14 +60,12 @@ export type ProfileBusiness = {
   province: string;
 
   status: BusinessStatus;
-
   is_verified: boolean;
 
   created_at: string;
   updated_at: string;
 
   memberRole: BusinessMemberRole;
-
   membershipCreatedAt: string;
 };
 
@@ -69,11 +75,9 @@ export type ProfileStats = {
   businesses: number;
 };
 
-/**
- * Shared Supabase profile select.
- *
- * change-username-modal.tsx and
- * edit-profile-modal.tsx depend on this.
+/*
+ * Shared profile query used by
+ * profile editing components.
  */
 export const PROFILE_SELECT = `
   id,
@@ -84,4 +88,4 @@ export const PROFILE_SELECT = `
   role,
   created_at,
   updated_at
-` as const;
+`;
