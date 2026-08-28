@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useState,
 } from "react";
 
@@ -9,9 +10,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 
-import {
-  toast,
-} from "sonner";
+import { toast } from "sonner";
 
 import {
   createClient,
@@ -26,11 +25,26 @@ export function SaveBusinessButton({
   businessId,
   initialSaved,
 }: Props) {
-  const [saved, setSaved] =
-    useState(initialSaved);
+  const [
+    saved,
+    setSaved,
+  ] = useState(
+    initialSaved,
+  );
 
-  const [loading, setLoading] =
-    useState(false);
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
+
+  useEffect(() => {
+    setSaved(
+      initialSaved,
+    );
+  }, [
+    businessId,
+    initialSaved,
+  ]);
 
   async function toggleSaved() {
     if (loading) {
@@ -39,30 +53,39 @@ export function SaveBusinessButton({
 
     setLoading(true);
 
-    const supabase =
-      createClient();
+    try {
+      const supabase =
+        createClient();
 
-    const {
-      data: { user },
-    } =
-      await supabase.auth.getUser();
+      const {
+        data: { user },
+        error:
+          authError,
+      } =
+        await supabase.auth.getUser();
 
-    if (!user) {
-      toast.error(
-        "Sign in to save places.",
-      );
+      if (
+        authError ||
+        !user
+      ) {
+        toast.error(
+          "Sign in to save places.",
+        );
 
-      setLoading(false);
-      return;
-    }
+        return;
+      }
 
-    if (saved) {
-      const { error } =
+      const {
+        data:
+          existingSaved,
+        error:
+          checkError,
+      } =
         await supabase
           .from(
             "saved_businesses",
           )
-          .delete()
+          .select("id")
           .eq(
             "user_id",
             user.id,
@@ -70,29 +93,56 @@ export function SaveBusinessButton({
           .eq(
             "business_id",
             businessId,
-          );
+          )
+          .maybeSingle();
 
-      if (error) {
-        console.error(
-          "Failed to remove saved business:",
-          error,
+      if (checkError) {
+        throw checkError;
+      }
+
+      const isCurrentlySaved =
+        Boolean(
+          existingSaved,
         );
 
-        toast.error(
-          "Couldn't remove this place.",
+      if (
+        isCurrentlySaved
+      ) {
+        const {
+          error:
+            deleteError,
+        } =
+          await supabase
+            .from(
+              "saved_businesses",
+            )
+            .delete()
+            .eq(
+              "user_id",
+              user.id,
+            )
+            .eq(
+              "business_id",
+              businessId,
+            );
+
+        if (deleteError) {
+          throw deleteError;
+        }
+
+        setSaved(false);
+
+        toast.success(
+          "Removed from saved",
         );
 
-        setLoading(false);
         return;
       }
 
-      setSaved(false);
-
-      toast.success(
-        "Removed from saved",
-      );
-    } else {
-      const { error } =
+      const {
+        error:
+          insertError,
+      } =
         await supabase
           .from(
             "saved_businesses",
@@ -100,22 +150,13 @@ export function SaveBusinessButton({
           .insert({
             user_id:
               user.id,
+
             business_id:
               businessId,
           });
 
-      if (error) {
-        console.error(
-          "Failed to save business:",
-          error,
-        );
-
-        toast.error(
-          "Couldn't save this place.",
-        );
-
-        setLoading(false);
-        return;
+      if (insertError) {
+        throw insertError;
       }
 
       setSaved(true);
@@ -123,9 +164,22 @@ export function SaveBusinessButton({
       toast.success(
         "Saved to your places",
       );
-    }
+    } catch (error) {
+      console.error(
+        "[CAFÉTA] Failed to update saved business:",
+        error,
+      );
 
-    setLoading(false);
+      toast.error(
+        "Couldn't update saved places.",
+        {
+          description:
+            "Please try again.",
+        },
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -134,7 +188,9 @@ export function SaveBusinessButton({
       onClick={
         toggleSaved
       }
-      disabled={loading}
+      disabled={
+        loading
+      }
       aria-label={
         saved
           ? "Remove from saved"
@@ -144,18 +200,31 @@ export function SaveBusinessButton({
         saved
       }
       className={`
-        flex size-10
+        flex
+        size-9
         items-center
         justify-center
+
         rounded-full
+
+        border
+        border-white/50
+
         bg-white/95
-        shadow-sm
-        backdrop-blur
+
+        shadow-[0_3px_12px_rgba(0,0,0,0.10)]
+
+        backdrop-blur-md
+
         transition-all
         duration-200
+
         hover:scale-105
+
         active:scale-90
+
         disabled:pointer-events-none
+        disabled:opacity-70
 
         ${
           saved
@@ -165,12 +234,17 @@ export function SaveBusinessButton({
       `}
     >
       {loading ? (
-        <LoaderCircle className="size-4 animate-spin" />
+        <LoaderCircle
+          className="
+            size-4
+            animate-spin
+          "
+        />
       ) : (
         <Heart
           className={
             saved
-              ? "size-4 fill-[#006241]"
+              ? "size-4 fill-[#006241] stroke-[#006241]"
               : "size-4"
           }
         />
