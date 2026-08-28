@@ -18,7 +18,6 @@ import {
 
 import {
   useRouter,
-  useSearchParams,
 } from "next/navigation";
 
 import {
@@ -29,12 +28,15 @@ import {
   createClient,
 } from "@/lib/supabase/client";
 
-export function LoginForm() {
+type LoginFormProps = {
+  next?: string;
+};
+
+export function LoginForm({
+  next = "/explore",
+}: LoginFormProps) {
   const router =
     useRouter();
-
-  const searchParams =
-    useSearchParams();
 
   const [email, setEmail] =
     useState("");
@@ -52,16 +54,6 @@ export function LoginForm() {
 
   const [error, setError] =
     useState("");
-
-  const requestedNext =
-    searchParams.get("next");
-
-  const next =
-    requestedNext &&
-    requestedNext.startsWith("/") &&
-    !requestedNext.startsWith("//")
-      ? requestedNext
-      : "/explore";
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -81,8 +73,7 @@ export function LoginForm() {
 
       const {
         data,
-        error:
-          signInError,
+        error: signInError,
       } =
         await supabase.auth
           .signInWithPassword({
@@ -113,7 +104,16 @@ export function LoginForm() {
         return;
       }
 
-      router.replace(next);
+      const safeNext =
+        next.startsWith("/") &&
+        !next.startsWith("//")
+          ? next
+          : "/explore";
+
+      router.replace(
+        safeNext,
+      );
+
       router.refresh();
     } catch (error) {
       console.error(
@@ -132,48 +132,122 @@ export function LoginForm() {
   return (
     <div>
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.17em] text-[#006241]">
+        <p
+          className="
+            text-xs
+            font-bold
+            uppercase
+            tracking-[0.17em]
+            text-[#006241]
+          "
+        >
           Welcome back
         </p>
 
-        <h2 className="mt-3 text-[2rem] font-bold tracking-[-0.045em] text-[#122019] sm:text-[2.2rem]">
+        <h2
+          className="
+            mt-3
+            text-[2rem]
+            font-bold
+            tracking-[-0.045em]
+            text-[#122019]
+            sm:text-[2.2rem]
+          "
+        >
           Sign in to CAFÉTA
         </h2>
 
-        <p className="mt-2 text-sm leading-6 text-black/45">
+        <p
+          className="
+            mt-2
+            text-sm
+            leading-6
+            text-black/45
+          "
+        >
           Pick up where you left off
           and keep discovering.
         </p>
       </div>
 
-      <div className="mt-6">
+      <div
+        className="
+          mt-6
+        "
+      >
         <GoogleAuthButton />
       </div>
 
-      <div className="my-5 flex items-center gap-4">
-        <div className="h-px flex-1 bg-black/[0.07]" />
+      <div
+        className="
+          my-5
+          flex
+          items-center
+          gap-4
+        "
+      >
+        <div
+          className="
+            h-px
+            flex-1
+            bg-black/[0.07]
+          "
+        />
 
-        <span className="text-[11px] font-medium text-black/35">
+        <span
+          className="
+            text-[11px]
+            font-medium
+            text-black/35
+          "
+        >
           OR CONTINUE WITH EMAIL
         </span>
 
-        <div className="h-px flex-1 bg-black/[0.07]" />
+        <div
+          className="
+            h-px
+            flex-1
+            bg-black/[0.07]
+          "
+        />
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-4"
+        className="
+          space-y-4
+        "
       >
         <div>
           <label
             htmlFor="email"
-            className="mb-2 block text-xs font-semibold text-[#24312b]"
+            className="
+              mb-2
+              block
+              text-xs
+              font-semibold
+              text-[#24312b]
+            "
           >
             Email address
           </label>
 
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 size-[17px] -translate-y-1/2 text-black/30" />
+          <div
+            className="
+              relative
+            "
+          >
+            <Mail
+              className="
+                absolute
+                left-4
+                top-1/2
+                size-[17px]
+                -translate-y-1/2
+                text-black/30
+              "
+            />
 
             <input
               id="email"
@@ -187,30 +261,75 @@ export function LoginForm() {
                 )
               }
               placeholder="you@example.com"
-              className="h-12 w-full rounded-xl border border-black/[0.09] bg-white pl-11 pr-4 text-sm outline-none transition placeholder:text-black/25 focus:border-[#006241]/50 focus:ring-4 focus:ring-[#006241]/[0.07]"
+              className="
+                h-12
+                w-full
+                rounded-xl
+                border
+                border-black/[0.09]
+                bg-white
+                pl-11
+                pr-4
+                text-sm
+                outline-none
+                transition
+                placeholder:text-black/25
+                focus:border-[#006241]/50
+                focus:ring-4
+                focus:ring-[#006241]/[0.07]
+              "
             />
           </div>
         </div>
 
         <div>
-          <div className="mb-2 flex items-center justify-between">
+          <div
+            className="
+              mb-2
+              flex
+              items-center
+              justify-between
+            "
+          >
             <label
               htmlFor="password"
-              className="text-xs font-semibold text-[#24312b]"
+              className="
+                text-xs
+                font-semibold
+                text-[#24312b]
+              "
             >
               Password
             </label>
 
             <Link
               href="/auth/forgot-password"
-              className="text-xs font-semibold text-[#006241] hover:underline"
+              className="
+                text-xs
+                font-semibold
+                text-[#006241]
+                hover:underline
+              "
             >
               Forgot password?
             </Link>
           </div>
 
-          <div className="relative">
-            <LockKeyhole className="absolute left-4 top-1/2 size-[17px] -translate-y-1/2 text-black/30" />
+          <div
+            className="
+              relative
+            "
+          >
+            <LockKeyhole
+              className="
+                absolute
+                left-4
+                top-1/2
+                size-[17px]
+                -translate-y-1/2
+                text-black/30
+              "
+            />
 
             <input
               id="password"
@@ -228,7 +347,23 @@ export function LoginForm() {
                 )
               }
               placeholder="Enter your password"
-              className="h-12 w-full rounded-xl border border-black/[0.09] bg-white pl-11 pr-12 text-sm outline-none transition placeholder:text-black/25 focus:border-[#006241]/50 focus:ring-4 focus:ring-[#006241]/[0.07]"
+              className="
+                h-12
+                w-full
+                rounded-xl
+                border
+                border-black/[0.09]
+                bg-white
+                pl-11
+                pr-12
+                text-sm
+                outline-none
+                transition
+                placeholder:text-black/25
+                focus:border-[#006241]/50
+                focus:ring-4
+                focus:ring-[#006241]/[0.07]
+              "
             />
 
             <button
@@ -244,19 +379,48 @@ export function LoginForm() {
                   ? "Hide password"
                   : "Show password"
               }
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-black/30 transition hover:text-black/60"
+              className="
+                absolute
+                right-4
+                top-1/2
+                -translate-y-1/2
+                text-black/30
+                transition
+                hover:text-black/60
+              "
             >
               {showPassword ? (
-                <EyeOff className="size-[17px]" />
+                <EyeOff
+                  className="
+                    size-[17px]
+                  "
+                />
               ) : (
-                <Eye className="size-[17px]" />
+                <Eye
+                  className="
+                    size-[17px]
+                  "
+                />
               )}
             </button>
           </div>
         </div>
 
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs leading-5 text-red-700">
+          <div
+            role="alert"
+            className="
+              rounded-xl
+              border
+              border-red-200
+              bg-red-50
+              px-4
+              py-3
+              text-xs
+              leading-5
+              text-red-700
+            "
+          >
             {error}
           </div>
         )}
@@ -264,29 +428,70 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="group flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#006241] px-5 text-sm font-semibold text-white transition hover:bg-[#004f35] disabled:pointer-events-none disabled:opacity-60"
+          className="
+            group
+            flex
+            h-12
+            w-full
+            items-center
+            justify-center
+            gap-2
+            rounded-xl
+            bg-[#006241]
+            px-5
+            text-sm
+            font-semibold
+            text-white
+            transition
+            hover:bg-[#004f35]
+            disabled:pointer-events-none
+            disabled:opacity-60
+          "
         >
           {loading ? (
             <>
-              <LoaderCircle className="size-[17px] animate-spin" />
+              <LoaderCircle
+                className="
+                  size-[17px]
+                  animate-spin
+                "
+              />
+
               Signing in...
             </>
           ) : (
             <>
               Sign in
 
-              <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+              <ArrowRight
+                className="
+                  size-4
+                  transition-transform
+                  group-hover:translate-x-1
+                "
+              />
             </>
           )}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-black/45">
+      <p
+        className="
+          mt-6
+          text-center
+          text-sm
+          text-black/45
+        "
+      >
         New to CAFÉTA?{" "}
 
         <Link
           href="/auth/register"
-          className="font-semibold text-[#006241] hover:underline"
+          className="
+            font-semibold
+            text-[#006241]
+            hover:underline
+          "
         >
           Create an account
         </Link>
