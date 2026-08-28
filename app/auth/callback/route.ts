@@ -1,36 +1,79 @@
-import { NextResponse } from "next/server";
+import {
+  NextResponse,
+} from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
+import {
+  createClient,
+} from "@/lib/supabase/server";
 
-export async function GET(request: Request) {
-  const requestUrl = new URL(request.url);
+export async function GET(
+  request: Request,
+) {
+  const requestUrl =
+    new URL(request.url);
 
-  const code = requestUrl.searchParams.get("code");
-  let next = requestUrl.searchParams.get("next") ?? "/explore";
+  const code =
+    requestUrl.searchParams.get(
+      "code",
+    );
 
-  if (!next.startsWith("/") || next.startsWith("//")) {
-    next = "/explore";
-  }
+  const requestedNext =
+    requestUrl.searchParams.get(
+      "next",
+    );
+
+  const next =
+    requestedNext &&
+    requestedNext.startsWith("/") &&
+    !requestedNext.startsWith("//")
+      ? requestedNext
+      : "/explore";
 
   if (!code) {
     return NextResponse.redirect(
-      new URL("/auth/login?error=oauth_callback", requestUrl.origin),
+      new URL(
+        "/auth/login?error=missing_oauth_code",
+        requestUrl.origin,
+      ),
     );
   }
 
-  const supabase = await createClient();
+  const supabase =
+    await createClient();
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const {
+    error,
+  } =
+    await supabase.auth
+      .exchangeCodeForSession(
+        code,
+      );
 
   if (error) {
-    console.error("OAuth callback error:", error.message);
+    console.error(
+      "[CAFÉTA] OAuth callback failed:",
+      {
+        message:
+          error.message,
+        status:
+          error.status,
+        code:
+          error.code,
+      },
+    );
 
     return NextResponse.redirect(
-      new URL("/auth/login?error=oauth_callback", requestUrl.origin),
+      new URL(
+        "/auth/login?error=oauth_callback",
+        requestUrl.origin,
+      ),
     );
   }
 
   return NextResponse.redirect(
-    new URL(next, requestUrl.origin),
+    new URL(
+      next,
+      requestUrl.origin,
+    ),
   );
 }
