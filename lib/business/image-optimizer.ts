@@ -1,7 +1,8 @@
 export type BusinessImageKind =
   | "logo"
   | "cover"
-  | "menu";
+  | "menu"
+  | "memory";
 
 const MAX_FILE_SIZE =
   5 * 1024 * 1024;
@@ -28,6 +29,12 @@ const imageSettings = {
   menu: {
     maxWidth: 1200,
     maxHeight: 1200,
+    quality: 0.82,
+  },
+
+  memory: {
+    maxWidth: 1440,
+    maxHeight: 1800,
     quality: 0.82,
   },
 } satisfies Record<
@@ -83,11 +90,16 @@ export async function optimizeBusinessImage(
         "canvas",
       );
 
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width =
+      width;
+
+    canvas.height =
+      height;
 
     const context =
-      canvas.getContext("2d");
+      canvas.getContext(
+        "2d",
+      );
 
     if (!context) {
       throw new Error(
@@ -116,13 +128,17 @@ export async function optimizeBusinessImage(
       );
 
     return new File(
-      [blob],
+      [
+        blob,
+      ],
       createOptimizedFilename(
         file,
         kind,
       ),
       {
-        type: "image/webp",
+        type:
+          "image/webp",
+
         lastModified:
           Date.now(),
       },
@@ -160,9 +176,14 @@ function createWebPBlob(
   quality: number,
 ) {
   return new Promise<Blob>(
-    (resolve, reject) => {
+    (
+      resolve,
+      reject,
+    ) => {
       canvas.toBlob(
-        (blob) => {
+        (
+          blob,
+        ) => {
           if (!blob) {
             reject(
               new Error(
@@ -173,7 +194,9 @@ function createWebPBlob(
             return;
           }
 
-          resolve(blob);
+          resolve(
+            blob,
+          );
         },
         "image/webp",
         quality,
@@ -191,6 +214,12 @@ function createOptimizedFilename(
     kind === "cover"
   ) {
     return `${kind}.webp`;
+  }
+
+  if (
+    kind === "memory"
+  ) {
+    return "memory.webp";
   }
 
   const originalName =
@@ -219,7 +248,10 @@ function createOptimizedFilename(
 export function formatFileSize(
   bytes: number,
 ) {
-  if (bytes < 1024) {
+  if (
+    bytes <
+    1024
+  ) {
     return `${bytes} B`;
   }
 
