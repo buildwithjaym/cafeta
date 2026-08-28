@@ -1,37 +1,86 @@
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import {
+  createServerClient,
+} from "@supabase/ssr";
 
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+import {
+  NextResponse,
+  type NextRequest,
+} from "next/server";
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
+export async function updateSession(
+  request: NextRequest,
+) {
+  let supabaseResponse =
+    NextResponse.next({
+      request,
+    });
 
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => {
-            request.cookies.set(name, value);
-          });
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-          supabaseResponse = NextResponse.next({
-            request,
-          });
+  const supabaseAnonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-          cookiesToSet.forEach(({ name, value, options }) => {
-            supabaseResponse.cookies.set(name, value, options);
-          });
+  if (
+    !supabaseUrl ||
+    !supabaseAnonKey
+  ) {
+    return supabaseResponse;
+  }
+
+  const supabase =
+    createServerClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(
+              ({
+                name,
+                value,
+              }) => {
+                request.cookies.set(
+                  name,
+                  value,
+                );
+              },
+            );
+
+            supabaseResponse =
+              NextResponse.next({
+                request,
+              });
+
+            cookiesToSet.forEach(
+              ({
+                name,
+                value,
+                options,
+              }) => {
+                supabaseResponse.cookies.set(
+                  name,
+                  value,
+                  options,
+                );
+              },
+            );
+          },
         },
       },
-    },
-  );
+    );
 
+  /*
+   * Do not remove this.
+   *
+   * It forces Supabase to validate /
+   * refresh the authentication state
+   * when necessary.
+   */
   await supabase.auth.getClaims();
 
   return supabaseResponse;
