@@ -1,7 +1,14 @@
-import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import type {
+  Metadata,
+} from "next";
 
-import { ProfilePageClient } from "@/components/profile/profile-page-client";
+import {
+  redirect,
+} from "next/navigation";
+
+import {
+  ProfilePageClient,
+} from "@/components/profile/profile-page-client";
 
 import type {
   BusinessCategory,
@@ -10,7 +17,9 @@ import type {
   ProfileBusiness,
 } from "@/lib/profile/types";
 
-import { createClient } from "@/lib/supabase/server";
+import {
+  createClient,
+} from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Profile",
@@ -20,14 +29,22 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
+  const supabase =
+    await createClient();
 
   const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+    data: {
+      user,
+    },
+    error:
+      authError,
+  } =
+    await supabase.auth.getUser();
 
-  if (authError || !user) {
+  if (
+    authError ||
+    !user
+  ) {
     redirect(
       "/auth/login?next=/profile",
     );
@@ -38,120 +55,189 @@ export default async function ProfilePage() {
     membershipsResult,
     savedResult,
     reviewsResult,
-  ] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select(`
-        id,
-        full_name,
-        username,
-        bio,
-        avatar_url,
-        role,
-        created_at,
-        updated_at
-      `)
-      .eq("id", user.id)
-      .maybeSingle(),
-
-    supabase
-      .from("business_members")
-      .select(`
-        role,
-        created_at,
-
-        business:businesses (
+  ] =
+    await Promise.all([
+      supabase
+        .from(
+          "profiles",
+        )
+        .select(`
           id,
-          name,
-          slug,
-          category,
-          description,
-
-          logo_url,
-          cover_url,
-
-          address,
-          barangay,
-          city,
-          province,
-
-          status,
-          is_verified,
-
+          full_name,
+          username,
+          bio,
+          avatar_url,
+          role,
           created_at,
           updated_at
+        `)
+        .eq(
+          "id",
+          user.id,
         )
-      `)
-      .eq("user_id", user.id)
-      .order("created_at", {
-        ascending: false,
-      }),
+        .maybeSingle(),
 
-    supabase
-      .from("saved_businesses")
-      .select("id", {
-        count: "exact",
-        head: true,
-      })
-      .eq("user_id", user.id),
+      /*
+       * Do NOT filter business status
+       * here.
+       *
+       * Owners should still see draft,
+       * pending and rejected businesses
+       * on their own profile.
+       */
+      supabase
+        .from(
+          "business_members",
+        )
+        .select(`
+          role,
+          created_at,
 
-    supabase
-      .from("reviews")
-      .select("id", {
-        count: "exact",
-        head: true,
-      })
-      .eq("user_id", user.id),
-  ]);
+          business:businesses (
+            id,
+            name,
+            slug,
+            category,
+            description,
 
-  if (profileResult.error) {
+            logo_url,
+            cover_url,
+
+            address,
+            barangay,
+            city,
+            province,
+
+            status,
+            is_verified,
+
+            created_at,
+            updated_at
+          )
+        `)
+        .eq(
+          "user_id",
+          user.id,
+        )
+        .order(
+          "created_at",
+          {
+            ascending:
+              false,
+          },
+        ),
+
+      supabase
+        .from(
+          "saved_businesses",
+        )
+        .select(
+          "id",
+          {
+            count:
+              "exact",
+
+            head:
+              true,
+          },
+        )
+        .eq(
+          "user_id",
+          user.id,
+        ),
+
+      supabase
+        .from(
+          "reviews",
+        )
+        .select(
+          "id",
+          {
+            count:
+              "exact",
+
+            head:
+              true,
+          },
+        )
+        .eq(
+          "user_id",
+          user.id,
+        ),
+    ]);
+
+  if (
+    profileResult.error
+  ) {
     console.error(
       "[CAFÉTA] Failed to load profile:",
       {
         code:
-          profileResult.error.code,
+          profileResult
+            .error
+            .code,
 
         message:
-          profileResult.error.message,
+          profileResult
+            .error
+            .message,
       },
     );
   }
 
-  if (membershipsResult.error) {
+  if (
+    membershipsResult.error
+  ) {
     console.error(
       "[CAFÉTA] Failed to load business memberships:",
       {
         code:
-          membershipsResult.error.code,
+          membershipsResult
+            .error
+            .code,
 
         message:
-          membershipsResult.error.message,
+          membershipsResult
+            .error
+            .message,
       },
     );
   }
 
-  if (savedResult.error) {
+  if (
+    savedResult.error
+  ) {
     console.error(
       "[CAFÉTA] Failed to load saved businesses:",
       {
         code:
-          savedResult.error.code,
+          savedResult
+            .error
+            .code,
 
         message:
-          savedResult.error.message,
+          savedResult
+            .error
+            .message,
       },
     );
   }
 
-  if (reviewsResult.error) {
+  if (
+    reviewsResult.error
+  ) {
     console.error(
       "[CAFÉTA] Failed to load reviews:",
       {
         code:
-          reviewsResult.error.code,
+          reviewsResult
+            .error
+            .code,
 
         message:
-          reviewsResult.error.message,
+          reviewsResult
+            .error
+            .message,
       },
     );
   }
@@ -160,21 +246,25 @@ export default async function ProfilePage() {
     profileResult.data;
 
   if (!profile) {
-    redirect("/profile/setup");
+    redirect(
+      "/profile/setup",
+    );
   }
 
-  const businesses: ProfileBusiness[] =
-    [];
+  const businesses:
+    ProfileBusiness[] = [];
 
   for (
     const membership of
-    membershipsResult.data ?? []
+    membershipsResult.data ??
+    []
   ) {
     const business =
       Array.isArray(
         membership.business,
       )
-        ? membership.business[0]
+        ? membership
+            .business[0]
         : membership.business;
 
     if (!business) {
@@ -242,7 +332,8 @@ export default async function ProfilePage() {
           user.id,
 
         email:
-          user.email ?? "",
+          user.email ??
+          "",
       }}
       profile={{
         id:
@@ -274,10 +365,12 @@ export default async function ProfilePage() {
       }
       stats={{
         saved:
-          savedResult.count ?? 0,
+          savedResult.count ??
+          0,
 
         reviews:
-          reviewsResult.count ?? 0,
+          reviewsResult.count ??
+          0,
 
         businesses:
           businesses.length,
