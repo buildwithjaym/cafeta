@@ -196,7 +196,7 @@ export function RegisterForm() {
       className="
         mx-auto
         w-full
-        max-w-[460px]
+        max-w-[520px]
       "
     >
       {/* Header */}
@@ -209,7 +209,7 @@ export function RegisterForm() {
             tracking-[0.18em]
             text-[#006241]
 
-            sm:text-xs
+            sm:text-[11px]
           "
         >
           Join CAFÉTA
@@ -217,17 +217,16 @@ export function RegisterForm() {
 
         <h1
           className="
-            mt-2
-            text-[1.75rem]
+            mt-1.5
+            text-[1.6rem]
             font-bold
-            leading-[1.08]
-            tracking-[-0.045em]
+            leading-tight
+            tracking-[-0.04em]
             text-[#13231b]
 
-            sm:mt-3
-            sm:text-[2rem]
+            sm:text-[1.8rem]
 
-            lg:text-[2.15rem]
+            lg:text-[1.95rem]
           "
         >
           Create your account
@@ -235,28 +234,25 @@ export function RegisterForm() {
 
         <p
           className="
-            mt-2
+            mt-1.5
             max-w-md
-            text-[13px]
+            text-[12px]
             leading-5
             text-black/45
 
-            sm:text-sm
-            sm:leading-6
+            sm:text-[13px]
           "
         >
-          Discover local cafés,
-          save your favorites, and
-          find your next kape spot.
+          Discover cafés,
+          save favorites,
+          and find your next kape spot.
         </p>
       </div>
 
-      {/* Google auth */}
+      {/* Google */}
       <div
         className="
-          mt-5
-
-          sm:mt-6
+          mt-4
         "
       >
         <GoogleAuthButton />
@@ -265,13 +261,10 @@ export function RegisterForm() {
       {/* Divider */}
       <div
         className="
-          my-4
+          my-3.5
           flex
           items-center
           gap-3
-
-          sm:my-5
-          sm:gap-4
         "
       >
         <div
@@ -284,15 +277,12 @@ export function RegisterForm() {
 
         <span
           className="
-            shrink-0
             whitespace-nowrap
             text-[9px]
             font-semibold
             uppercase
-            tracking-[0.13em]
+            tracking-[0.12em]
             text-black/30
-
-            sm:text-[10px]
           "
         >
           or use email
@@ -307,13 +297,11 @@ export function RegisterForm() {
         />
       </div>
 
-      {/* Registration form */}
+      {/* Form */}
       <form
         onSubmit={handleSubmit}
         className="
-          space-y-3.5
-
-          sm:space-y-4
+          space-y-3
         "
       >
         <Field
@@ -322,7 +310,7 @@ export function RegisterForm() {
           icon={
             <UserRound
               className="
-                size-[17px]
+                size-4
               "
             />
           }
@@ -340,17 +328,15 @@ export function RegisterForm() {
             }
             placeholder="Your full name"
             className="
-              h-12
+              h-10
               w-full
               bg-transparent
-              pl-11
-              pr-4
+              pl-10
+              pr-3
               text-[13px]
               text-[#13231b]
               outline-none
               placeholder:text-black/25
-
-              sm:text-sm
             "
           />
         </Field>
@@ -361,7 +347,7 @@ export function RegisterForm() {
           icon={
             <Mail
               className="
-                size-[17px]
+                size-4
               "
             />
           }
@@ -382,141 +368,146 @@ export function RegisterForm() {
             }
             placeholder="you@example.com"
             className="
-              h-12
+              h-10
               w-full
               bg-transparent
-              pl-11
-              pr-4
+              pl-10
+              pr-3
               text-[13px]
               text-[#13231b]
               outline-none
               placeholder:text-black/25
-
-              sm:text-sm
             "
           />
         </Field>
 
-        <Field
-          id="password"
-          label="Password"
-          icon={
-            <LockKeyhole
-              className="
-                size-[17px]
-              "
-            />
-          }
+        {/* Password row */}
+        <div
+          className="
+            grid
+            grid-cols-1
+            gap-3
+
+            md:grid-cols-2
+          "
         >
-          <input
+          <Field
             id="password"
-            type={
-              showPassword
-                ? "text"
-                : "password"
+            label="Password"
+            icon={
+              <LockKeyhole
+                className="
+                  size-4
+                "
+              />
             }
-            autoComplete="new-password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(event) =>
-              setPassword(
-                event.target.value,
-              )
-            }
-            placeholder="At least 8 characters"
-            className="
-              h-12
-              w-full
-              bg-transparent
-              pl-11
-              pr-12
-              text-[13px]
-              text-[#13231b]
-              outline-none
-              placeholder:text-black/25
-
-              sm:text-sm
-            "
-          />
-
-          <PasswordToggle
-            visible={showPassword}
-            onClick={() =>
-              setShowPassword(
-                (current) =>
-                  !current,
-              )
-            }
-          />
-        </Field>
-
-        <Field
-          id="confirmPassword"
-          label="Confirm password"
-          icon={
-            <LockKeyhole
+          >
+            <input
+              id="password"
+              type={
+                showPassword
+                  ? "text"
+                  : "password"
+              }
+              autoComplete="new-password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(event) =>
+                setPassword(
+                  event.target.value,
+                )
+              }
+              placeholder="8+ characters"
               className="
-                size-[17px]
+                h-10
+                w-full
+                bg-transparent
+                pl-10
+                pr-10
+                text-[13px]
+                text-[#13231b]
+                outline-none
+                placeholder:text-black/25
               "
             />
-          }
-        >
-          <input
+
+            <PasswordToggle
+              visible={
+                showPassword
+              }
+              onClick={() =>
+                setShowPassword(
+                  (current) =>
+                    !current,
+                )
+              }
+            />
+          </Field>
+
+          <Field
             id="confirmPassword"
-            type={
-              showConfirmPassword
-                ? "text"
-                : "password"
+            label="Confirm password"
+            icon={
+              <LockKeyhole
+                className="
+                  size-4
+                "
+              />
             }
-            autoComplete="new-password"
-            required
-            value={confirmPassword}
-            onChange={(event) =>
-              setConfirmPassword(
-                event.target.value,
-              )
-            }
-            placeholder="Enter your password again"
-            className="
-              h-12
-              w-full
-              bg-transparent
-              pl-11
-              pr-12
-              text-[13px]
-              text-[#13231b]
-              outline-none
-              placeholder:text-black/25
+          >
+            <input
+              id="confirmPassword"
+              type={
+                showConfirmPassword
+                  ? "text"
+                  : "password"
+              }
+              autoComplete="new-password"
+              required
+              value={confirmPassword}
+              onChange={(event) =>
+                setConfirmPassword(
+                  event.target.value,
+                )
+              }
+              placeholder="Repeat password"
+              className="
+                h-10
+                w-full
+                bg-transparent
+                pl-10
+                pr-10
+                text-[13px]
+                text-[#13231b]
+                outline-none
+                placeholder:text-black/25
+              "
+            />
 
-              sm:text-sm
-            "
-          />
+            <PasswordToggle
+              visible={
+                showConfirmPassword
+              }
+              onClick={() =>
+                setShowConfirmPassword(
+                  (current) =>
+                    !current,
+                )
+              }
+            />
+          </Field>
+        </div>
 
-          <PasswordToggle
-            visible={
-              showConfirmPassword
-            }
-            onClick={() =>
-              setShowConfirmPassword(
-                (current) =>
-                  !current,
-              )
-            }
-          />
-        </Field>
-
-        {/* Password validation */}
+        {/* Password status */}
         {password.length > 0 && (
           <div
             className="
               flex
               flex-wrap
-              items-center
               gap-x-4
-              gap-y-2
-              px-1
-              pt-0.5
+              gap-y-1.5
+              px-0.5
             "
           >
             <PasswordCheck
@@ -548,18 +539,15 @@ export function RegisterForm() {
             role="alert"
             aria-live="polite"
             className="
-              rounded-xl
+              rounded-lg
               border
               border-red-200
               bg-red-50
-              px-3.5
-              py-3
+              px-3
+              py-2
               text-[11px]
-              leading-5
+              leading-4
               text-red-700
-
-              sm:px-4
-              sm:text-xs
             "
           >
             {error}
@@ -573,15 +561,14 @@ export function RegisterForm() {
           className="
             group
             flex
-            min-h-12
+            h-10
             w-full
             items-center
             justify-center
             gap-2
-            rounded-xl
+            rounded-lg
             bg-[#006241]
-            px-5
-            py-3
+            px-4
             text-[13px]
             font-semibold
             text-white
@@ -595,28 +582,22 @@ export function RegisterForm() {
 
             disabled:pointer-events-none
             disabled:opacity-60
-
-            sm:text-sm
           "
         >
           {loading ? (
             <>
               <LoaderCircle
                 className="
-                  size-[17px]
+                  size-4
                   animate-spin
                 "
               />
 
-              <span>
-                Creating account...
-              </span>
+              Creating account...
             </>
           ) : (
             <>
-              <span>
-                Create account
-              </span>
+              Create account
 
               <ArrowRight
                 className="
@@ -632,27 +613,22 @@ export function RegisterForm() {
         {/* Terms */}
         <p
           className="
-            px-1
+            px-2
             text-center
             text-[9px]
-            leading-[1.6]
+            leading-4
             text-black/35
-
-            sm:px-4
-            sm:text-[10px]
           "
         >
-          By continuing, you agree
-          to CAFÉTA&apos;s{" "}
+          By continuing, you agree to
+          CAFÉTA&apos;s{" "}
 
           <Link
             href="/terms"
             className="
               font-medium
               text-black/55
-              transition
               hover:text-[#006241]
-              hover:underline
             "
           >
             Terms
@@ -665,9 +641,7 @@ export function RegisterForm() {
             className="
               font-medium
               text-black/55
-              transition
               hover:text-[#006241]
-              hover:underline
             "
           >
             Privacy Policy
@@ -677,42 +651,29 @@ export function RegisterForm() {
       </form>
 
       {/* Sign in */}
-      <div
+      <p
         className="
-          mt-5
-          border-t
-          border-black/[0.06]
-          pt-4
+          mt-3
+          text-center
+          text-[11px]
+          text-black/45
 
-          sm:mt-6
-          sm:pt-5
+          sm:text-xs
         "
       >
-        <p
-          className="
-            text-center
-            text-xs
-            text-black/45
+        Already have an account?{" "}
 
-            sm:text-sm
+        <Link
+          href="/auth/login"
+          className="
+            font-semibold
+            text-[#006241]
+            hover:underline
           "
         >
-          Already have an account?{" "}
-
-          <Link
-            href="/auth/login"
-            className="
-              font-semibold
-              text-[#006241]
-              transition
-              hover:text-[#004f35]
-              hover:underline
-            "
-          >
-            Sign in
-          </Link>
-        </p>
-      </div>
+          Sign in
+        </Link>
+      </p>
     </div>
   );
 }
@@ -737,13 +698,11 @@ function Field({
       <label
         htmlFor={id}
         className="
-          mb-1.5
+          mb-1
           block
           text-[10px]
           font-semibold
           text-[#24312b]
-
-          sm:text-[11px]
         "
       >
         {label}
@@ -753,14 +712,14 @@ function Field({
         className="
           relative
           w-full
-          rounded-xl
+          rounded-lg
           border
           border-black/[0.09]
           bg-white
           transition
 
           focus-within:border-[#006241]/50
-          focus-within:ring-4
+          focus-within:ring-3
           focus-within:ring-[#006241]/[0.06]
         "
       >
@@ -768,7 +727,7 @@ function Field({
           className="
             pointer-events-none
             absolute
-            left-3.5
+            left-3
             top-1/2
             z-10
             -translate-y-1/2
@@ -802,35 +761,31 @@ function PasswordToggle({
       }
       className="
         absolute
-        right-1.5
+        right-1
         top-1/2
         flex
-        size-9
+        size-8
         -translate-y-1/2
         items-center
         justify-center
-        rounded-lg
+        rounded-md
         text-black/30
         transition
 
         hover:bg-black/[0.04]
         hover:text-black/60
-
-        focus-visible:outline-none
-        focus-visible:ring-2
-        focus-visible:ring-[#006241]/20
       "
     >
       {visible ? (
         <EyeOff
           className="
-            size-[17px]
+            size-4
           "
         />
       ) : (
         <Eye
           className="
-            size-[17px]
+            size-4
           "
         />
       )}
@@ -849,13 +804,10 @@ function PasswordCheck({
     <div
       className={`
         flex
-        min-w-0
         items-center
         gap-1.5
         text-[9px]
         font-medium
-
-        sm:text-[10px]
 
         ${
           valid
