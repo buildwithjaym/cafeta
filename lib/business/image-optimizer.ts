@@ -1,6 +1,7 @@
 export type BusinessImageKind =
   | "logo"
-  | "cover";
+  | "cover"
+  | "menu";
 
 const MAX_FILE_SIZE =
   5 * 1024 * 1024;
@@ -23,6 +24,12 @@ const imageSettings = {
     maxHeight: 1200,
     quality: 0.82,
   },
+
+  menu: {
+    maxWidth: 1200,
+    maxHeight: 1200,
+    quality: 0.82,
+  },
 } satisfies Record<
   BusinessImageKind,
   {
@@ -39,7 +46,9 @@ export async function optimizeBusinessImage(
   validateImage(file);
 
   const bitmap =
-    await createImageBitmap(file);
+    await createImageBitmap(
+      file,
+    );
 
   try {
     const settings =
@@ -56,14 +65,16 @@ export async function optimizeBusinessImage(
     const width = Math.max(
       1,
       Math.round(
-        bitmap.width * scale,
+        bitmap.width *
+          scale,
       ),
     );
 
     const height = Math.max(
       1,
       Math.round(
-        bitmap.height * scale,
+        bitmap.height *
+          scale,
       ),
     );
 
@@ -106,7 +117,10 @@ export async function optimizeBusinessImage(
 
     return new File(
       [blob],
-      `${kind}.webp`,
+      createOptimizedFilename(
+        file,
+        kind,
+      ),
       {
         type: "image/webp",
         lastModified:
@@ -166,6 +180,40 @@ function createWebPBlob(
       );
     },
   );
+}
+
+function createOptimizedFilename(
+  file: File,
+  kind: BusinessImageKind,
+) {
+  if (
+    kind === "logo" ||
+    kind === "cover"
+  ) {
+    return `${kind}.webp`;
+  }
+
+  const originalName =
+    file.name
+      .replace(
+        /\.[^/.]+$/,
+        "",
+      )
+      .trim()
+      .toLowerCase()
+      .replace(
+        /[^a-z0-9-_]+/g,
+        "-",
+      )
+      .replace(
+        /^-+|-+$/g,
+        "",
+      );
+
+  return `${
+    originalName ||
+    "menu-item"
+  }.webp`;
 }
 
 export function formatFileSize(
