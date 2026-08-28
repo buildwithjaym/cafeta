@@ -26,6 +26,7 @@ export type MenuItemDraft = {
   description: string;
   price: string;
   category: string;
+  image: File | null;
 };
 
 export type BusinessFormData = {
