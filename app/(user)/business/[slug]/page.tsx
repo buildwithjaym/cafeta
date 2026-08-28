@@ -1,6 +1,4 @@
-import type {
-  Metadata,
-} from "next";
+import type { Metadata } from "next";
 
 import {
   notFound,
@@ -10,6 +8,10 @@ import {
 import {
   BusinessProfileClient,
 } from "@/components/business/create-business-profile";
+
+import type {
+  BusinessMemoryPreview,
+} from "@/lib/memories/types";
 
 import {
   createClient,
@@ -43,34 +45,20 @@ type MenuCategory = {
 type MenuItem = {
   id: string;
   business_id: string;
-  category_id:
-    | string
-    | null;
+  category_id: string | null;
   name: string;
-  description:
-    | string
-    | null;
-  price:
-    | number
-    | string;
-  image_url:
-    | string
-    | null;
+  description: string | null;
+  price: number | string;
+  image_url: string | null;
   is_available: boolean;
   sort_order: number;
 };
 
 type ReviewProfile = {
   id: string;
-  full_name:
-    | string
-    | null;
-  username:
-    | string
-    | null;
-  avatar_url:
-    | string
-    | null;
+  full_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
 };
 
 type Review = {
@@ -78,15 +66,32 @@ type Review = {
   user_id: string;
   business_id: string;
   rating: number;
-  content:
-    | string
-    | null;
+  content: string | null;
   created_at: string;
   updated_at: string;
 
   profile:
     | ReviewProfile
     | ReviewProfile[]
+    | null;
+};
+
+type MemoryAuthor = {
+  id: string;
+  username: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+};
+
+type RawBusinessMemory = {
+  id: string;
+  image_url: string;
+  caption: string | null;
+  created_at: string;
+
+  author:
+    | MemoryAuthor
+    | MemoryAuthor[]
     | null;
 };
 
@@ -97,9 +102,8 @@ type BusinessMember = {
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const {
-    slug,
-  } = await params;
+  const { slug } =
+    await params;
 
   const supabase =
     await createClient();
@@ -108,18 +112,13 @@ export async function generateMetadata({
     data: business,
   } =
     await supabase
-      .from(
-        "businesses",
-      )
+      .from("businesses")
       .select(`
         name,
         description,
         cover_url
       `)
-      .eq(
-        "slug",
-        slug,
-      )
+      .eq("slug", slug)
       .eq(
         "status",
         "approved",
@@ -162,20 +161,12 @@ export async function generateMetadata({
 export default async function BusinessPage({
   params,
 }: PageProps) {
-  const {
-    slug,
-  } = await params;
+  const { slug } =
+    await params;
 
   const supabase =
     await createClient();
 
-  /*
-   * Check the current session first.
-   *
-   * This does not throw an
-   * AuthSessionMissingError when
-   * the visitor is logged out.
-   */
   const {
     data: {
       session,
@@ -183,15 +174,6 @@ export default async function BusinessPage({
   } =
     await supabase.auth.getSession();
 
-  /*
-   * Business profiles require
-   * authentication.
-   *
-   * Preserve where the visitor
-   * wanted to go so your register
-   * page can optionally return
-   * them here after authentication.
-   */
   if (!session?.user) {
     const next =
       `/business/${encodeURIComponent(
@@ -205,11 +187,6 @@ export default async function BusinessPage({
     );
   }
 
-  /*
-   * We now know a session exists.
-   * getUser() verifies the user
-   * against Supabase Auth.
-   */
   const {
     data: {
       user,
@@ -241,9 +218,7 @@ export default async function BusinessPage({
       businessError,
   } =
     await supabase
-      .from(
-        "businesses",
-      )
+      .from("businesses")
       .select(`
         id,
         name,
@@ -269,10 +244,7 @@ export default async function BusinessPage({
         created_at,
         updated_at
       `)
-      .eq(
-        "slug",
-        slug,
-      )
+      .eq("slug", slug)
       .eq(
         "status",
         "approved",
@@ -295,21 +267,10 @@ export default async function BusinessPage({
     notFound();
   }
 
-  /*
-   * Determine whether this
-   * authenticated user can edit
-   * the business.
-   */
   let membership:
     | BusinessMember
     | null = null;
 
-  /*
-   * The creator already has
-   * management permission, so
-   * membership only needs to be
-   * queried for another user.
-   */
   if (
     business.created_by !==
     user.id
@@ -322,9 +283,7 @@ export default async function BusinessPage({
         .from(
           "business_members",
         )
-        .select(
-          "role",
-        )
+        .select("role")
         .eq(
           "business_id",
           business.id,
@@ -371,6 +330,7 @@ export default async function BusinessPage({
     itemsResult,
     reviewsResult,
     savedResult,
+    memoriesResult,
   ] =
     await Promise.all([
       supabase
@@ -461,9 +421,7 @@ export default async function BusinessPage({
         ),
 
       supabase
-        .from(
-          "reviews",
-        )
+        .from("reviews")
         .select(`
           id,
           user_id,
@@ -496,9 +454,7 @@ export default async function BusinessPage({
         .from(
           "saved_businesses",
         )
-        .select(
-          "id",
-        )
+        .select("id")
         .eq(
           "user_id",
           user.id,
@@ -508,6 +464,34 @@ export default async function BusinessPage({
           business.id,
         )
         .maybeSingle(),
+
+      supabase
+        .from("memories")
+        .select(`
+          id,
+          image_url,
+          caption,
+          created_at,
+
+          author:profiles!memories_user_id_fkey (
+            id,
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq(
+          "business_id",
+          business.id,
+        )
+        .order(
+          "created_at",
+          {
+            ascending:
+              false,
+          },
+        )
+        .limit(6),
     ]);
 
   if (
@@ -552,6 +536,15 @@ export default async function BusinessPage({
     console.error(
       "[CAFÉTA] Failed to load saved state:",
       savedResult.error,
+    );
+  }
+
+  if (
+    memoriesResult.error
+  ) {
+    console.error(
+      "[CAFÉTA] Failed to load business memories:",
+      memoriesResult.error,
     );
   }
 
@@ -610,6 +603,42 @@ export default async function BusinessPage({
             review.created_at,
 
           profile,
+        };
+      },
+    );
+
+  const rawMemories =
+    (
+      memoriesResult.data ??
+      []
+    ) as unknown as RawBusinessMemory[];
+
+  const memories: BusinessMemoryPreview[] =
+    rawMemories.map(
+      (memory) => {
+        const author =
+          Array.isArray(
+            memory.author,
+          )
+            ? memory
+                .author[0] ??
+              null
+            : memory.author;
+
+        return {
+          id:
+            memory.id,
+
+          image_url:
+            memory.image_url,
+
+          caption:
+            memory.caption,
+
+          created_at:
+            memory.created_at,
+
+          author,
         };
       },
     );
@@ -696,9 +725,7 @@ export default async function BusinessPage({
           business.is_verified ===
           true,
       }}
-      hours={
-        hours
-      }
+      hours={hours}
       categories={
         categories
       }
@@ -716,6 +743,9 @@ export default async function BusinessPage({
       }
       reviews={
         reviews
+      }
+      memories={
+        memories
       }
       averageRating={
         averageRating
