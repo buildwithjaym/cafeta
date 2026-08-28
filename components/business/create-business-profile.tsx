@@ -35,8 +35,16 @@ import {
 } from "sonner";
 
 import {
+  BusinessMemories,
+} from "@/components/business/memories/business-memories";
+
+import {
   SaveBusinessButton,
 } from "@/components/explore/save-business-button";
+
+import type {
+  BusinessMemoryPreview,
+} from "@/lib/memories/types";
 
 type Business = {
   id: string;
@@ -115,15 +123,16 @@ type Props = {
   categories: MenuCategory[];
   menuItems: MenuItem[];
   reviews: Review[];
+  memories: BusinessMemoryPreview[];
   averageRating: number;
   reviewCount: number;
   initialSaved: boolean;
-
   canEdit: boolean;
 };
 
 type Tab =
   | "home"
+  | "memories"
   | "about"
   | "menu"
   | "reviews";
@@ -134,6 +143,7 @@ export function BusinessProfileClient({
   categories,
   menuItems,
   reviews,
+  memories,
   averageRating,
   reviewCount,
   initialSaved,
@@ -659,10 +669,8 @@ export function BusinessProfileClient({
                         }
                         className="
                           font-medium
-
                           transition-colors
                           duration-200
-
                           hover:text-[#006241]
                         "
                       >
@@ -749,10 +757,8 @@ export function BusinessProfileClient({
                     <Pencil
                       className="
                         size-3.5
-
                         transition-transform
                         duration-200
-
                         group-hover:-rotate-6
                       "
                     />
@@ -881,6 +887,51 @@ export function BusinessProfileClient({
               <PageTab
                 active={
                   activeTab ===
+                  "memories"
+                }
+                onClick={() =>
+                  setActiveTab(
+                    "memories",
+                  )
+                }
+              >
+                <span
+                  className="
+                    flex
+                    items-center
+                    gap-1.5
+                  "
+                >
+                  Memories
+
+                  {memories.length >
+                    0 && (
+                    <span
+                      className={`
+                        rounded-full
+                        px-1.5
+                        py-0.5
+
+                        text-[8px]
+                        font-black
+
+                        ${
+                          activeTab ===
+                          "memories"
+                            ? "bg-[#006241]/10 text-[#006241]"
+                            : "bg-black/[0.05] text-black/35"
+                        }
+                      `}
+                    >
+                      {memories.length}
+                    </span>
+                  )}
+                </span>
+              </PageTab>
+
+              <PageTab
+                active={
+                  activeTab ===
                   "about"
                 }
                 onClick={() =>
@@ -932,7 +983,6 @@ export function BusinessProfileClient({
           py-4
 
           sm:px-6
-
           lg:px-8
         "
       >
@@ -956,6 +1006,9 @@ export function BusinessProfileClient({
             reviews={
               reviews
             }
+            memories={
+              memories
+            }
             averageRating={
               averageRating
             }
@@ -976,6 +1029,33 @@ export function BusinessProfileClient({
               )
             }
           />
+        )}
+
+        {activeTab ===
+          "memories" && (
+          <div
+            className="
+              mx-auto
+              max-w-[900px]
+
+              animate-in
+              fade-in
+              slide-in-from-bottom-2
+              duration-300
+            "
+          >
+            <BusinessMemories
+              businessSlug={
+                business.slug
+              }
+              businessName={
+                business.name
+              }
+              memories={
+                memories
+              }
+            />
+          </div>
         )}
 
         {activeTab ===
@@ -1040,6 +1120,7 @@ function HomeTab({
   location,
   menuItems,
   reviews,
+  memories,
   averageRating,
   reviewCount,
   canEdit,
@@ -1060,6 +1141,7 @@ function HomeTab({
   location: string;
   menuItems: MenuItem[];
   reviews: Review[];
+  memories: BusinessMemoryPreview[];
   averageRating: number;
   reviewCount: number;
   canEdit: boolean;
@@ -1243,7 +1325,6 @@ function HomeTab({
                     truncate
                     font-medium
                     text-[#006241]
-
                     hover:underline
                   "
                 >
@@ -1521,6 +1602,21 @@ function HomeTab({
           </div>
         </PageCard>
 
+        <BusinessMemories
+          businessSlug={
+            business.slug
+          }
+          businessName={
+            business.name
+          }
+          memories={
+            memories.slice(
+              0,
+              3,
+            )
+          }
+        />
+
         <PageCard>
           <div
             className="
@@ -1598,7 +1694,6 @@ function HomeTab({
                     text-[11px]
                     font-bold
                     text-[#006241]
-
                     hover:underline
                   "
                 >
@@ -1796,7 +1891,6 @@ function HomeTab({
                   text-[11px]
                   font-bold
                   text-[#006241]
-
                   hover:underline
                 "
               >
@@ -2297,10 +2391,8 @@ function MenuTab({
               <Pencil
                 className="
                   size-3.5
-
                   transition-transform
                   duration-200
-
                   group-hover:-rotate-6
                 "
               />
@@ -3575,7 +3667,6 @@ function getOpenState(
           openMinutes &&
         currentMinutes <
           closeMinutes
-
       : currentMinutes >=
           openMinutes ||
         currentMinutes <
