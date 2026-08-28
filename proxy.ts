@@ -1,7 +1,14 @@
-import { type NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/proxy";
+import {
+  type NextRequest,
+} from "next/server";
 
-export async function proxy(request: NextRequest) {
+import {
+  updateSession,
+} from "@/lib/supabase/proxy";
+
+export async function proxy(
+  request: NextRequest,
+) {
   return updateSession(request);
 }
 
