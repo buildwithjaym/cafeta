@@ -18,10 +18,12 @@ import {
   LoaderCircle,
   MapPinOff,
   RefreshCw,
-  X
+  X,
 } from "lucide-react";
 
-import { toast } from "sonner";
+import {
+  toast,
+} from "sonner";
 
 import {
   BASILAN_CENTER,
@@ -35,11 +37,25 @@ import type {
   MapStatus,
 } from "@/lib/map/types";
 
-import { MapControls } from "@/components/map/map-controls";
-import { MapFilters } from "@/components/map/map-filters";
-import { createBusinessMarker } from "@/components/map/map-marker";
-import { MapPlaceSheet } from "@/components/map/map-place-sheet";
-import { MapSearch } from "@/components/map/map-search";
+import {
+  MapControls,
+} from "@/components/map/map-controls";
+
+import {
+  MapFilters,
+} from "@/components/map/map-filters";
+
+import {
+  createBusinessMarker,
+} from "@/components/map/map-marker";
+
+import {
+  MapPlaceSheet,
+} from "@/components/map/map-place-sheet";
+
+import {
+  MapSearch,
+} from "@/components/map/map-search";
 
 type Props = {
   businesses: MapBusiness[];
@@ -51,35 +67,56 @@ export function CafetaMap({
   databaseError = false,
 }: Props) {
   const containerRef =
-    useRef<HTMLDivElement>(null);
+    useRef<HTMLDivElement>(
+      null,
+    );
 
   const mapRef =
-    useRef<MapLibreMap | null>(null);
+    useRef<MapLibreMap | null>(
+      null,
+    );
 
   const markersRef =
-    useRef<Marker[]>([]);
+    useRef<Marker[]>(
+      [],
+    );
 
-  const [status, setStatus] =
-    useState<MapStatus>("loading");
+  const [
+    status,
+    setStatus,
+  ] =
+    useState<MapStatus>(
+      "loading",
+    );
 
   const [
     selectedBusiness,
     setSelectedBusiness,
-  ] = useState<MapBusiness | null>(
-    null,
-  );
+  ] =
+    useState<MapBusiness | null>(
+      null,
+    );
 
-  const [search, setSearch] =
+  const [
+    search,
+    setSearch,
+  ] =
     useState("");
 
-  const [filter, setFilter] =
-    useState<MapFilter>("all");
+  const [
+    filter,
+    setFilter,
+  ] =
+    useState<MapFilter>(
+      "all",
+    );
 
   const visibleBusinesses =
     useMemo(() => {
-      const query = search
-        .trim()
-        .toLowerCase();
+      const query =
+        search
+          .trim()
+          .toLowerCase();
 
       return businesses.filter(
         (business) => {
@@ -87,27 +124,42 @@ export function CafetaMap({
             !query ||
             business.name
               .toLowerCase()
-              .includes(query) ||
+              .includes(
+                query,
+              ) ||
             business.address
               .toLowerCase()
-              .includes(query) ||
+              .includes(
+                query,
+              ) ||
             business.city
               .toLowerCase()
-              .includes(query) ||
+              .includes(
+                query,
+              ) ||
             business.province
               .toLowerCase()
-              .includes(query) ||
+              .includes(
+                query,
+              ) ||
             Boolean(
               business.barangay
                 ?.toLowerCase()
-                .includes(query),
+                .includes(
+                  query,
+                ),
             );
 
-          if (!matchesSearch) {
+          if (
+            !matchesSearch
+          ) {
             return false;
           }
 
-          if (filter === "coffee") {
+          if (
+            filter ===
+            "coffee"
+          ) {
             return [
               "coffee_shop",
               "cafe",
@@ -119,11 +171,36 @@ export function CafetaMap({
           }
 
           if (
-            filter === "milk-tea"
+            filter ===
+            "milk-tea"
           ) {
             return (
               business.category ===
               "milk_tea"
+            );
+          }
+
+          if (
+            filter ===
+            "memories"
+          ) {
+            return (
+              (
+                business
+                  .memoryActivity
+                  ?.memory_count ??
+                0
+              ) > 0
+            );
+          }
+
+          if (
+            filter ===
+            "trending"
+          ) {
+            return (
+              business.memoryActivityLabel ===
+              "trending"
             );
           }
 
@@ -136,104 +213,186 @@ export function CafetaMap({
       search,
     ]);
 
+  /*
+   * Initialize MapLibre.
+   *
+   * This was the missing part in the previous
+   * component. Without this effect the status
+   * remained "loading" forever.
+   */
   useEffect(() => {
-    const container =
-      containerRef.current;
-
     if (
-      !container ||
+      !containerRef.current ||
       mapRef.current
     ) {
       return;
     }
 
-    setStatus("loading");
+    let destroyed =
+      false;
 
-    const map =
-      new MapLibreMap({
-        container,
-
-        style: CAFETA_MAP_STYLE,
-
-        center: BASILAN_CENTER,
-
-        zoom: BASILAN_ZOOM,
-
-        attributionControl: false,
-      });
-
-    mapRef.current = map;
-
-    map.addControl(
-      new AttributionControl({
-        compact: true,
-      }),
-      "bottom-right",
-    );
-
-    const handleLoad = () => {
-      map.resize();
-      setStatus("ready");
-    };
-
-    const handleError = (
-      event: unknown,
-    ) => {
-      console.error(
-        "CAFÉTA map error:",
-        event,
+    try {
+      setStatus(
+        "loading",
       );
 
-      setStatus("error");
-    };
+      const map =
+        new MapLibreMap({
+          container:
+            containerRef.current,
 
-    map.once(
-      "load",
-      handleLoad,
-    );
+          style:
+            CAFETA_MAP_STYLE,
 
-    map.on(
-      "error",
-      handleError,
-    );
+          center:
+            BASILAN_CENTER,
 
-    const resizeObserver =
-      new ResizeObserver(() => {
-        map.resize();
-      });
+          zoom:
+            BASILAN_ZOOM,
 
-    resizeObserver.observe(
-      container,
-    );
+          attributionControl:
+            false,
+        });
 
-    return () => {
-      resizeObserver.disconnect();
+      mapRef.current =
+        map;
 
-      map.off(
+      map.addControl(
+        new AttributionControl({
+          compact: true,
+        }),
+        "bottom-left",
+      );
+
+      const handleLoad =
+        () => {
+          if (
+            destroyed
+          ) {
+            return;
+          }
+
+          setStatus(
+            "ready",
+          );
+
+          /*
+           * MapLibre can occasionally calculate
+           * dimensions before the page layout has
+           * completely settled.
+           */
+          window.requestAnimationFrame(
+            () => {
+              map.resize();
+            },
+          );
+        };
+
+      const handleError =
+        (
+          event: unknown,
+        ) => {
+          console.error(
+            "[CAFÉTA] MapLibre error:",
+            event,
+          );
+
+          /*
+           * Don't immediately replace an already
+           * working map because one individual tile
+           * failed.
+           */
+          if (
+            !map.loaded()
+          ) {
+            setStatus(
+              "error",
+            );
+          }
+        };
+
+      map.on(
+        "load",
+        handleLoad,
+      );
+
+      map.on(
         "error",
         handleError,
       );
 
-      markersRef.current.forEach(
-        (marker) => {
-          marker.remove();
-        },
+      /*
+       * ResizeObserver keeps the map synchronized
+       * with the mobile layout/navigation.
+       */
+      const resizeObserver =
+        new ResizeObserver(
+          () => {
+            map.resize();
+          },
+        );
+
+      resizeObserver.observe(
+        containerRef.current,
       );
 
-      markersRef.current = [];
+      return () => {
+        destroyed =
+          true;
 
-      map.remove();
+        resizeObserver.disconnect();
 
-      mapRef.current = null;
-    };
+        map.off(
+          "load",
+          handleLoad,
+        );
+
+        map.off(
+          "error",
+          handleError,
+        );
+
+        markersRef.current.forEach(
+          (marker) => {
+            marker.remove();
+          },
+        );
+
+        markersRef.current =
+          [];
+
+        map.remove();
+
+        mapRef.current =
+          null;
+      };
+    } catch (error) {
+      console.error(
+        "[CAFÉTA] Failed to initialize map:",
+        error,
+      );
+
+      setStatus(
+        "error",
+      );
+
+      mapRef.current =
+        null;
+    }
   }, []);
 
+  /*
+   * Build/rebuild business markers whenever
+   * businesses, filters or search results change.
+   */
   useEffect(() => {
-    const map = mapRef.current;
+    const map =
+      mapRef.current;
 
     if (
       !map ||
-      status !== "ready"
+      status !==
+        "ready"
     ) {
       return;
     }
@@ -244,17 +403,22 @@ export function CafetaMap({
       },
     );
 
-    markersRef.current = [];
+    markersRef.current =
+      [];
 
-    for (const business of visibleBusinesses) {
-      const markerElement =
+    for (
+      const business of
+      visibleBusinesses
+    ) {
+      const element =
         createBusinessMarker(
           business,
           selectedBusiness?.id ===
             business.id,
         );
 
-      const handleMarkerClick =
+      element.addEventListener(
+        "click",
         () => {
           setSelectedBusiness(
             business,
@@ -266,32 +430,34 @@ export function CafetaMap({
               business.latitude,
             ],
 
-            zoom: Math.max(
-              map.getZoom(),
-              15.5,
-            ),
+            zoom:
+              Math.max(
+                map.getZoom(),
+                14,
+              ),
 
-            duration: 700,
+            duration:
+              550,
 
-            essential: true,
+            essential:
+              true,
           });
-        };
-
-      markerElement.addEventListener(
-        "click",
-        handleMarkerClick,
+        },
       );
 
       const marker =
         new Marker({
-          element: markerElement,
-          anchor: "center",
+          element,
+          anchor:
+            "center",
         })
           .setLngLat([
             business.longitude,
             business.latitude,
           ])
-          .addTo(map);
+          .addTo(
+            map,
+          );
 
       markersRef.current.push(
         marker,
@@ -305,28 +471,71 @@ export function CafetaMap({
         },
       );
 
-      markersRef.current = [];
+      markersRef.current =
+        [];
     };
   }, [
     visibleBusinesses,
-    selectedBusiness,
+    selectedBusiness?.id,
     status,
   ]);
+
+  /*
+   * Resize once the browser has fully laid out
+   * the page. This is particularly useful on
+   * mobile because of the bottom navigation.
+   */
+  useEffect(() => {
+    const handleResize =
+      () => {
+        mapRef.current?.resize();
+      };
+
+    window.addEventListener(
+      "resize",
+      handleResize,
+    );
+
+    window.addEventListener(
+      "orientationchange",
+      handleResize,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "resize",
+        handleResize,
+      );
+
+      window.removeEventListener(
+        "orientationchange",
+        handleResize,
+      );
+    };
+  }, []);
 
   function handleSearch(
     value: string,
   ) {
-    setSearch(value);
+    setSearch(
+      value,
+    );
 
-    setSelectedBusiness(null);
+    setSelectedBusiness(
+      null,
+    );
   }
 
   function handleFilterChange(
     value: MapFilter,
   ) {
-    setFilter(value);
+    setFilter(
+      value,
+    );
 
-    setSelectedBusiness(null);
+    setSelectedBusiness(
+      null,
+    );
   }
 
   function locateUser() {
@@ -346,30 +555,40 @@ export function CafetaMap({
       );
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      (
+        position,
+      ) => {
         const longitude =
-          position.coords.longitude;
+          position.coords
+            .longitude;
 
         const latitude =
-          position.coords.latitude;
+          position.coords
+            .latitude;
 
-        mapRef.current?.flyTo({
-          center: [
-            longitude,
-            latitude,
-          ],
+        mapRef.current?.flyTo(
+          {
+            center: [
+              longitude,
+              latitude,
+            ],
 
-          zoom: 15,
+            zoom:
+              15,
 
-          duration: 800,
+            duration:
+              800,
 
-          essential: true,
-        });
+            essential:
+              true,
+          },
+        );
 
         toast.success(
           "Location found",
           {
-            id: toastId,
+            id:
+              toastId,
 
             description:
               "Showing the area around you.",
@@ -381,7 +600,8 @@ export function CafetaMap({
         toast.error(
           "Location unavailable",
           {
-            id: toastId,
+            id:
+              toastId,
 
             description:
               "Allow location access and try again.",
@@ -390,25 +610,46 @@ export function CafetaMap({
       },
 
       {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 30000,
+        enableHighAccuracy:
+          true,
+
+        timeout:
+          10000,
+
+        maximumAge:
+          30000,
       },
     );
   }
 
   function resetMap() {
-    setSelectedBusiness(null);
+    setSelectedBusiness(
+      null,
+    );
 
-    mapRef.current?.flyTo({
-      center: BASILAN_CENTER,
+    setSearch(
+      "",
+    );
 
-      zoom: BASILAN_ZOOM,
+    setFilter(
+      "all",
+    );
 
-      duration: 700,
+    mapRef.current?.flyTo(
+      {
+        center:
+          BASILAN_CENTER,
 
-      essential: true,
-    });
+        zoom:
+          BASILAN_ZOOM,
+
+        duration:
+          700,
+
+        essential:
+          true,
+      },
+    );
   }
 
   function openDirections(
@@ -426,24 +667,72 @@ export function CafetaMap({
     );
   }
 
-  if (databaseError) {
+  if (
+    databaseError
+  ) {
     return (
       <MapDatabaseError />
     );
   }
 
   return (
-    <section className="relative h-full min-h-0 w-full overflow-hidden bg-[#e8eeea]">
+    <section
+      className="
+        relative
+        h-full
+        min-h-0
+        w-full
+        overflow-hidden
+        bg-[#e8eeea]
+      "
+    >
       <div
-        ref={containerRef}
-        className="absolute inset-0"
+        ref={
+          containerRef
+        }
+        className="
+          absolute
+          inset-0
+        "
       />
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-white/85 via-white/25 to-transparent pb-12 pt-4">
-        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
-          <div className="pointer-events-auto max-w-[560px]">
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-x-0
+          top-0
+          z-20
+
+          bg-gradient-to-b
+          from-white/85
+          via-white/25
+          to-transparent
+
+          pb-12
+          pt-4
+        "
+      >
+        <div
+          className="
+            mx-auto
+            max-w-[1440px]
+            px-4
+
+            sm:px-6
+            lg:px-8
+          "
+        >
+          <div
+            className="
+              pointer-events-auto
+              max-w-[560px]
+            "
+          >
             <MapSearch
-              value={search}
+              value={
+                search
+              }
               onChange={
                 handleSearch
               }
@@ -455,9 +744,16 @@ export function CafetaMap({
             />
           </div>
 
-          <div className="pointer-events-auto mt-3">
+          <div
+            className="
+              pointer-events-auto
+              mt-3
+            "
+          >
             <MapFilters
-              active={filter}
+              active={
+                filter
+              }
               onChange={
                 handleFilterChange
               }
@@ -466,20 +762,40 @@ export function CafetaMap({
         </div>
       </div>
 
-      <div className="absolute right-4 top-[132px] z-20 md:right-6 md:top-[145px]">
+      <div
+        className="
+          absolute
+          right-4
+          top-[132px]
+          z-20
+
+          md:right-6
+          md:top-[145px]
+        "
+      >
         <MapControls
-          onLocate={locateUser}
+          onLocate={
+            locateUser
+          }
           onZoomIn={() =>
-            mapRef.current?.zoomIn({
-              duration: 200,
-            })
+            mapRef.current?.zoomIn(
+              {
+                duration:
+                  200,
+              },
+            )
           }
           onZoomOut={() =>
-            mapRef.current?.zoomOut({
-              duration: 200,
-            })
+            mapRef.current?.zoomOut(
+              {
+                duration:
+                  200,
+              },
+            )
           }
-          onReset={resetMap}
+          onReset={
+            resetMap
+          }
         />
       </div>
 
@@ -488,26 +804,33 @@ export function CafetaMap({
         <MapLoadingState />
       )}
 
-      {status === "error" && (
+      {status ===
+        "error" && (
         <MapBasemapError />
       )}
 
-      {status === "ready" &&
+      {status ===
+        "ready" &&
         businesses.length ===
           0 && (
           <MapEmptyState />
         )}
 
-      {status === "ready" &&
-        businesses.length > 0 &&
+      {status ===
+        "ready" &&
+        businesses.length >
+          0 &&
         visibleBusinesses.length ===
           0 && (
           <MapSearchEmptyState
-            search={search}
+            search={
+              search
+            }
           />
         )}
 
-      {status === "ready" &&
+      {status ===
+        "ready" &&
         visibleBusinesses.length >
           0 &&
         !selectedBusiness && (
@@ -518,7 +841,8 @@ export function CafetaMap({
           />
         )}
 
-      {status === "ready" &&
+      {status ===
+        "ready" &&
         selectedBusiness && (
           <MapPlaceSheet
             business={
@@ -542,16 +866,63 @@ export function CafetaMap({
 
 function MapLoadingState() {
   return (
-    <div className="pointer-events-none absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
-      <div className="flex items-center gap-3 rounded-2xl border border-black/[0.06] bg-white/95 px-4 py-3 shadow-xl backdrop-blur-xl">
-        <LoaderCircle className="size-5 animate-spin text-[#006241]" />
+    <div
+      className="
+        pointer-events-none
+        absolute
+        left-1/2
+        top-1/2
+        z-30
+
+        -translate-x-1/2
+        -translate-y-1/2
+      "
+    >
+      <div
+        className="
+          flex
+          items-center
+          gap-3
+
+          rounded-2xl
+          border
+          border-black/[0.06]
+          bg-white/95
+          px-4
+          py-3
+
+          shadow-xl
+          backdrop-blur-xl
+        "
+      >
+        <LoaderCircle
+          className="
+            size-5
+            animate-spin
+            text-[#006241]
+          "
+        />
 
         <div>
-          <p className="text-xs font-bold text-[#17211c]">
+          <p
+            className="
+              text-xs
+              font-bold
+              text-[#17211c]
+            "
+          >
             Loading map
           </p>
 
-          <p className="mt-0.5 whitespace-nowrap text-[10px] text-black/40">
+          <p
+            className="
+              mt-0.5
+              whitespace-nowrap
+
+              text-[10px]
+              text-black/40
+            "
+          >
             Getting Basilan
             ready...
           </p>
@@ -563,19 +934,61 @@ function MapLoadingState() {
 
 function MapBasemapError() {
   return (
-    <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#edf2ee]/95 px-5">
-      <div className="max-w-sm rounded-[28px] bg-white p-6 text-center shadow-xl">
-        <MapPinOff className="mx-auto size-6 text-[#006241]" />
+    <div
+      className="
+        absolute
+        inset-0
+        z-30
 
-        <h2 className="mt-4 font-bold text-[#17211c]">
+        flex
+        items-center
+        justify-center
+
+        bg-[#edf2ee]/95
+        px-5
+      "
+    >
+      <div
+        className="
+          max-w-sm
+          rounded-[28px]
+          bg-white
+          p-6
+          text-center
+          shadow-xl
+        "
+      >
+        <MapPinOff
+          className="
+            mx-auto
+            size-6
+            text-[#006241]
+          "
+        />
+
+        <h2
+          className="
+            mt-4
+            font-bold
+            text-[#17211c]
+          "
+        >
           Map couldn&apos;t
           load
         </h2>
 
-        <p className="mt-2 text-xs leading-5 text-black/45">
-          We couldn&apos;t load
-          the Basilan map. Check
-          your connection and try
+        <p
+          className="
+            mt-2
+            text-xs
+            leading-5
+            text-black/45
+          "
+        >
+          We couldn&apos;t
+          load the Basilan
+          map. Check your
+          connection and try
           again.
         </p>
 
@@ -584,7 +997,26 @@ function MapBasemapError() {
           onClick={() =>
             window.location.reload()
           }
-          className="mx-auto mt-5 flex items-center gap-2 rounded-full bg-[#006241] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-[#00754a]"
+          className="
+            mx-auto
+            mt-5
+
+            flex
+            items-center
+            gap-2
+
+            rounded-full
+            bg-[#006241]
+            px-5
+            py-2.5
+
+            text-xs
+            font-bold
+            text-white
+
+            transition
+            hover:bg-[#00754a]
+          "
         >
           <RefreshCw className="size-3.5" />
 
@@ -597,17 +1029,55 @@ function MapBasemapError() {
 
 function MapDatabaseError() {
   return (
-    <div className="flex h-full items-center justify-center bg-[#edf2ee] px-5">
-      <div className="max-w-sm rounded-[28px] bg-white p-6 text-center shadow-sm">
-        <Coffee className="mx-auto size-6 text-[#006241]" />
+    <div
+      className="
+        flex
+        h-full
+        items-center
+        justify-center
+        bg-[#edf2ee]
+        px-5
+      "
+    >
+      <div
+        className="
+          max-w-sm
+          rounded-[28px]
+          bg-white
+          p-6
+          text-center
+          shadow-sm
+        "
+      >
+        <Coffee
+          className="
+            mx-auto
+            size-6
+            text-[#006241]
+          "
+        />
 
-        <h2 className="mt-4 font-bold text-[#17211c]">
+        <h2
+          className="
+            mt-4
+            font-bold
+            text-[#17211c]
+          "
+        >
           Places unavailable
         </h2>
 
-        <p className="mt-2 text-xs leading-5 text-black/45">
-          We couldn&apos;t load
-          CAFÉTA businesses right
+        <p
+          className="
+            mt-2
+            text-xs
+            leading-5
+            text-black/45
+          "
+        >
+          We couldn&apos;t
+          load CAFÉTA
+          businesses right
           now.
         </p>
       </div>
@@ -616,26 +1086,59 @@ function MapDatabaseError() {
 }
 
 function MapEmptyState() {
-  const [isVisible, setIsVisible] = useState(true);
-  const [isClosing, setIsClosing] = useState(false);
+  const [
+    isVisible,
+    setIsVisible,
+  ] =
+    useState(
+      true,
+    );
 
-  const handleClose = () => {
-    setIsClosing(true);
+  const [
+    isClosing,
+    setIsClosing,
+  ] =
+    useState(
+      false,
+    );
 
-    // Wait for exit animation before removing
-    window.setTimeout(() => {
-      setIsVisible(false);
-    }, 220);
-  };
+  function handleClose() {
+    setIsClosing(
+      true,
+    );
 
-  if (!isVisible) return null;
+    window.setTimeout(
+      () => {
+        setIsVisible(
+          false,
+        );
+      },
+      220,
+    );
+  }
+
+  if (
+    !isVisible
+  ) {
+    return null;
+  }
 
   return (
     <div
       className={`
-        absolute inset-x-4 bottom-[105px] z-20
-        transition-all duration-200 ease-out
-        md:bottom-6 md:left-6 md:right-auto md:w-[380px]
+        absolute
+        inset-x-4
+        bottom-[105px]
+        z-20
+
+        transition-all
+        duration-200
+        ease-out
+
+        md:bottom-6
+        md:left-6
+        md:right-auto
+        md:w-[380px]
 
         ${
           isClosing
@@ -646,49 +1149,71 @@ function MapEmptyState() {
     >
       <div
         className="
-          relative overflow-hidden
+          relative
+          overflow-hidden
+
           rounded-[24px]
-          border border-black/[0.06]
+          border
+          border-black/[0.06]
           bg-white/95
           p-5
+
           shadow-[0_12px_40px_rgba(23,33,28,0.12)]
           backdrop-blur-xl
         "
       >
-        {/* Close button */}
         <button
           type="button"
-          onClick={handleClose}
+          onClick={
+            handleClose
+          }
           aria-label="Dismiss message"
           className="
-            group absolute right-3 top-3
-            flex size-8
-            items-center justify-center
+            group
+            absolute
+            right-3
+            top-3
+
+            flex
+            size-8
+            items-center
+            justify-center
+
             rounded-full
             text-black/30
-            transition-all duration-200
+
+            transition-all
+            duration-200
+
             hover:bg-black/[0.045]
             hover:text-[#17211c]
+
             active:scale-90
           "
         >
           <X
             className="
               size-[15px]
+
               transition-transform
               duration-200
               ease-out
+
               group-hover:rotate-90
             "
-            strokeWidth={2}
+            strokeWidth={
+              2
+            }
           />
         </button>
 
-        {/* Icon */}
         <div
           className="
-            flex size-9
-            items-center justify-center
+            flex
+            size-9
+            items-center
+            justify-center
+
             rounded-full
             bg-[#e8f1ec]
             text-[#006241]
@@ -696,19 +1221,44 @@ function MapEmptyState() {
         >
           <Coffee
             className="size-[17px]"
-            strokeWidth={2}
+            strokeWidth={
+              2
+            }
           />
         </div>
 
-        {/* Content */}
-        <div className="mt-3 pr-7">
-          <h3 className="text-sm font-bold text-[#17211c]">
-            No places listed yet
+        <div
+          className="
+            mt-3
+            pr-7
+          "
+        >
+          <h3
+            className="
+              text-sm
+              font-bold
+              text-[#17211c]
+            "
+          >
+            No places listed
+            yet
           </h3>
 
-          <p className="mt-1 max-w-[290px] text-xs leading-5 text-black/45">
-            There aren&apos;t any approved CAFÉTA businesses
-            to show on the map yet.
+          <p
+            className="
+              mt-1
+              max-w-[290px]
+
+              text-xs
+              leading-5
+              text-black/45
+            "
+          >
+            There aren&apos;t
+            any approved
+            CAFÉTA businesses
+            to show on the
+            map yet.
           </p>
         </div>
       </div>
@@ -722,13 +1272,49 @@ function MapSearchEmptyState({
   search: string;
 }) {
   return (
-    <div className="absolute inset-x-4 bottom-[105px] z-20 md:bottom-6 md:left-6 md:right-auto md:w-[380px]">
-      <div className="rounded-[24px] border border-black/[0.06] bg-white/95 p-5 shadow-xl backdrop-blur-xl">
-        <p className="text-sm font-bold text-[#17211c]">
+    <div
+      className="
+        absolute
+        inset-x-4
+        bottom-[105px]
+        z-20
+
+        md:bottom-6
+        md:left-6
+        md:right-auto
+        md:w-[380px]
+      "
+    >
+      <div
+        className="
+          rounded-[24px]
+          border
+          border-black/[0.06]
+          bg-white/95
+          p-5
+
+          shadow-xl
+          backdrop-blur-xl
+        "
+      >
+        <p
+          className="
+            text-sm
+            font-bold
+            text-[#17211c]
+          "
+        >
           No matching places
         </p>
 
-        <p className="mt-1 text-xs leading-5 text-black/45">
+        <p
+          className="
+            mt-1
+            text-xs
+            leading-5
+            text-black/45
+          "
+        >
           {search
             ? `No businesses match "${search}".`
             : "Try another category."}
@@ -744,9 +1330,47 @@ function MapResultCount({
   count: number;
 }) {
   return (
-    <div className="absolute inset-x-4 bottom-[105px] z-20 md:bottom-6 md:left-6 md:right-auto md:w-auto">
-      <div className="inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white/95 px-4 py-2.5 text-xs font-bold text-[#17211c] shadow-lg backdrop-blur-xl">
-        <span className="size-2 rounded-full bg-[#006241]" />
+    <div
+      className="
+        absolute
+        inset-x-4
+        bottom-[105px]
+        z-20
+
+        md:bottom-6
+        md:left-6
+        md:right-auto
+        md:w-auto
+      "
+    >
+      <div
+        className="
+          inline-flex
+          items-center
+          gap-2
+
+          rounded-full
+          border
+          border-black/[0.06]
+          bg-white/95
+          px-4
+          py-2.5
+
+          text-xs
+          font-bold
+          text-[#17211c]
+
+          shadow-lg
+          backdrop-blur-xl
+        "
+      >
+        <span
+          className="
+            size-2
+            rounded-full
+            bg-[#006241]
+          "
+        />
 
         {count}{" "}
         {count === 1
