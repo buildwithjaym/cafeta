@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "maplibre-gl/dist/maplibre-gl.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -36,9 +37,13 @@
   --color-ring: var(--ring);
 
   --color-brand-green: var(--brand-green);
+  --color-brand-green-hover: var(--brand-green-hover);
   --color-brand-green-dark: var(--brand-green-dark);
-  --color-brand-green-light: var(--brand-green-light);
+  --color-brand-green-soft: var(--brand-green-soft);
+  --color-brand-green-muted: var(--brand-green-muted);
+
   --color-brand-cream: var(--brand-cream);
+  --color-brand-surface: var(--brand-surface);
   --color-brand-espresso: var(--brand-espresso);
   --color-brand-gold: var(--brand-gold);
 
@@ -51,12 +56,11 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-  /*
-   * CAFÉTA
-   * White-first interface with a premium coffee-inspired palette.
-   */
+/* =========================================================
+   CAFÉTA THEME
+   ========================================================= */
 
+:root {
   --background: #ffffff;
   --foreground: #17211c;
 
@@ -72,30 +76,50 @@
   --secondary: #f4f7f5;
   --secondary-foreground: #004f35;
 
-  --muted: #f5f6f5;
-  --muted-foreground: #66716b;
+  --muted: #f4f6f5;
+  --muted-foreground: #68736d;
 
-  --accent: #edf5f1;
-  --accent-foreground: #00583b;
+  --accent: #e8f2ed;
+  --accent-foreground: #006241;
 
   --destructive: #dc2626;
 
-  --border: #e5e9e7;
-  --input: #e1e6e3;
+  --border: #e4e9e6;
+  --input: #dfe5e1;
   --ring: #006241;
 
-  /*
-   * Brand tokens
-   */
   --brand-green: #006241;
-  --brand-green-dark: #004c33;
-  --brand-green-light: #e9f3ee;
+  --brand-green-hover: #00754a;
+  --brand-green-dark: #004f35;
+  --brand-green-soft: #e8f2ed;
+  --brand-green-muted: #f2f7f4;
+
   --brand-cream: #f7f5ef;
+  --brand-surface: #f7f8f6;
   --brand-espresso: #3b2a22;
   --brand-gold: #b8924a;
 
   --radius: 0.875rem;
+
+  /*
+   * These MUST match the actual navigation components.
+   *
+   * Mobile header = 64px / h-16
+   * Desktop navbar = 72px / h-[72px]
+   */
+  --desktop-navbar-height: 72px;
+  --mobile-header-height: 64px;
+
+  /*
+   * Space reserved for floating mobile navigation
+   * on normal scrollable pages.
+   */
+  --mobile-bottom-nav-space: 104px;
 }
+
+/* =========================================================
+   DARK THEME
+   ========================================================= */
 
 .dark {
   --background: #0d1511;
@@ -124,20 +148,78 @@
   --border: rgb(255 255 255 / 10%);
   --input: rgb(255 255 255 / 12%);
   --ring: #42a77c;
+
+  --brand-green: #42a77c;
+  --brand-green-hover: #55b88e;
+  --brand-green-dark: #2f8c67;
+  --brand-green-soft: #172b21;
+  --brand-green-muted: #13231b;
+
+  --brand-cream: #191b17;
+  --brand-surface: #101713;
+  --brand-espresso: #d5c1b5;
+  --brand-gold: #d1ad65;
 }
 
+/* =========================================================
+   BASE
+   ========================================================= */
+
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
 
   html {
+    width: 100%;
+    min-height: 100%;
+
+    background: var(--background);
+
     scroll-behavior: smooth;
+
+    /*
+     * Do not lock vertical scrolling globally.
+     */
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-background text-foreground font-sans;
+
+    width: 100%;
     min-height: 100vh;
+    min-height: 100dvh;
+
+    margin: 0;
+
+    /*
+     * IMPORTANT:
+     *
+     * Do not use:
+     * overflow: hidden;
+     * height: 100vh;
+     *
+     * Normal pages need document scrolling.
+     */
+    overflow-x: hidden;
+
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
   }
 
   button,
@@ -145,24 +227,188 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  img,
+  svg {
+    display: block;
+  }
+
+  img {
+    max-width: 100%;
+  }
+
   ::selection {
     background: var(--brand-green);
-    color: white;
+    color: #ffffff;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(0 98 65 / 45%);
+    outline-offset: 2px;
   }
 }
 
+/* =========================================================
+   GENERAL APPLICATION LAYOUT
+   ========================================================= */
+
 @layer utilities {
   .page-container {
-    @apply mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .app-container {
+    @apply mx-auto w-full max-w-[1180px] px-4 sm:px-6 lg:px-8;
   }
 
   .section-spacing {
-    @apply py-20 md:py-24 lg:py-28;
+    @apply py-16 md:py-20 lg:py-24;
   }
 
   .text-balance {
     text-wrap: balance;
   }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * NORMAL USER PAGES
+   * ---------------------------------------------------------
+   *
+   * Explore
+   * Saved
+   * Profile
+   * Settings
+   * Business management
+   *
+   * These pages use normal document scrolling.
+   */
+
+  .app-page {
+    position: relative;
+
+    width: 100%;
+    min-height: calc(
+      100dvh - var(--mobile-header-height)
+    );
+
+    background: var(--brand-surface);
+  }
+
+  .app-page-content {
+    width: 100%;
+
+    padding-bottom: calc(
+      var(--mobile-bottom-nav-space) +
+      env(safe-area-inset-bottom)
+    );
+  }
+
+  @media (min-width: 768px) {
+    .app-page {
+      min-height: calc(
+        100dvh - var(--desktop-navbar-height)
+      );
+    }
+
+    .app-page-content {
+      padding-bottom: 4rem;
+    }
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * MAP PAGE
+   * ---------------------------------------------------------
+   *
+   * The map is the ONLY normal user page that gets
+   * a fixed viewport-sized content area.
+   *
+   * Mobile:
+   * viewport - mobile header
+   *
+   * Desktop:
+   * viewport - desktop navbar
+   */
+
+  .map-page {
+    position: relative;
+
+    width: 100%;
+
+    height: calc(
+      100dvh - var(--mobile-header-height)
+    );
+
+    min-height: 0;
+
+    overflow: hidden;
+
+    background: #e8eeea;
+
+    isolation: isolate;
+  }
+
+  @media (min-width: 768px) {
+    .map-page {
+      height: calc(
+        100dvh - var(--desktop-navbar-height)
+      );
+    }
+  }
+
+  /*
+   * Useful when CafetaMap needs an explicit
+   * full-size child.
+   */
+
+  .map-fill {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+
+    overflow: hidden;
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * MOBILE NAVIGATION SAFE AREA
+   * ---------------------------------------------------------
+   */
+
+  .mobile-nav-padding {
+    padding-bottom: calc(
+      var(--mobile-bottom-nav-space) +
+      env(safe-area-inset-bottom)
+    );
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * BRAND SURFACES
+   * ---------------------------------------------------------
+   */
 
   .brand-gradient {
     background:
@@ -177,5 +423,382 @@
         transparent 25%
       ),
       #ffffff;
+  }
+
+  .cafeta-surface {
+    background: var(--brand-surface);
+  }
+
+  .cafeta-card {
+    border: 1px solid rgb(0 0 0 / 5.5%);
+
+    background: var(--card);
+
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 2%),
+      0 10px 35px rgb(0 0 0 / 3.5%);
+  }
+
+  .cafeta-glass {
+    border: 1px solid rgb(0 0 0 / 6%);
+
+    background: rgb(255 255 255 / 88%);
+
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .cafeta-shadow {
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 3%),
+      0 12px 35px rgb(0 0 0 / 5%);
+  }
+
+  .cafeta-shadow-lg {
+    box-shadow:
+      0 2px 4px rgb(0 0 0 / 3%),
+      0 20px 60px rgb(0 0 0 / 9%);
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * SCROLLBARS
+   * ---------------------------------------------------------
+   */
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .cafeta-scrollbar {
+    scrollbar-width: thin;
+
+    scrollbar-color:
+      rgb(0 98 65 / 22%)
+      transparent;
+  }
+
+  .cafeta-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .cafeta-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .cafeta-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+
+    background: rgb(0 98 65 / 18%);
+  }
+
+  .cafeta-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgb(0 98 65 / 30%);
+  }
+}
+
+/* =========================================================
+   MAPLIBRE
+   ========================================================= */
+
+.maplibregl-map {
+  position: relative;
+
+  width: 100% !important;
+  height: 100% !important;
+
+  min-width: 0;
+  min-height: 0;
+
+  overflow: hidden;
+
+  background: #e8eeea;
+
+  font-family:
+    var(--font-geist-sans),
+    Arial,
+    sans-serif;
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+.maplibregl-canvas-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.maplibregl-canvas-container.maplibregl-interactive {
+  cursor: grab;
+}
+
+.maplibregl-canvas-container.maplibregl-interactive:active {
+  cursor: grabbing;
+}
+
+.maplibregl-canvas {
+  width: 100% !important;
+  height: 100% !important;
+
+  outline: none;
+}
+
+.maplibregl-control-container {
+  position: relative;
+  z-index: 2;
+}
+
+.maplibregl-ctrl-bottom-left,
+.maplibregl-ctrl-bottom-right {
+  font-size: 10px;
+}
+
+.maplibregl-ctrl-attrib {
+  border-radius: 8px 0 0 0;
+
+  background: rgb(255 255 255 / 82%) !important;
+
+  font-size: 9px;
+
+  opacity: 0.7;
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.maplibregl-ctrl-attrib a {
+  color: #536059;
+}
+
+.maplibregl-ctrl-logo {
+  opacity: 0.6;
+}
+
+/* =========================================================
+   CAFÉTA MAP MARKERS
+   ========================================================= */
+
+.cafeta-map-marker {
+  position: relative;
+
+  display: flex;
+
+  width: 42px;
+  height: 42px;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 3px solid #ffffff;
+  border-radius: 9999px;
+
+  background: var(--brand-green);
+  color: #ffffff;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 2px 5px rgb(0 0 0 / 12%),
+    0 8px 20px rgb(0 0 0 / 16%);
+
+  transform: translateZ(0);
+
+  transition:
+    width 180ms ease,
+    height 180ms ease,
+    transform 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.cafeta-map-marker::after {
+  content: "";
+
+  position: absolute;
+  inset: -7px;
+  z-index: -1;
+
+  border-radius: inherit;
+
+  background: rgb(0 98 65 / 10%);
+
+  opacity: 0;
+
+  transform: scale(0.75);
+
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.cafeta-map-marker:hover {
+  background: var(--brand-green-hover);
+
+  transform:
+    translateY(-2px)
+    scale(1.07);
+
+  box-shadow:
+    0 3px 8px rgb(0 0 0 / 12%),
+    0 12px 28px rgb(0 98 65 / 22%);
+}
+
+.cafeta-map-marker:hover::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.cafeta-map-marker:active {
+  transform: scale(0.94);
+}
+
+.cafeta-map-marker:focus-visible {
+  outline: none;
+
+  box-shadow:
+    0 0 0 4px rgb(0 98 65 / 16%),
+    0 8px 24px rgb(0 0 0 / 16%);
+}
+
+.cafeta-map-marker-active {
+  width: 50px;
+  height: 50px;
+
+  background: var(--brand-green-hover);
+
+  transform:
+    translateY(-3px)
+    scale(1.06);
+
+  box-shadow:
+    0 0 0 5px rgb(0 98 65 / 12%),
+    0 12px 32px rgb(0 98 65 / 30%);
+}
+
+.cafeta-map-marker-active::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* =========================================================
+   LOADING / SKELETON
+   ========================================================= */
+
+@keyframes cafeta-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cafeta-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cafeta-skeleton {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@layer utilities {
+  .animate-cafeta-in {
+    animation:
+      cafeta-fade-in
+      280ms
+      cubic-bezier(0.22, 1, 0.36, 1)
+      both;
+  }
+
+  .animate-cafeta-scale {
+    animation:
+      cafeta-scale-in
+      220ms
+      cubic-bezier(0.22, 1, 0.36, 1)
+      both;
+  }
+
+  .cafeta-skeleton {
+    background:
+      linear-gradient(
+        90deg,
+        #eef1ef 25%,
+        #f7f8f7 50%,
+        #eef1ef 75%
+      );
+
+    background-size: 200% 100%;
+
+    animation:
+      cafeta-skeleton
+      1.4s
+      ease-in-out
+      infinite;
+  }
+}
+
+/* =========================================================
+   MOBILE MAP
+   ========================================================= */
+
+@media (max-width: 767px) {
+  .maplibregl-ctrl-attrib {
+    max-width: 180px;
+    font-size: 8px;
+  }
+
+  .cafeta-map-marker {
+    width: 40px;
+    height: 40px;
+  }
+
+  .cafeta-map-marker-active {
+    width: 47px;
+    height: 47px;
+  }
+}
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+
+    transition-duration: 0.01ms !important;
   }
 }
