@@ -468,7 +468,7 @@ export function ProfilePageClient({
                         ? "review"
                         : "reviews"
                     }`}
-                    href="/profile/reviews"
+                    href="/business/reviews"
                   />
                 </div>
               </section>
