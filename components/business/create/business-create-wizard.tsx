@@ -1,14 +1,8 @@
 "use client";
 
-import {
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useMemo, useState } from "react";
 
-import {
-  useRouter,
-} from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import {
   ArrowLeft,
@@ -19,21 +13,13 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import {
-  toast,
-} from "sonner";
+import { toast } from "sonner";
 
-import {
-  createClient,
-} from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 
-import {
-  uploadBusinessImage,
-} from "@/lib/business/upload-business-image";
+import { uploadBusinessImage } from "@/lib/business/upload-business-image";
 
-import {
-  initialBusinessFormData,
-} from "@/lib/business/types";
+import { initialBusinessFormData } from "@/lib/business/types";
 
 import type {
   BusinessFormData,
@@ -41,33 +27,19 @@ import type {
   MenuItemDraft,
 } from "@/lib/business/types";
 
-import {
-  BusinessStepper,
-} from "./business-stepper";
+import { BusinessStepper } from "./business-stepper";
 
-import {
-  BasicsStep,
-} from "./steps/basics-step";
+import { BasicsStep } from "./steps/basics-step";
 
-import {
-  LocationStep,
-} from "./steps/location-step";
+import { LocationStep } from "./steps/location-step";
 
-import {
-  HoursStep,
-} from "./steps/hours-step";
+import { HoursStep } from "./steps/hours-step";
 
-import {
-  MenuStep,
-} from "./steps/menu-step";
+import { MenuStep } from "./steps/menu-step";
 
-import {
-  MediaStep,
-} from "./steps/media-step";
+import { MediaStep } from "./steps/media-step";
 
-import {
-  ReviewStep,
-} from "./steps/review-step";
+import { ReviewStep } from "./steps/review-step";
 
 const TOTAL_STEPS = 6;
 
@@ -80,10 +52,7 @@ const STEP_LABELS = [
   "Final review",
 ] as const;
 
-type SupabaseClient =
-  ReturnType<
-    typeof createClient
-  >;
+type SupabaseClient = ReturnType<typeof createClient>;
 
 type SupabaseErrorLike = {
   message?: string;
@@ -96,173 +65,104 @@ type BusinessCreateWizardProps = {
   userId: string;
 };
 
-export function BusinessCreateWizard({
-  userId,
-}: BusinessCreateWizardProps) {
-  const router =
-    useRouter();
+export function BusinessCreateWizard({ userId }: BusinessCreateWizardProps) {
+  const router = useRouter();
 
-  const [
-    currentStep,
-    setCurrentStep,
-  ] =
-    useState<BusinessWizardStep>(
-      1,
-    );
+  const [currentStep, setCurrentStep] = useState<BusinessWizardStep>(1);
 
-  const [
-    formData,
-    setFormData,
-  ] =
-    useState<BusinessFormData>(
-      () => ({
-        ...initialBusinessFormData,
+  const [formData, setFormData] = useState<BusinessFormData>(() => ({
+    ...initialBusinessFormData,
 
-        hours:
-          initialBusinessFormData.hours.map(
-            (hour) => ({
-              ...hour,
-            }),
-          ),
+    hours: initialBusinessFormData.hours.map((hour) => ({
+      ...hour,
+    })),
 
-        menuItems: [],
-      }),
-    );
+    menuItems: [],
+  }));
 
-  const [
-    submitting,
-    setSubmitting,
-  ] =
-    useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const [
-    submitStage,
-    setSubmitStage,
-  ] =
-    useState<
-      string | null
-    >(null);
+  const [submitStage, setSubmitStage] = useState<string | null>(null);
 
-  const updateData =
-    useCallback(
-      (
-        values:
-          Partial<BusinessFormData>,
-      ) => {
-        setFormData(
-          (current) => ({
-            ...current,
-            ...values,
-          }),
+  const updateData = useCallback((values: Partial<BusinessFormData>) => {
+    setFormData((current) => ({
+      ...current,
+      ...values,
+    }));
+  }, []);
+
+  const canContinue = useMemo(() => {
+    switch (currentStep) {
+      case 1:
+        return (
+          formData.name.trim().length >= 2 &&
+          normalizeSlug(formData.slug || formData.name).length >= 2 &&
+          Boolean(formData.category)
         );
-      },
-      [],
-    );
 
-  const canContinue =
-    useMemo(() => {
-      switch (
-        currentStep
-      ) {
-        case 1:
-          return (
-            formData.name
-              .trim()
-              .length >= 2 &&
-            normalizeSlug(
-              formData.slug ||
-                formData.name,
-            ).length >= 2 &&
-            Boolean(
-              formData.category,
-            )
-          );
+      case 2:
+        return (
+          formData.address.trim().length > 0 &&
+          formData.city.trim().length > 0 &&
+          formData.province.trim().length > 0 &&
+          formData.latitude !== null &&
+          formData.longitude !== null
+        );
 
-        case 2:
-          return (
-            formData.address
-              .trim()
-              .length > 0 &&
-            formData.city
-              .trim()
-              .length > 0 &&
-            formData.province
-              .trim()
-              .length > 0 &&
-            formData.latitude !==
-              null &&
-            formData.longitude !==
-              null
-          );
+      case 3:
+        return formData.hours.every((hour) => {
+          if (hour.isClosed) {
+            return true;
+          }
 
-        case 3:
-          return (
-            formData.hours.every(
-              (hour) => {
-                if (
-                  hour.isClosed
-                ) {
-                  return true;
-                }
+          return Boolean(hour.opensAt && hour.closesAt);
+        });
 
-                return Boolean(
-                  hour.opensAt &&
-                    hour.closesAt,
-                );
-              },
-            )
-          );
+      case 4:
+      case 5:
+      case 6:
+        return true;
 
-        case 4:
-        case 5:
-        case 6:
-          return true;
+      default:
+        return false;
+    }
+  }, [currentStep, formData]);
 
-        default:
-          return false;
-      }
-    }, [
-      currentStep,
-      formData,
-    ]);
+  const completedSteps = useMemo(
+    () => STEP_LABELS.map((_, index) => currentStep > index + 1),
+    [currentStep],
+  );
 
-  const completedSteps =
-    useMemo(
-      () =>
-        STEP_LABELS.map(
-          (
-            _,
-            index,
-          ) =>
-            currentStep >
-            index + 1,
-        ),
-      [currentStep],
-    );
+  const updateLocation = useCallback(
+    (location: { latitude: number; longitude: number; accuracy?: number }) => {
+      setFormData((current) => ({
+        ...current,
+
+        latitude: location.latitude,
+
+        longitude: location.longitude,
+
+        locationAccuracy: location.accuracy ?? null,
+      }));
+    },
+    [],
+  );
 
   function scrollToTop() {
-    window.requestAnimationFrame(
-      () => {
-        window.scrollTo({
-          top: 0,
-          behavior:
-            "smooth",
-        });
-      },
-    );
+    window.requestAnimationFrame(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    });
   }
 
-  function goToStep(
-    step:
-      BusinessWizardStep,
-  ) {
+  function goToStep(step: BusinessWizardStep) {
     if (submitting) {
       return;
     }
 
-    setCurrentStep(
-      step,
-    );
+    setCurrentStep(step);
 
     scrollToTop();
   }
@@ -272,20 +172,13 @@ export function BusinessCreateWizard({
       return;
     }
 
-    if (
-      currentStep === 1
-    ) {
-      router.push(
-        "/profile",
-      );
+    if (currentStep === 1) {
+      router.push("/profile");
 
       return;
     }
 
-    goToStep(
-      (currentStep -
-        1) as BusinessWizardStep,
-    );
+    goToStep((currentStep - 1) as BusinessWizardStep);
   }
 
   function handleContinue() {
@@ -294,21 +187,13 @@ export function BusinessCreateWizard({
     }
 
     if (!canContinue) {
-      toast.error(
-        "Complete the required fields first.",
-      );
+      toast.error("Complete the required fields first.");
 
       return;
     }
 
-    if (
-      currentStep <
-      TOTAL_STEPS
-    ) {
-      goToStep(
-        (currentStep +
-          1) as BusinessWizardStep,
-      );
+    if (currentStep < TOTAL_STEPS) {
+      goToStep((currentStep + 1) as BusinessWizardStep);
     }
   }
 
@@ -317,21 +202,12 @@ export function BusinessCreateWizard({
       return;
     }
 
-    const validationError =
-      validateBusiness(
-        formData,
-      );
+    const validationError = validateBusiness(formData);
 
-    if (
-      validationError
-    ) {
-      toast.error(
-        validationError.title,
-        {
-          description:
-            validationError.description,
-        },
-      );
+    if (validationError) {
+      toast.error(validationError.title, {
+        description: validationError.description,
+      });
 
       return;
     }
@@ -343,34 +219,26 @@ export function BusinessCreateWizard({
      * This is only a defensive check.
      */
     if (!userId) {
-      toast.error(
-        "Your account could not be identified.",
-      );
+      toast.error("Your account could not be identified.");
 
       return;
     }
 
     setSubmitting(true);
 
-    setSubmitStage(
-      "Creating your listing",
-    );
+    setSubmitStage("Creating your listing");
 
-    const toastId =
-      toast.loading(
-        "Creating your business...",
-        {
-          description:
-            "Setting up your CAFÉTA listing and ownership.",
-        },
-      );
+    const toastId = toast.loading("Creating your business...", {
+      description: "Setting up your CAFÉTA listing and ownership.",
+    });
 
-    const supabase =
-      createClient();
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    let businessId:
-      | string
-      | null = null;
+    console.log("CAFETA RPC SESSION", session?.user?.id);
+    let businessId: string | null = null;
 
     try {
       /*
@@ -390,11 +258,7 @@ export function BusinessCreateWizard({
        * authoritative identity.
        */
 
-      const slug =
-        normalizeSlug(
-          formData.slug ||
-            formData.name,
-        );
+      const slug = normalizeSlug(formData.slug || formData.name);
 
       /*
        * =================================================
@@ -403,140 +267,106 @@ export function BusinessCreateWizard({
        * =================================================
        */
 
-      const {
-        data:
-          createdBusinessId,
-        error:
-          createError,
-      } =
-        await supabase.rpc(
-          "create_business",
-          {
-            p_name:
-              formData.name.trim(),
+      const { data: createdBusinessId, error: createError } =
+        await supabase.rpc("create_business", {
+          p_name: formData.name.trim(),
 
-            p_slug:
-              slug,
+          p_slug: slug,
 
-            p_category:
-              formData.category,
+          p_category: formData.category,
 
-            p_description:
-              cleanOptional(
-                formData.description,
-              ),
+          p_description: cleanOptional(formData.description),
 
-            p_address:
-              formData.address.trim(),
+          p_address: formData.address.trim(),
 
-            p_barangay:
-              cleanOptional(
-                formData.barangay,
-              ),
+          p_barangay: cleanOptional(formData.barangay),
 
-            p_city:
-              formData.city.trim(),
+          p_city: formData.city.trim(),
 
-            p_latitude:
-              formData.latitude,
+          p_latitude: formData.latitude,
 
-            p_longitude:
-              formData.longitude,
-          },
-        );
+          p_longitude: formData.longitude,
+        });
 
-      if (
-        createError
-      ) {
-        logSupabaseError(
-          "create_business",
-          createError,
-        );
+      if (createError) {
+  console.error(
+    "[CAFÉTA] FULL RPC ERROR",
+    JSON.stringify(
+      createError,
+      null,
+      2,
+    ),
+  );
 
-        throw createError;
+  console.error(
+    "[CAFÉTA] RPC ERROR MESSAGE",
+    createError.message,
+  );
+
+  console.error(
+    "[CAFÉTA] RPC ERROR CODE",
+    createError.code,
+  );
+
+  console.error(
+    "[CAFÉTA] RPC ERROR DETAILS",
+    createError.details,
+  );
+
+  console.error(
+    "[CAFÉTA] RPC ERROR HINT",
+    createError.hint,
+  );
+
+  throw createError;
+}
+      if (!createdBusinessId) {
+        throw new Error("CAFÉTA did not receive the new business ID.");
       }
 
+      businessId = String(createdBusinessId);
       if (
-        !createdBusinessId
+        formData.locationAccuracy !== null &&
+        formData.locationAccuracy !== undefined
       ) {
-        throw new Error(
-          "CAFÉTA did not receive the new business ID.",
-        );
+        const { error: accuracyError } = await supabase
+          .from("businesses")
+          .update({
+            location_accuracy: formData.locationAccuracy,
+          })
+          .eq("id", businessId);
+
+        if (accuracyError) {
+          logSupabaseError(
+            "businesses.location_accuracy.update",
+            accuracyError,
+          );
+        }
       }
 
-      businessId =
-        String(
-          createdBusinessId,
-        );
+      console.info("[CAFÉTA] Business created", {
+        businessId,
+        ownerId: userId,
+      });
 
-      /*
-       * At this point your RPC should
-       * already have:
-       *
-       * businesses.created_by = auth.uid()
-       *
-       * AND
-       *
-       * business_members:
-       * business_id = new business
-       * user_id     = auth.uid()
-       * role        = owner
-       */
+ 
+      setSubmitStage("Connecting your account");
 
-      console.info(
-        "[CAFÉTA] Business created",
-        {
-          businessId,
-          ownerId:
-            userId,
-        },
-      );
-
-      /*
-       * =================================================
-       * STEP 2
-       * VERIFY OWNER MEMBERSHIP
-       * =================================================
-       */
-
-      setSubmitStage(
-        "Connecting your account",
-      );
-
-      const {
-        data:
-          membership,
-        error:
-          membershipError,
-      } =
-        await supabase
-          .from(
-            "business_members",
-          )
-          .select(
-            `
+      const { data: membership, error: membershipError } = await supabase
+        .from("business_members")
+        .select(
+          `
               business_id,
               user_id,
               role
             `,
-          )
-          .eq(
-            "business_id",
-            businessId,
-          )
-          .eq(
-            "user_id",
-            userId,
-          )
-          .maybeSingle();
+        )
+        .eq("business_id", businessId)
+        .eq("user_id", userId)
+        .maybeSingle();
 
-      if (
-        membershipError
-      ) {
-        logSupabaseError(
-          "business_members.verify",
-          membershipError,
-        );
+      if (membershipError) {
+        logSupabaseError("business_members.verify", membershipError);
 
         throw membershipError;
       }
@@ -547,394 +377,196 @@ export function BusinessCreateWizard({
         );
       }
 
-      if (
-        membership.role !==
-        "owner"
-      ) {
+      if (membership.role !== "owner") {
         throw new Error(
           "The business was created, but your account was not assigned as its owner.",
         );
       }
 
-      /*
-       * =================================================
-       * STEP 3
-       * UPLOAD LOGO + COVER
-       * =================================================
-       *
-       * This must happen AFTER ownership
-       * exists because Storage RLS checks
-       * business_members.
-       */
+     
+      let logoUrl: string | null = null;
 
-      let logoUrl:
-        | string
-        | null = null;
+      let coverUrl: string | null = null;
 
-      let coverUrl:
-        | string
-        | null = null;
+      if (formData.logoFile || formData.coverFile) {
+        setSubmitStage("Uploading images");
 
-      if (
-        formData.logoFile ||
-        formData.coverFile
-      ) {
-        setSubmitStage(
-          "Uploading images",
-        );
-
-        toast.loading(
-          "Uploading images...",
-          {
-            id: toastId,
-
-            description:
-              "Saving your business logo and cover.",
-          },
-        );
-      }
-
-      if (
-        formData.logoFile
-      ) {
-        const uploaded =
-          await uploadBusinessImage({
-            supabase,
-
-            businessId,
-
-            kind:
-              "logo",
-
-            file:
-              formData.logoFile,
-          });
-
-        logoUrl =
-          uploaded.publicUrl;
-      }
-
-      if (
-        formData.coverFile
-      ) {
-        const uploaded =
-          await uploadBusinessImage({
-            supabase,
-
-            businessId,
-
-            kind:
-              "cover",
-
-            file:
-              formData.coverFile,
-          });
-
-        coverUrl =
-          uploaded.publicUrl;
-      }
-
-      /*
-       * =================================================
-       * STEP 4
-       * UPDATE BUSINESS DETAILS
-       * =================================================
-       */
-
-      setSubmitStage(
-        "Saving business details",
-      );
-
-      toast.loading(
-        "Saving business details...",
-        {
+        toast.loading("Uploading images...", {
           id: toastId,
 
-          description:
-            "Adding contact information and media.",
-        },
-      );
+          description: "Saving your business logo and cover.",
+        });
+      }
 
-      const {
-        data:
-          updatedBusiness,
-        error:
-          businessUpdateError,
-      } =
+      if (formData.logoFile) {
+        const uploaded = await uploadBusinessImage({
+          supabase,
+
+          businessId,
+
+          kind: "logo",
+
+          file: formData.logoFile,
+        });
+
+        logoUrl = uploaded.publicUrl;
+      }
+
+      if (formData.coverFile) {
+        const uploaded = await uploadBusinessImage({
+          supabase,
+
+          businessId,
+
+          kind: "cover",
+
+          file: formData.coverFile,
+        });
+
+        coverUrl = uploaded.publicUrl;
+      }
+
+      
+      setSubmitStage("Saving business details");
+
+      toast.loading("Saving business details...", {
+        id: toastId,
+
+        description: "Adding contact information and media.",
+      });
+
+      const { data: updatedBusiness, error: businessUpdateError } =
         await supabase
-          .from(
-            "businesses",
-          )
+          .from("businesses")
           .update({
-            province:
-              formData.province.trim(),
+            province: formData.province.trim(),
 
-            phone:
-              cleanOptional(
-                formData.phone,
-              ),
+            phone: cleanOptional(formData.phone),
 
-            email:
-              cleanOptional(
-                formData.email,
-              ),
+            email: cleanOptional(formData.email),
 
-            website_url:
-              cleanOptional(
-                formData.websiteUrl,
-              ),
+            website_url: cleanOptional(formData.websiteUrl),
 
-            facebook_url:
-              cleanOptional(
-                formData.facebookUrl,
-              ),
+            facebook_url: cleanOptional(formData.facebookUrl),
 
-            instagram_url:
-              cleanOptional(
-                formData.instagramUrl,
-              ),
+            instagram_url: cleanOptional(formData.instagramUrl),
 
-            logo_url:
-              logoUrl,
+            logo_url: logoUrl,
 
-            cover_url:
-              coverUrl,
+            cover_url: coverUrl,
           })
-          .eq(
-            "id",
-            businessId,
-          )
-          .select(
-            "id",
-          )
+          .eq("id", businessId)
+          .select("id")
           .maybeSingle();
 
-      if (
-        businessUpdateError
-      ) {
-        logSupabaseError(
-          "businesses.update",
-          businessUpdateError,
-        );
+      if (businessUpdateError) {
+        logSupabaseError("businesses.update", businessUpdateError);
 
         throw businessUpdateError;
       }
 
-      if (
-        !updatedBusiness
-      ) {
+      if (!updatedBusiness) {
         throw new Error(
           "The business exists, but its details could not be updated.",
         );
       }
 
-      /*
-       * =================================================
-       * STEP 5
-       * BUSINESS HOURS
-       * =================================================
-       */
+     
+      setSubmitStage("Saving business hours");
 
-      setSubmitStage(
-        "Saving business hours",
-      );
+      toast.loading("Saving business hours...", {
+        id: toastId,
 
-      toast.loading(
-        "Saving business hours...",
-        {
-          id: toastId,
+        description: "Adding your weekly schedule.",
+      });
 
-          description:
-            "Adding your weekly schedule.",
-        },
-      );
+      const hoursRows = formData.hours.map((hour) => ({
+        business_id: businessId,
 
-      const hoursRows =
-        formData.hours.map(
-          (hour) => ({
-            business_id:
-              businessId,
+        day_of_week: hour.dayOfWeek,
 
-            day_of_week:
-              hour.dayOfWeek,
+        opens_at: hour.isClosed ? null : hour.opensAt,
 
-            opens_at:
-              hour.isClosed
-                ? null
-                : hour.opensAt,
+        closes_at: hour.isClosed ? null : hour.closesAt,
 
-            closes_at:
-              hour.isClosed
-                ? null
-                : hour.closesAt,
+        is_closed: hour.isClosed,
+      }));
 
-            is_closed:
-              hour.isClosed,
-          }),
-        );
+      const { error: hoursError } = await supabase
+        .from("business_hours")
+        .insert(hoursRows);
 
-      const {
-        error:
-          hoursError,
-      } =
-        await supabase
-          .from(
-            "business_hours",
-          )
-          .insert(
-            hoursRows,
-          );
-
-      if (
-        hoursError
-      ) {
-        logSupabaseError(
-          "business_hours.insert",
-          hoursError,
-        );
+      if (hoursError) {
+        logSupabaseError("business_hours.insert", hoursError);
 
         throw hoursError;
       }
 
-      /*
-       * =================================================
-       * STEP 6
-       * STARTER MENU
-       * =================================================
-       */
+     
+      const validMenuItems = formData.menuItems.filter(
+        (item) => item.name.trim().length > 0,
+      );
 
-      const validMenuItems =
-        formData.menuItems.filter(
-          (item) =>
-            item.name
-              .trim()
-              .length > 0,
-        );
+      if (validMenuItems.length > 0) {
+        setSubmitStage("Building starter menu");
 
-      if (
-        validMenuItems.length >
-        0
-      ) {
-        setSubmitStage(
-          "Building starter menu",
-        );
+        toast.loading("Building your menu...", {
+          id: toastId,
 
-        toast.loading(
-          "Building your menu...",
-          {
-            id: toastId,
-
-            description:
-              "Adding your starter menu items.",
-          },
-        );
+          description: "Adding your starter menu items.",
+        });
 
         await saveStarterMenu({
           supabase,
 
           businessId,
 
-          items:
-            validMenuItems,
+          items: validMenuItems,
         });
       }
 
-      /*
-       * =================================================
-       * STEP 7
-       * SUBMIT FOR REVIEW
-       * =================================================
-       */
+      
+      setSubmitStage("Submitting for review");
 
-      setSubmitStage(
-        "Submitting for review",
-      );
+      toast.loading("Submitting for review...", {
+        id: toastId,
 
-      toast.loading(
-        "Submitting for review...",
+        description: "Your listing is almost ready.",
+      });
+
+      const { error: reviewError } = await supabase.rpc(
+        "submit_business_for_review",
         {
-          id: toastId,
-
-          description:
-            "Your listing is almost ready.",
+          p_business_id: businessId,
         },
       );
 
-      const {
-        error:
-          reviewError,
-      } =
-        await supabase.rpc(
-          "submit_business_for_review",
-          {
-            p_business_id:
-              businessId,
-          },
-        );
-
-      if (
-        reviewError
-      ) {
-        logSupabaseError(
-          "submit_business_for_review",
-          reviewError,
-        );
+      if (reviewError) {
+        logSupabaseError("submit_business_for_review", reviewError);
 
         throw reviewError;
       }
 
-      /*
-       * =================================================
-       * SUCCESS
-       * =================================================
-       */
+      
+      setSubmitStage("Complete");
 
-      setSubmitStage(
-        "Complete",
-      );
+      revokePreviewUrl(formData.logoPreviewUrl);
 
-      revokePreviewUrl(
-        formData.logoPreviewUrl,
-      );
+      revokePreviewUrl(formData.coverPreviewUrl);
 
-      revokePreviewUrl(
-        formData.coverPreviewUrl,
-      );
+      toast.success("Business submitted", {
+        id: toastId,
 
-      toast.success(
-        "Business submitted",
-        {
-          id: toastId,
+        description: `${formData.name.trim()} is now waiting for review.`,
+      });
 
-          description:
-            `${formData.name.trim()} is now waiting for review.`,
-        },
-      );
-
-      /*
-       * Later we can change this to:
-       *
-       * /business/[slug]/manage
-       *
-       * once your management dashboard
-       * is ready.
-       */
-
-      router.replace(
-        "/profile",
-      );
+      router.replace("/profile");
 
       router.refresh();
     } catch (error) {
-      const normalized =
-        normalizeErrorForLog(
-          error,
-        );
+      const normalized = normalizeErrorForLog(error);
 
-      console.error(
-        "[CAFÉTA] Business creation failed",
-        normalized,
-      );
+      console.error("[CAFÉTA] Business creation failed", normalized);
 
       toast.error(
         businessId
@@ -943,23 +575,13 @@ export function BusinessCreateWizard({
         {
           id: toastId,
 
-          description:
-            getErrorMessage(
-              error,
-              Boolean(
-                businessId,
-              ),
-            ),
+          description: getErrorMessage(error, Boolean(businessId)),
         },
       );
     } finally {
-      setSubmitting(
-        false,
-      );
+      setSubmitting(false);
 
-      setSubmitStage(
-        null,
-      );
+      setSubmitStage(null);
     }
   }
 
@@ -968,14 +590,8 @@ export function BusinessCreateWizard({
       <header className="mb-6 md:mb-8">
         <button
           type="button"
-          onClick={() =>
-            router.push(
-              "/profile",
-            )
-          }
-          disabled={
-            submitting
-          }
+          onClick={() => router.push("/profile")}
+          disabled={submitting}
           className="
             group mb-5
             flex items-center
@@ -997,7 +613,6 @@ export function BusinessCreateWizard({
               group-hover:-translate-x-0.5
             "
           />
-
           Back to profile
         </button>
 
@@ -1048,10 +663,7 @@ export function BusinessCreateWizard({
                 text-black/45
               "
             >
-              Create your café,
-              coffee shop,
-              milk-tea shop, or
-              bakery on CAFÉTA.
+              Create your café, coffee shop, milk-tea shop, or bakery on CAFÉTA.
             </p>
           </div>
 
@@ -1064,8 +676,7 @@ export function BusinessCreateWizard({
                 text-black/30
               "
             >
-              Step {currentStep} of{" "}
-              {TOTAL_STEPS}
+              Step {currentStep} of {TOTAL_STEPS}
             </p>
 
             <p
@@ -1076,12 +687,7 @@ export function BusinessCreateWizard({
                 text-[#006241]
               "
             >
-              {
-                STEP_LABELS[
-                  currentStep -
-                    1
-                ]
-              }
+              {STEP_LABELS[currentStep - 1]}
             </p>
           </div>
         </div>
@@ -1099,11 +705,7 @@ export function BusinessCreateWizard({
           lg:px-9 lg:py-6
         "
       >
-        <BusinessStepper
-          currentStep={
-            currentStep
-          }
-        />
+        <BusinessStepper currentStep={currentStep} />
       </section>
 
       <div
@@ -1124,9 +726,7 @@ export function BusinessCreateWizard({
           "
         >
           <div
-            key={
-              currentStep
-            }
+            key={currentStep}
             className="
               animate-in
               fade-in
@@ -1137,74 +737,27 @@ export function BusinessCreateWizard({
               lg:p-8
             "
           >
-            {currentStep ===
-              1 && (
-              <BasicsStep
-                data={
-                  formData
-                }
-                updateData={
-                  updateData
-                }
-              />
+            {currentStep === 1 && (
+              <BasicsStep data={formData} updateData={updateData} />
             )}
 
-            {currentStep ===
-              2 && (
-              <LocationStep
-                data={
-                  formData
-                }
-                updateData={
-                  updateData
-                }
-              />
+            {currentStep === 2 && (
+              <LocationStep data={formData} updateData={updateData} />
             )}
 
-            {currentStep ===
-              3 && (
-              <HoursStep
-                data={
-                  formData
-                }
-                updateData={
-                  updateData
-                }
-              />
+            {currentStep === 3 && (
+              <HoursStep data={formData} updateData={updateData} />
             )}
 
-            {currentStep ===
-              4 && (
-              <MenuStep
-                data={
-                  formData
-                }
-                updateData={
-                  updateData
-                }
-              />
+            {currentStep === 4 && (
+              <MenuStep data={formData} updateData={updateData} />
             )}
 
-            {currentStep ===
-              5 && (
-              <MediaStep
-                data={
-                  formData
-                }
-                updateData={
-                  updateData
-                }
-              />
+            {currentStep === 5 && (
+              <MediaStep data={formData} updateData={updateData} />
             )}
 
-            {currentStep ===
-              6 && (
-              <ReviewStep
-                data={
-                  formData
-                }
-              />
-            )}
+            {currentStep === 6 && <ReviewStep data={formData} />}
           </div>
 
           <div
@@ -1225,12 +778,8 @@ export function BusinessCreateWizard({
           >
             <button
               type="button"
-              onClick={
-                handleBack
-              }
-              disabled={
-                submitting
-              }
+              onClick={handleBack}
+              disabled={submitting}
               className="
                 flex h-11
                 items-center
@@ -1254,23 +803,14 @@ export function BusinessCreateWizard({
             >
               <ArrowLeft className="size-3.5" />
 
-              {currentStep ===
-              1
-                ? "Cancel"
-                : "Back"}
+              {currentStep === 1 ? "Cancel" : "Back"}
             </button>
 
-            {currentStep <
-            TOTAL_STEPS ? (
+            {currentStep < TOTAL_STEPS ? (
               <button
                 type="button"
-                onClick={
-                  handleContinue
-                }
-                disabled={
-                  !canContinue ||
-                  submitting
-                }
+                onClick={handleContinue}
+                disabled={!canContinue || submitting}
                 className="
                   group
                   flex h-11
@@ -1294,18 +834,13 @@ export function BusinessCreateWizard({
                 "
               >
                 Continue
-
                 <ArrowRight className="size-3.5" />
               </button>
             ) : (
               <button
                 type="button"
-                onClick={
-                  handleSubmit
-                }
-                disabled={
-                  submitting
-                }
+                onClick={handleSubmit}
+                disabled={submitting}
                 className="
                   flex h-11
                   min-w-[160px]
@@ -1374,38 +909,20 @@ export function BusinessCreateWizard({
               </h3>
 
               <p className="mt-2 text-xs leading-5 text-black/40">
-                Add accurate information
-                about the real business
-                you manage.
+                Add accurate information about the real business you manage.
               </p>
 
               <div className="my-5 h-px bg-black/[0.055]" />
 
               <div className="space-y-3.5">
-                {STEP_LABELS.map(
-                  (
-                    label,
-                    index,
-                  ) => (
-                    <SidebarItem
-                      key={
-                        label
-                      }
-                      complete={
-                        completedSteps[
-                          index
-                        ]
-                      }
-                      active={
-                        currentStep ===
-                        index + 1
-                      }
-                      text={
-                        label
-                      }
-                    />
-                  ),
-                )}
+                {STEP_LABELS.map((label, index) => (
+                  <SidebarItem
+                    key={label}
+                    complete={completedSteps[index]}
+                    active={currentStep === index + 1}
+                    text={label}
+                  />
+                ))}
               </div>
             </div>
 
@@ -1437,9 +954,7 @@ export function BusinessCreateWizard({
               </p>
 
               <p className="mt-2 text-[11px] leading-5 text-white/55">
-                Help people discover
-                more local places
-                around Basilan.
+                Help people discover more local places around Basilan.
               </p>
             </div>
           </div>
@@ -1447,22 +962,13 @@ export function BusinessCreateWizard({
       </div>
 
       {submitting && (
-        <SubmissionOverlay
-          stage={
-            submitStage ??
-            "Creating your business"
-          }
-        />
+        <SubmissionOverlay stage={submitStage ?? "Creating your business"} />
       )}
     </div>
   );
 }
 
-function SubmissionOverlay({
-  stage,
-}: {
-  stage: string;
-}) {
+function SubmissionOverlay({ stage }: { stage: string }) {
   return (
     <div
       className="
@@ -1544,8 +1050,7 @@ function SubmissionOverlay({
         </h3>
 
         <p className="mt-2 text-xs leading-5 text-black/40">
-          Please keep this page open
-          while we prepare your listing.
+          Please keep this page open while we prepare your listing.
         </p>
 
         <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-[#edf2ef]">
@@ -1596,12 +1101,7 @@ function SidebarItem({
         className={`
           text-[11px]
           font-medium
-          ${
-            complete ||
-            active
-              ? "text-[#17211c]"
-              : "text-black/35"
-          }
+          ${complete || active ? "text-[#17211c]" : "text-black/35"}
         `}
       >
         {text}
@@ -1615,305 +1115,159 @@ async function saveStarterMenu({
   businessId,
   items,
 }: {
-  supabase:
-    SupabaseClient;
+  supabase: SupabaseClient;
 
-  businessId:
-    string;
+  businessId: string;
 
-  items:
-    MenuItemDraft[];
+  items: MenuItemDraft[];
 }) {
-  const categoryNames =
-    Array.from(
-      new Set(
-        items
-          .map(
-            (item) =>
-              item.category.trim(),
-          )
-          .filter(
-            Boolean,
-          ),
-      ),
-    );
+  const categoryNames = Array.from(
+    new Set(items.map((item) => item.category.trim()).filter(Boolean)),
+  );
 
-  const categoryIds =
-    new Map<
-      string,
-      string
-    >();
+  const categoryIds = new Map<string, string>();
 
-  for (
-    let index = 0;
-    index <
-    categoryNames.length;
-    index++
-  ) {
-    const categoryName =
-      categoryNames[
-        index
-      ];
+  for (let index = 0; index < categoryNames.length; index++) {
+    const categoryName = categoryNames[index];
 
-    const {
-      data:
-        createdCategory,
-      error:
-        categoryError,
-    } =
-      await supabase
-        .from(
-          "menu_categories",
-        )
-        .insert({
-          business_id:
-            businessId,
+    const { data: createdCategory, error: categoryError } = await supabase
+      .from("menu_categories")
+      .insert({
+        business_id: businessId,
 
-          name:
-            categoryName,
+        name: categoryName,
 
-          sort_order:
-            index,
-        })
-        .select(
-          "id",
-        )
-        .single();
+        sort_order: index,
+      })
+      .select("id")
+      .single();
 
-    if (
-      categoryError
-    ) {
-      logSupabaseError(
-        "menu_categories.insert",
-        categoryError,
-      );
+    if (categoryError) {
+      logSupabaseError("menu_categories.insert", categoryError);
 
       throw categoryError;
     }
 
-    categoryIds.set(
-      categoryName,
-      createdCategory.id,
-    );
+    categoryIds.set(categoryName, createdCategory.id);
   }
 
-  const menuRows =
-    items.map(
-      (
-        item,
-        index,
-      ) => {
-        const categoryName =
-          item.category.trim();
+  const menuRows = items.map((item, index) => {
+    const categoryName = item.category.trim();
 
-        const price =
-          parsePrice(
-            item.price,
-          );
+    const price = parsePrice(item.price);
 
-        if (
-          price === null
-        ) {
-          throw new Error(
-            `Invalid price for "${item.name.trim()}".`,
-          );
-        }
+    if (price === null) {
+      throw new Error(`Invalid price for "${item.name.trim()}".`);
+    }
 
-        return {
-          business_id:
-            businessId,
+    return {
+      business_id: businessId,
 
-          category_id:
-            categoryName
-              ? categoryIds.get(
-                  categoryName,
-                ) ??
-                null
-              : null,
+      category_id: categoryName
+        ? (categoryIds.get(categoryName) ?? null)
+        : null,
 
-          name:
-            item.name.trim(),
+      name: item.name.trim(),
 
-          description:
-            cleanOptional(
-              item.description,
-            ),
+      description: cleanOptional(item.description),
 
-          price,
+      price,
 
-          sort_order:
-            index,
+      sort_order: index,
 
-          is_available:
-            true,
-        };
-      },
-    );
+      is_available: true,
+    };
+  });
 
-  if (
-    !menuRows.length
-  ) {
+  if (!menuRows.length) {
     return;
   }
 
-  const {
-    error:
-      menuError,
-  } =
-    await supabase
-      .from(
-        "menu_items",
-      )
-      .insert(
-        menuRows,
-      );
+  const { error: menuError } = await supabase
+    .from("menu_items")
+    .insert(menuRows);
 
-  if (
-    menuError
-  ) {
-    logSupabaseError(
-      "menu_items.insert",
-      menuError,
-    );
+  if (menuError) {
+    logSupabaseError("menu_items.insert", menuError);
 
     throw menuError;
   }
 }
 
-function validateBusiness(
-  data:
-    BusinessFormData,
-):
-  | {
-      title: string;
-      description: string;
+function validateBusiness(data: BusinessFormData): {
+  title: string;
+  description: string;
+} | null {
+  if (data.name.trim().length < 2) {
+    return {
+      title: "Add your business name",
+
+      description: "Your business name must contain at least 2 characters.",
+    };
+  }
+
+  if (normalizeSlug(data.slug || data.name).length < 2) {
+    return {
+      title: "Choose a business URL",
+
+      description: "Add a valid URL slug for your CAFÉTA listing.",
+    };
+  }
+
+  if (!data.address.trim() || !data.city.trim() || !data.province.trim()) {
+    return {
+      title: "Complete the location",
+
+      description: "Address, city, and province are required.",
+    };
+  }
+
+  if (data.latitude === null || data.longitude === null) {
+    return {
+      title: "Pin the business location",
+
+      description: "Choose the business location on the map before submitting.",
+    };
+  }
+
+  if (
+    data.latitude < -90 ||
+    data.latitude > 90 ||
+    data.longitude < -180 ||
+    data.longitude > 180
+  ) {
+    return {
+      title: "Check the map location",
+
+      description: "The selected coordinates are invalid.",
+    };
+  }
+
+  const invalidHours = data.hours.some(
+    (hour) => !hour.isClosed && (!hour.opensAt || !hour.closesAt),
+  );
+
+  if (invalidHours) {
+    return {
+      title: "Check your business hours",
+
+      description: "Every open day needs an opening and closing time.",
+    };
+  }
+
+  const invalidMenuItem = data.menuItems.some((item) => {
+    if (!item.name.trim()) {
+      return false;
     }
-  | null {
-  if (
-    data.name
-      .trim()
-      .length < 2
-  ) {
+
+    const price = parsePrice(item.price);
+
+    return price === null || price < 0;
+  });
+
+  if (invalidMenuItem) {
     return {
-      title:
-        "Add your business name",
-
-      description:
-        "Your business name must contain at least 2 characters.",
-    };
-  }
-
-  if (
-    normalizeSlug(
-      data.slug ||
-        data.name,
-    ).length < 2
-  ) {
-    return {
-      title:
-        "Choose a business URL",
-
-      description:
-        "Add a valid URL slug for your CAFÉTA listing.",
-    };
-  }
-
-  if (
-    !data.address.trim() ||
-    !data.city.trim() ||
-    !data.province.trim()
-  ) {
-    return {
-      title:
-        "Complete the location",
-
-      description:
-        "Address, city, and province are required.",
-    };
-  }
-
-  if (
-    data.latitude ===
-      null ||
-    data.longitude ===
-      null
-  ) {
-    return {
-      title:
-        "Pin the business location",
-
-      description:
-        "Choose the business location on the map before submitting.",
-    };
-  }
-
-  if (
-    data.latitude <
-      -90 ||
-    data.latitude >
-      90 ||
-    data.longitude <
-      -180 ||
-    data.longitude >
-      180
-  ) {
-    return {
-      title:
-        "Check the map location",
-
-      description:
-        "The selected coordinates are invalid.",
-    };
-  }
-
-  const invalidHours =
-    data.hours.some(
-      (hour) =>
-        !hour.isClosed &&
-        (!hour.opensAt ||
-          !hour.closesAt),
-    );
-
-  if (
-    invalidHours
-  ) {
-    return {
-      title:
-        "Check your business hours",
-
-      description:
-        "Every open day needs an opening and closing time.",
-    };
-  }
-
-  const invalidMenuItem =
-    data.menuItems.some(
-      (item) => {
-        if (
-          !item.name.trim()
-        ) {
-          return false;
-        }
-
-        const price =
-          parsePrice(
-            item.price,
-          );
-
-        return (
-          price ===
-            null ||
-          price < 0
-        );
-      },
-    );
-
-  if (
-    invalidMenuItem
-  ) {
-    return {
-      title:
-        "Check your menu prices",
+      title: "Check your menu prices",
 
       description:
         "Every named menu item needs a valid price greater than or equal to zero.",
@@ -1923,142 +1277,68 @@ function validateBusiness(
   return null;
 }
 
-function normalizeSlug(
-  value: string,
-) {
+function normalizeSlug(value: string) {
   return value
     .trim()
     .toLowerCase()
     .normalize("NFD")
-    .replace(
-      /[\u0300-\u036f]/g,
-      "",
-    )
-    .replace(
-      /[^a-z0-9]+/g,
-      "-",
-    )
-    .replace(
-      /^-+|-+$/g,
-      "",
-    )
-    .slice(
-      0,
-      140,
-    );
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 140);
 }
 
-function parsePrice(
-  value: string,
-) {
-  const cleaned =
-    value
-      .replace(
-        /,/g,
-        "",
-      )
-      .trim();
+function parsePrice(value: string) {
+  const cleaned = value.replace(/,/g, "").trim();
 
   if (!cleaned) {
     return null;
   }
 
-  const parsed =
-    Number.parseFloat(
-      cleaned,
-    );
+  const parsed = Number.parseFloat(cleaned);
 
-  return Number.isFinite(
-    parsed,
-  )
-    ? parsed
-    : null;
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
-function cleanOptional(
-  value:
-    | string
-    | null
-    | undefined,
-) {
-  if (
-    typeof value !==
-    "string"
-  ) {
+function cleanOptional(value: string | null | undefined) {
+  if (typeof value !== "string") {
     return null;
   }
 
-  const cleaned =
-    value.trim();
+  const cleaned = value.trim();
 
-  return cleaned
-    ? cleaned
-    : null;
+  return cleaned ? cleaned : null;
 }
 
-function revokePreviewUrl(
-  value:
-    | string
-    | null
-    | undefined,
-) {
-  if (
-    value?.startsWith(
-      "blob:",
-    )
-  ) {
-    URL.revokeObjectURL(
-      value,
-    );
+function revokePreviewUrl(value: string | null | undefined) {
+  if (value?.startsWith("blob:")) {
+    URL.revokeObjectURL(value);
   }
 }
 
 function logSupabaseError(
   operation: string,
-  error:
-    | SupabaseErrorLike
-    | null
-    | undefined,
+  error: SupabaseErrorLike | null | undefined,
 ) {
   if (!error) {
     return;
   }
 
-  console.error(
-    `[CAFÉTA] ${operation} failed`,
-    {
-      message:
-        error.message ??
-        null,
+  console.error(`[CAFÉTA] ${operation} failed`, {
+    message: error.message ?? null,
 
-      code:
-        error.code ??
-        null,
+    code: error.code ?? null,
 
-      details:
-        error.details ??
-        null,
+    details: error.details ?? null,
 
-      hint:
-        error.hint ??
-        null,
-    },
-  );
+    hint: error.hint ?? null,
+  });
 }
 
-function normalizeErrorForLog(
-  error: unknown,
-) {
-  if (
-    typeof error !==
-      "object" ||
-    error === null
-  ) {
+function normalizeErrorForLog(error: unknown) {
+  if (typeof error !== "object" || error === null) {
     return {
-      message:
-        String(
-          error,
-        ),
+      message: String(error),
 
       code: null,
       details: null,
@@ -2066,101 +1346,52 @@ function normalizeErrorForLog(
     };
   }
 
-  const value =
-    error as SupabaseErrorLike;
+  const value = error as SupabaseErrorLike;
 
   return {
-    message:
-      value.message ??
-      "Unknown error",
+    message: value.message ?? "Unknown error",
 
-    code:
-      value.code ??
-      null,
+    code: value.code ?? null,
 
-    details:
-      value.details ??
-      null,
+    details: value.details ?? null,
 
-    hint:
-      value.hint ??
-      null,
+    hint: value.hint ?? null,
   };
 }
 
-function getErrorMessage(
-  error: unknown,
-  businessAlreadyCreated =
-    false,
-) {
-  const normalized =
-    normalizeErrorForLog(
-      error,
-    );
+function getErrorMessage(error: unknown, businessAlreadyCreated = false) {
+  const normalized = normalizeErrorForLog(error);
 
-  const raw =
-    normalized.message;
+  const raw = normalized.message;
 
-  const message =
-    raw.toLowerCase();
+  const message = raw.toLowerCase();
 
-  const code =
-    normalized.code ??
-    "";
+  const code = normalized.code ?? "";
 
   if (
-    code ===
-      "23505" ||
-    message.includes(
-      "business url already exists",
-    ) ||
-    message.includes(
-      "duplicate",
-    )
+    code === "23505" ||
+    message.includes("business url already exists") ||
+    message.includes("duplicate")
   ) {
     return "That business URL is already in use. Choose another one.";
   }
 
-  if (
-    message.includes(
-      "authentication required",
-    ) ||
-    message.includes(
-      "jwt",
-    )
-  ) {
+  if (message.includes("authentication required") || message.includes("jwt")) {
     return "The database could not authenticate this request. Refresh the page and try again.";
   }
 
-  if (
-    message.includes(
-      "profile not found",
-    )
-  ) {
+  if (message.includes("profile not found")) {
     return "Your account is signed in, but its CAFÉTA profile could not be found.";
   }
 
-  if (
-    message.includes(
-      "owner",
-    ) &&
-    message.includes(
-      "membership",
-    )
-  ) {
+  if (message.includes("owner") && message.includes("membership")) {
     return "The business was created, but CAFÉTA could not connect your account as its owner.";
   }
 
   if (
-    message.includes(
-      "storage",
-    ) ||
-    message.includes(
-      "bucket",
-    ) ||
-    message.includes(
-      "object",
-    )
+    message.includes("storage") ||
+    message.includes("bucket") ||
+    message.includes("object")
   ) {
     return businessAlreadyCreated
       ? "Your business was created, but its media upload failed. Check the business-media Storage policies."
@@ -2168,14 +1399,9 @@ function getErrorMessage(
   }
 
   if (
-    code ===
-      "42501" ||
-    message.includes(
-      "row-level security",
-    ) ||
-    message.includes(
-      "permission denied",
-    )
+    code === "42501" ||
+    message.includes("row-level security") ||
+    message.includes("permission denied")
   ) {
     return businessAlreadyCreated
       ? "Your business was created, but a later database operation was blocked by its RLS policy."
@@ -2184,6 +1410,5 @@ function getErrorMessage(
 
   return businessAlreadyCreated
     ? `The business was created, but setup stopped: ${raw}`
-    : raw ||
-        "Something went wrong while creating your business.";
+    : raw || "Something went wrong while creating your business.";
 }

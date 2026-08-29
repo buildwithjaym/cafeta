@@ -4,7 +4,7 @@ import {
   Geist_Mono,
 } from "next/font/google";
 import { Toaster } from "sonner";
-
+import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
 const geistSans = Geist({

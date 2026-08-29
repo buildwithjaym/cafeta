@@ -138,6 +138,9 @@ type Tab =
   | "menu"
   | "reviews";
 
+const [sharing, setSharing] = useState(false);
+
+
 export function BusinessProfileClient({
   business,
   hours,
@@ -208,64 +211,54 @@ export function BusinessProfileClient({
     );
 
   async function shareBusiness() {
-    const url =
-      window.location.href;
-
-    const shareData = {
-      title:
-        business.name,
-
-      text:
-        business.description ??
-        `Discover ${business.name} on CAFÉTA.`,
-
-      url,
-    };
-
-    try {
-      if (
-        navigator.share
-      ) {
-        await navigator.share(
-          shareData,
-        );
-
-        return;
-      }
-
-      await navigator.clipboard.writeText(
-        url,
-      );
-
-      toast.success(
-        "Business link copied.",
-      );
-    } catch (error) {
-      if (
-        error instanceof
-          DOMException &&
-        error.name ===
-          "AbortError"
-      ) {
-        return;
-      }
-
-      try {
-        await navigator.clipboard.writeText(
-          url,
-        );
-
-        toast.success(
-          "Business link copied.",
-        );
-      } catch {
-        toast.error(
-          "Unable to share this business.",
-        );
-      }
-    }
+  if (sharing) {
+    return;
   }
 
+  setSharing(true);
+
+  const url =
+    `https://www.cafeta.online/business/${encodeURIComponent(
+      business.slug,
+    )}`;
+
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: business.name,
+        text:
+          `Check out ${business.name} on CAFÉTA ☕ View their menu, location, hours, and reviews.`,
+        url,
+      });
+
+      return;
+    }
+
+    await navigator.clipboard.writeText(url);
+
+    toast.success(
+      "Business link copied.",
+    );
+
+  } catch(error) {
+
+    if (
+      error instanceof DOMException &&
+      error.name === "AbortError"
+    ) {
+      return;
+    }
+
+    toast.error(
+      "Unable to share this business.",
+    );
+
+  } finally {
+
+    setSharing(false);
+
+  }
+}
   return (
     <main
       className="
@@ -789,30 +782,28 @@ export function BusinessProfileClient({
                 </div>
 
                 <button
-                  type="button"
-                  onClick={() =>
-                    void shareBusiness()
-                  }
-                  className="
-                    flex
-                    size-10
-                    items-center
-                    justify-center
+  disabled={sharing}
+  onClick={() => void shareBusiness()}
+  className="
+    flex
+    size-10
+    items-center
+    justify-center
 
-                    rounded-[10px]
-                    bg-[#e8ebe9]
-                    text-[#39433e]
+    rounded-[10px]
+    bg-[#e8ebe9]
+    text-[#39433e]
 
-                    transition-all
-                    hover:bg-[#dfe5e1]
-                    hover:text-[#006241]
+    transition-all
+    hover:bg-[#dfe5e1]
+    hover:text-[#006241]
 
-                    active:scale-95
-                  "
-                  aria-label="Share business"
-                >
-                  <Share2 className="size-4" />
-                </button>
+    active:scale-95
+  "
+  aria-label="Share business"
+>
+  <Share2 className="size-4" />
+</button>
               </div>
             </div>
 

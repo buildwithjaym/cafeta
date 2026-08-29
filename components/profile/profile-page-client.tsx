@@ -1,15 +1,10 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import {
-  useRouter,
-} from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import {
   BadgeCheck,
@@ -33,17 +28,11 @@ import {
   XCircle,
 } from "lucide-react";
 
-import {
-  toast,
-} from "sonner";
+import { toast } from "sonner";
 
-import {
-  ChangeUsernameModal,
-} from "@/components/profile/change-username-modal";
+import { ChangeUsernameModal } from "@/components/profile/change-username-modal";
 
-import {
-  EditProfileModal,
-} from "@/components/profile/edit-profile-modal";
+import { EditProfileModal } from "@/components/profile/edit-profile-modal";
 
 import type {
   CafetaProfile,
@@ -51,9 +40,7 @@ import type {
   ProfileStats,
 } from "@/lib/profile/types";
 
-import {
-  createClient,
-} from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 
 type Props = {
   user: {
@@ -68,65 +55,33 @@ type Props = {
   stats: ProfileStats;
 };
 
+
+
 export function ProfilePageClient({
   user,
-  profile:
-    initialProfile,
+  profile: initialProfile,
   businesses,
   stats,
 }: Props) {
-  const router =
-    useRouter();
+  const router = useRouter();
 
-  const [
-    profile,
-    setProfile,
-  ] =
-    useState<CafetaProfile>(
-      initialProfile,
-    );
+  const [profile, setProfile] = useState<CafetaProfile>(initialProfile);
 
-  const [
-    editProfileOpen,
-    setEditProfileOpen,
-  ] =
-    useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
 
-  const [
-    usernameOpen,
-    setUsernameOpen,
-  ] =
-    useState(false);
+  const [usernameOpen, setUsernameOpen] = useState(false);
 
-  const [
-    pendingBusiness,
-    setPendingBusiness,
-  ] =
-    useState<ProfileBusiness | null>(
-      null,
-    );
+  const [pendingBusiness, setPendingBusiness] =
+    useState<ProfileBusiness | null>(null);
 
-  const [
-    signingOut,
-    setSigningOut,
-  ] =
-    useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
-    setProfile(
-      initialProfile,
-    );
-  }, [
-    initialProfile,
-  ]);
+    setProfile(initialProfile);
+  }, [initialProfile]);
 
-  function handleProfileUpdated(
-    updatedProfile:
-      CafetaProfile,
-  ) {
-    setProfile(
-      updatedProfile,
-    );
+  function handleProfileUpdated(updatedProfile: CafetaProfile) {
+    setProfile(updatedProfile);
 
     router.refresh();
   }
@@ -136,52 +91,30 @@ export function ProfilePageClient({
       return;
     }
 
-    setSigningOut(
-      true,
-    );
+    setSigningOut(true);
 
     try {
-      const supabase =
-        createClient();
+      const supabase = createClient();
 
-      const {
-        error,
-      } =
-        await supabase.auth
-          .signOut();
+      const { error } = await supabase.auth.signOut();
 
       if (error) {
-        toast.error(
-          "Couldn't sign you out",
-          {
-            description:
-              error.message,
-          },
-        );
+        toast.error("Couldn't sign you out", {
+          description: error.message,
+        });
 
         return;
       }
 
-      router.replace(
-        "/",
-      );
+      router.replace("/");
 
       router.refresh();
-    } catch (
-      error
-    ) {
-      console.error(
-        "[CAFÉTA] Sign out failed:",
-        error,
-      );
+    } catch (error) {
+      console.error("[CAFÉTA] Sign out failed:", error);
 
-      toast.error(
-        "Couldn't sign you out",
-      );
+      toast.error("Couldn't sign you out");
     } finally {
-      setSigningOut(
-        false,
-      );
+      setSigningOut(false);
     }
   }
 
@@ -311,24 +244,14 @@ export function ProfilePageClient({
             "
           >
             <ProfileCard
-              user={
-                user
-              }
-              profile={
-                profile
-              }
-              stats={
-                stats
-              }
+              user={user}
+              profile={profile}
+              stats={stats}
               onEdit={() => {
-                setEditProfileOpen(
-                  true,
-                );
+                setEditProfileOpen(true);
               }}
               onUsername={() => {
-                setUsernameOpen(
-                  true,
-                );
+                setUsernameOpen(true);
               }}
             />
 
@@ -392,8 +315,7 @@ export function ProfilePageClient({
                         text-[#17211c]
                       "
                     >
-                      Your CAFÉTA
-                      identity
+                      Your CAFÉTA identity
                     </h2>
                   </div>
 
@@ -427,9 +349,7 @@ export function ProfilePageClient({
                   "
                 >
                   <ProfileActionRow
-                    icon={
-                      CircleUserRound
-                    }
+                    icon={CircleUserRound}
                     label="Username"
                     value={
                       profile.username
@@ -437,52 +357,25 @@ export function ProfilePageClient({
                         : "Set your username"
                     }
                     onClick={() => {
-                      setUsernameOpen(
-                        true,
-                      );
+                      setUsernameOpen(true);
                     }}
                   />
 
                   <ProfileRow
-                    icon={
-                      Heart
-                    }
+                    icon={Heart}
                     label="Saved places"
                     value={`${stats.saved} ${
-                      stats.saved ===
-                      1
-                        ? "place"
-                        : "places"
+                      stats.saved === 1 ? "place" : "places"
                     }`}
                     href="/saved"
-                  />
-
-                  <ProfileRow
-                    icon={
-                      MessageSquareText
-                    }
-                    label="Your reviews"
-                    value={`${stats.reviews} ${
-                      stats.reviews ===
-                      1
-                        ? "review"
-                        : "reviews"
-                    }`}
-                    href="/business/reviews"
                   />
                 </div>
               </section>
 
               <BusinessSection
-                businesses={
-                  businesses
-                }
-                onPendingBusiness={(
-                  business,
-                ) => {
-                  setPendingBusiness(
-                    business,
-                  );
+                businesses={businesses}
+                onPendingBusiness={(business) => {
+                  setPendingBusiness(business);
                 }}
               />
 
@@ -506,22 +399,21 @@ export function ProfilePageClient({
                 "
               >
                 <ProfileRow
-                  icon={
-                    Settings
-                  }
+                  icon={Settings}
                   label="Settings"
                   value="Account & preferences"
-                  href="/profile/settings"
+                  onClick={() => {
+                    toast.info("Settings & preferences", {
+                      description:
+                        "Account settings, notifications, privacy, and preferences will be available here soon.",
+                    });
+                  }}
                 />
 
                 <button
                   type="button"
-                  onClick={
-                    handleSignOut
-                  }
-                  disabled={
-                    signingOut
-                  }
+                  onClick={handleSignOut}
+                  disabled={signingOut}
                   className="
                     group
 
@@ -582,9 +474,7 @@ export function ProfilePageClient({
                         text-red-600
                       "
                     >
-                      {signingOut
-                        ? "Signing out..."
-                        : "Sign out"}
+                      {signingOut ? "Signing out..." : "Sign out"}
                     </p>
 
                     <p
@@ -595,8 +485,7 @@ export function ProfilePageClient({
                         text-black/35
                       "
                     >
-                      Sign out of your
-                      CAFÉTA account
+                      Sign out of your CAFÉTA account
                     </p>
                   </div>
                 </button>
@@ -607,48 +496,26 @@ export function ProfilePageClient({
       </main>
 
       <EditProfileModal
-        open={
-          editProfileOpen
-        }
-        onOpenChange={
-          setEditProfileOpen
-        }
-        profile={
-          profile
-        }
-        email={
-          user.email
-        }
-        onUpdated={
-          handleProfileUpdated
-        }
+        open={editProfileOpen}
+        onOpenChange={setEditProfileOpen}
+        profile={profile}
+        email={user.email}
+        onUpdated={handleProfileUpdated}
       />
 
       <ChangeUsernameModal
-        open={
-          usernameOpen
-        }
-        profile={
-          profile
-        }
+        open={usernameOpen}
+        profile={profile}
         onClose={() => {
-          setUsernameOpen(
-            false,
-          );
+          setUsernameOpen(false);
         }}
-        onUpdated={
-          handleProfileUpdated
-        }
+        onUpdated={handleProfileUpdated}
       />
 
       <PendingBusinessModal
-        business={
-          pendingBusiness
-        }
+        business={pendingBusiness}
         onClose={() => {
-          setPendingBusiness(
-            null,
-          );
+          setPendingBusiness(null);
         }}
       />
     </>
@@ -662,48 +529,29 @@ function ProfileCard({
   onEdit,
   onUsername,
 }: {
-  user:
-    Props["user"];
+  user: Props["user"];
 
-  profile:
-    CafetaProfile;
+  profile: CafetaProfile;
 
-  stats:
-    ProfileStats;
+  stats: ProfileStats;
 
-  onEdit:
-    () => void;
+  onEdit: () => void;
 
-  onUsername:
-    () => void;
+  onUsername: () => void;
 }) {
-  const [
-    avatarFailed,
-    setAvatarFailed,
-  ] =
-    useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
 
   useEffect(() => {
-    setAvatarFailed(
-      false,
-    );
-  }, [
-    profile.avatar_url,
-  ]);
+    setAvatarFailed(false);
+  }, [profile.avatar_url]);
 
   const displayName =
     profile.full_name?.trim() ||
     profile.username?.trim() ||
-    user.email.split(
-      "@",
-    )[0] ||
+    user.email.split("@")[0] ||
     "CAFÉTA User";
 
-  const showAvatar =
-    Boolean(
-      profile.avatar_url,
-    ) &&
-    !avatarFailed;
+  const showAvatar = Boolean(profile.avatar_url) && !avatarFailed;
 
   return (
     <section
@@ -796,20 +644,14 @@ function ProfileCard({
             >
               {showAvatar ? (
                 <img
-                  key={
-                    profile.avatar_url
-                  }
-                  src={
-                    profile.avatar_url!
-                  }
+                  key={profile.avatar_url}
+                  src={profile.avatar_url!}
                   alt={`${displayName} profile`}
                   loading="eager"
                   decoding="async"
                   referrerPolicy="no-referrer"
                   onError={() => {
-                    setAvatarFailed(
-                      true,
-                    );
+                    setAvatarFailed(true);
                   }}
                   className="
                     block
@@ -834,18 +676,14 @@ function ProfileCard({
                     text-[#006241]
                   "
                 >
-                  {getInitials(
-                    displayName,
-                  )}
+                  {getInitials(displayName)}
                 </div>
               )}
             </div>
 
             <button
               type="button"
-              onClick={
-                onEdit
-              }
+              onClick={onEdit}
               aria-label="Change profile photo"
               className="
                 absolute
@@ -883,9 +721,7 @@ function ProfileCard({
 
           <button
             type="button"
-            onClick={
-              onEdit
-            }
+            onClick={onEdit}
             className="
               mb-1
 
@@ -920,7 +756,6 @@ function ProfileCard({
                 size-3
               "
             />
-
             Edit
           </button>
         </div>
@@ -952,8 +787,7 @@ function ProfileCard({
               {displayName}
             </h2>
 
-            {profile.role ===
-              "admin" && (
+            {profile.role === "admin" && (
               <ShieldCheck
                 className="
                   size-[17px]
@@ -967,9 +801,7 @@ function ProfileCard({
 
           <button
             type="button"
-            onClick={
-              onUsername
-            }
+            onClick={onUsername}
             className="
               mt-1
 
@@ -980,9 +812,7 @@ function ProfileCard({
               hover:underline
             "
           >
-            {profile.username
-              ? `@${profile.username}`
-              : "Set your username"}
+            {profile.username ? `@${profile.username}` : "Set your username"}
           </button>
 
           <p
@@ -1015,9 +845,7 @@ function ProfileCard({
           ) : (
             <button
               type="button"
-              onClick={
-                onEdit
-              }
+              onClick={onEdit}
               className="
                 mt-4
 
@@ -1029,9 +857,8 @@ function ProfileCard({
                 hover:text-[#006241]
               "
             >
-              Add a short bio to tell
-              the CAFÉTA community a
-              little about yourself.
+              Add a short bio to tell the CAFÉTA community a little about
+              yourself.
             </button>
           )}
         </div>
@@ -1053,26 +880,11 @@ function ProfileCard({
             py-4
           "
         >
-          <ProfileStat
-            value={
-              stats.saved
-            }
-            label="Saved"
-          />
+          <ProfileStat value={stats.saved} label="Saved" />
 
-          <ProfileStat
-            value={
-              stats.reviews
-            }
-            label="Reviews"
-          />
+          <ProfileStat value={stats.reviews} label="Reviews" />
 
-          <ProfileStat
-            value={
-              stats.businesses
-            }
-            label="Businesses"
-          />
+          <ProfileStat value={stats.businesses} label="Businesses" />
         </div>
       </div>
     </section>
@@ -1083,13 +895,9 @@ function BusinessSection({
   businesses,
   onPendingBusiness,
 }: {
-  businesses:
-    ProfileBusiness[];
+  businesses: ProfileBusiness[];
 
-  onPendingBusiness: (
-    business:
-      ProfileBusiness,
-  ) => void;
+  onPendingBusiness: (business: ProfileBusiness) => void;
 }) {
   return (
     <section
@@ -1158,9 +966,7 @@ function BusinessSection({
               text-black/40
             "
           >
-            Create and manage
-            businesses connected to
-            your CAFÉTA account.
+            Create and manage businesses connected to your CAFÉTA account.
           </p>
         </div>
 
@@ -1195,37 +1001,23 @@ function BusinessSection({
         </Link>
       </div>
 
-      {businesses.length >
-      0 ? (
+      {businesses.length > 0 ? (
         <div
           className="
             mt-5
             space-y-2.5
           "
         >
-          {businesses.map(
-            (
-              business,
-              index,
-            ) => (
-              <BusinessListItem
-                key={
-                  business.id
-                }
-                business={
-                  business
-                }
-                index={
-                  index
-                }
-                onPending={() => {
-                  onPendingBusiness(
-                    business,
-                  );
-                }}
-              />
-            ),
-          )}
+          {businesses.map((business, index) => (
+            <BusinessListItem
+              key={business.id}
+              business={business}
+              index={index}
+              onPending={() => {
+                onPendingBusiness(business);
+              }}
+            />
+          ))}
         </div>
       ) : (
         <EmptyBusinessState />
@@ -1239,30 +1031,19 @@ function BusinessListItem({
   index,
   onPending,
 }: {
-  business:
-    ProfileBusiness;
+  business: ProfileBusiness;
 
-  index:
-    number;
+  index: number;
 
-  onPending:
-    () => void;
+  onPending: () => void;
 }) {
-  const approved =
-    business.status ===
-    "approved";
+  const approved = business.status === "approved";
 
-  const pending =
-    business.status ===
-    "pending";
+  const pending = business.status === "pending";
 
   const content = (
     <>
-      <BusinessLogo
-        business={
-          business
-        }
-      />
+      <BusinessLogo business={business} />
 
       <div
         className="
@@ -1292,22 +1073,19 @@ function BusinessListItem({
             {business.name}
           </h3>
 
-          {business.is_verified &&
-            approved && (
-              <BadgeCheck
-                aria-label="Verified business"
-                className="
+          {business.is_verified && approved && (
+            <BadgeCheck
+              aria-label="Verified business"
+              className="
                   size-[15px]
                   shrink-0
 
                   fill-[#1689e8]
                   text-white
                 "
-                strokeWidth={
-                  2.4
-                }
-              />
-            )}
+              strokeWidth={2.4}
+            />
+          )}
         </div>
 
         <div
@@ -1326,9 +1104,7 @@ function BusinessListItem({
               text-black/40
             "
           >
-            {formatCategory(
-              business.category,
-            )}
+            {formatCategory(business.category)}
           </span>
 
           <span
@@ -1345,16 +1121,10 @@ function BusinessListItem({
               text-black/40
             "
           >
-            {formatMemberRole(
-              business.memberRole,
-            )}
+            {formatMemberRole(business.memberRole)}
           </span>
 
-          <BusinessStatusBadge
-            status={
-              business.status
-            }
-          />
+          <BusinessStatusBadge status={business.status} />
         </div>
       </div>
 
@@ -1420,28 +1190,17 @@ function BusinessListItem({
   `;
 
   const style = {
-    animationDelay:
-      `${Math.min(
-        index * 60,
-        300,
-      )}ms`,
+    animationDelay: `${Math.min(index * 60, 300)}ms`,
 
-    animationFillMode:
-      "both" as const,
+    animationFillMode: "both" as const,
   };
 
   if (approved) {
     return (
       <Link
-        href={`/business/${encodeURIComponent(
-          business.slug,
-        )}`}
-        style={
-          style
-        }
-        className={
-          className
-        }
+        href={`/business/${encodeURIComponent(business.slug)}`}
+        style={style}
+        className={className}
       >
         {content}
       </Link>
@@ -1452,12 +1211,8 @@ function BusinessListItem({
     return (
       <button
         type="button"
-        onClick={
-          onPending
-        }
-        style={
-          style
-        }
+        onClick={onPending}
+        style={style}
         className={`
           ${className}
 
@@ -1483,9 +1238,7 @@ function BusinessListItem({
    */
   return (
     <div
-      style={
-        style
-      }
+      style={style}
       className={`
         ${className}
 
@@ -1500,16 +1253,8 @@ function BusinessListItem({
   );
 }
 
-function BusinessStatusBadge({
-  status,
-}: {
-  status:
-    string;
-}) {
-  if (
-    status ===
-    "approved"
-  ) {
+function BusinessStatusBadge({ status }: { status: string }) {
+  if (status === "approved") {
     return (
       <span
         className="
@@ -1535,16 +1280,12 @@ function BusinessStatusBadge({
             size-2.5
           "
         />
-
         Active
       </span>
     );
   }
 
-  if (
-    status ===
-    "pending"
-  ) {
+  if (status === "pending") {
     return (
       <span
         className="
@@ -1573,16 +1314,12 @@ function BusinessStatusBadge({
             size-2.5
           "
         />
-
         Pending
       </span>
     );
   }
 
-  if (
-    status ===
-    "rejected"
-  ) {
+  if (status === "rejected") {
     return (
       <span
         className="
@@ -1608,7 +1345,6 @@ function BusinessStatusBadge({
             size-2.5
           "
         />
-
         Rejected
       </span>
     );
@@ -1640,9 +1376,7 @@ function BusinessStatusBadge({
         "
       />
 
-      {formatStatus(
-        status,
-      )}
+      {formatStatus(status)}
     </span>
   );
 }
@@ -1650,59 +1384,39 @@ function PendingBusinessModal({
   business,
   onClose,
 }: {
-  business:
-    ProfileBusiness | null;
+  business: ProfileBusiness | null;
 
-  onClose:
-    () => void;
+  onClose: () => void;
 }) {
   useEffect(() => {
     if (!business) {
       return;
     }
 
-    const previousOverflow =
-      document.body.style.overflow;
+    const previousOverflow = document.body.style.overflow;
 
-    document.body.style.overflow =
-      "hidden";
+    document.body.style.overflow = "hidden";
 
-    function handleKeyDown(
-      event: KeyboardEvent,
-    ) {
+    function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         onClose();
       }
     }
 
-    window.addEventListener(
-      "keydown",
-      handleKeyDown,
-    );
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.body.style.overflow =
-        previousOverflow;
+      document.body.style.overflow = previousOverflow;
 
-      window.removeEventListener(
-        "keydown",
-        handleKeyDown,
-      );
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [
-    business,
-    onClose,
-  ]);
+  }, [business, onClose]);
 
   if (!business) {
     return null;
   }
 
-  const location = [
-    business.barangay,
-    business.city,
-    business.province,
-  ]
+  const location = [business.barangay, business.city, business.province]
     .filter(Boolean)
     .join(", ");
 
@@ -1732,10 +1446,7 @@ function PendingBusinessModal({
         sm:p-6
       "
       onMouseDown={(event) => {
-        if (
-          event.target ===
-          event.currentTarget
-        ) {
+        if (event.target === event.currentTarget) {
           onClose();
         }
       }}
@@ -1784,9 +1495,7 @@ function PendingBusinessModal({
         >
           {business.cover_url ? (
             <img
-              src={
-                business.cover_url
-              }
+              src={business.cover_url}
               alt=""
               loading="eager"
               decoding="async"
@@ -1814,9 +1523,7 @@ function PendingBusinessModal({
 
           <button
             type="button"
-            onClick={
-              onClose
-            }
+            onClick={onClose}
             aria-label="Close pending business dialog"
             className="
               absolute
@@ -1875,11 +1582,7 @@ function PendingBusinessModal({
               gap-3
             "
           >
-            <BusinessModalLogo
-              business={
-                business
-              }
-            />
+            <BusinessModalLogo business={business} />
 
             <div
               className="
@@ -1911,7 +1614,6 @@ function PendingBusinessModal({
                   size-3
                 "
               />
-
               Pending review
             </div>
           </div>
@@ -1982,9 +1684,7 @@ function PendingBusinessModal({
                 text-black/40
               "
             >
-              {formatCategory(
-                business.category,
-              )}
+              {formatCategory(business.category)}
             </p>
 
             {location && (
@@ -2075,8 +1775,7 @@ function PendingBusinessModal({
                   text-[#17211c]
                 "
               >
-                We&apos;re reviewing
-                your business
+                We&apos;re reviewing your business
               </h3>
 
               <p
@@ -2090,12 +1789,8 @@ function PendingBusinessModal({
                   text-black/45
                 "
               >
-                Your submission is
-                waiting for approval.
-                Once approved, your
-                business will become
-                discoverable across
-                CAFÉTA.
+                Your submission is waiting for approval. Once approved, your
+                business will become discoverable across CAFÉTA.
               </p>
             </div>
           </div>
@@ -2135,17 +1830,13 @@ function PendingBusinessModal({
                 text-black/40
               "
             >
-              No action is needed
-              while your submission
-              is being reviewed.
+              No action is needed while your submission is being reviewed.
             </p>
           </div>
 
           <button
             type="button"
-            onClick={
-              onClose
-            }
+            onClick={onClose}
             className="
               mt-4
 
@@ -2184,32 +1875,14 @@ function PendingBusinessModal({
   );
 }
 
-function BusinessModalLogo({
-  business,
-}: {
-  business:
-    ProfileBusiness;
-}) {
-  const [
-    failed,
-    setFailed,
-  ] =
-    useState(false);
+function BusinessModalLogo({ business }: { business: ProfileBusiness }) {
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    setFailed(
-      false,
-    );
-  }, [
-    business.id,
-    business.logo_url,
-  ]);
+    setFailed(false);
+  }, [business.id, business.logo_url]);
 
-  const showLogo =
-    Boolean(
-      business.logo_url,
-    ) &&
-    !failed;
+  const showLogo = Boolean(business.logo_url) && !failed;
 
   return (
     <div
@@ -2231,17 +1904,13 @@ function BusinessModalLogo({
     >
       {showLogo ? (
         <img
-          src={
-            business.logo_url!
-          }
+          src={business.logo_url!}
           alt={`${business.name} logo`}
           loading="eager"
           decoding="async"
           referrerPolicy="no-referrer"
           onError={() => {
-            setFailed(
-              true,
-            );
+            setFailed(true);
           }}
           className="
             block
@@ -2275,32 +1944,14 @@ function BusinessModalLogo({
   );
 }
 
-function BusinessLogo({
-  business,
-}: {
-  business:
-    ProfileBusiness;
-}) {
-  const [
-    logoFailed,
-    setLogoFailed,
-  ] =
-    useState(false);
+function BusinessLogo({ business }: { business: ProfileBusiness }) {
+  const [logoFailed, setLogoFailed] = useState(false);
 
   useEffect(() => {
-    setLogoFailed(
-      false,
-    );
-  }, [
-    business.id,
-    business.logo_url,
-  ]);
+    setLogoFailed(false);
+  }, [business.id, business.logo_url]);
 
-  const showLogo =
-    Boolean(
-      business.logo_url,
-    ) &&
-    !logoFailed;
+  const showLogo = Boolean(business.logo_url) && !logoFailed;
 
   return (
     <div
@@ -2323,17 +1974,13 @@ function BusinessLogo({
     >
       {showLogo ? (
         <img
-          src={
-            business.logo_url!
-          }
+          src={business.logo_url!}
           alt={`${business.name} logo`}
           loading="lazy"
           decoding="async"
           referrerPolicy="no-referrer"
           onError={() => {
-            setLogoFailed(
-              true,
-            );
+            setLogoFailed(true);
           }}
           className="
             block
@@ -2433,7 +2080,6 @@ function BusinessCoverFallback() {
             size-3
           "
         />
-
         CAFÉTA
       </div>
     </div>
@@ -2491,8 +2137,7 @@ function EmptyBusinessState() {
           text-[#17211c]
         "
       >
-        Have a café or milk tea
-        shop?
+        Have a café or milk tea shop?
       </h3>
 
       <p
@@ -2506,9 +2151,7 @@ function EmptyBusinessState() {
           text-black/40
         "
       >
-        Create your business page and
-        make it discoverable across
-        CAFÉTA.
+        Create your business page and make it discoverable across CAFÉTA.
       </p>
 
       <Link
@@ -2537,7 +2180,6 @@ function EmptyBusinessState() {
             size-3.5
           "
         />
-
         Create your business
       </Link>
     </div>
@@ -2579,11 +2221,9 @@ function ProfileStat({
   value,
   label,
 }: {
-  value:
-    number;
+  value: number;
 
-  label:
-    string;
+  label: string;
 }) {
   return (
     <div
@@ -2617,44 +2257,21 @@ function ProfileStat({
     </div>
   );
 }
-
 function ProfileRow({
-  icon:
-    Icon,
+  icon: Icon,
   label,
   value,
   href,
+  onClick,
 }: {
-  icon:
-    typeof UserRound;
-
-  label:
-    string;
-
-  value:
-    string;
-
-  href:
-    string;
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  href?: string;
+  onClick?: () => void;
 }) {
-  return (
-    <Link
-      href={
-        href
-      }
-      className="
-        group
-
-        flex
-        items-center
-        gap-3
-
-        py-3.5
-
-        first:pt-0
-        last:pb-0
-      "
-    >
+  const content = (
+    <>
       <div
         className="
           flex
@@ -2708,39 +2325,72 @@ function ProfileRow({
       <ChevronRight
         className="
           size-4
-
           text-black/20
         "
       />
-    </Link>
+    </>
+  );
+
+  const className = `
+    group
+
+    flex
+    w-full
+    items-center
+    gap-3
+
+    py-3.5
+
+    text-left
+  `;
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={className}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={className}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div className={className}>
+      {content}
+    </div>
   );
 }
-
 function ProfileActionRow({
-  icon:
-    Icon,
+  icon: Icon,
   label,
   value,
   onClick,
 }: {
-  icon:
-    typeof UserRound;
+  icon: typeof UserRound;
 
-  label:
-    string;
+  label: string;
 
-  value:
-    string;
+  value: string;
 
-  onClick:
-    () => void;
+  onClick: () => void;
 }) {
   return (
     <button
       type="button"
-      onClick={
-        onClick
-      }
+      onClick={onClick}
       className="
         group
 
@@ -2818,79 +2468,38 @@ function ProfileActionRow({
   );
 }
 
-function getInitials(
-  name:
-    string | null,
-) {
-  if (
-    !name?.trim()
-  ) {
+function getInitials(name: string | null) {
+  if (!name?.trim()) {
     return "C";
   }
 
   return name
     .trim()
     .split(/\s+/)
-    .slice(
-      0,
-      2,
-    )
-    .map(
-      (part) =>
-        part.charAt(
-          0,
-        ),
-    )
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
     .join("")
     .toUpperCase();
 }
 
-function formatCategory(
-  category:
-    string,
-) {
+function formatCategory(category: string) {
   return category
-    .replaceAll(
-      "_",
-      " ",
-    )
-    .replace(
-      /\b\w/g,
-      (
-        letter,
-      ) =>
-        letter.toUpperCase(),
-    );
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function formatMemberRole(
-  role:
-    string,
-) {
+function formatMemberRole(role: string) {
   if (!role) {
     return "Member";
   }
 
-  return (
-    role
-      .charAt(0)
-      .toUpperCase() +
-    role.slice(1)
-  );
+  return role.charAt(0).toUpperCase() + role.slice(1);
 }
 
-function formatStatus(
-  status:
-    string,
-) {
+function formatStatus(status: string) {
   if (!status) {
     return "";
   }
 
-  return (
-    status
-      .charAt(0)
-      .toUpperCase() +
-    status.slice(1)
-  );
+  return status.charAt(0).toUpperCase() + status.slice(1);
 }
