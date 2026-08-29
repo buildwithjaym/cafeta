@@ -10,6 +10,7 @@ import Link from "next/link";
 
 import {
   ArrowLeft,
+  ArrowRight,
   BadgeCheck,
   Clock3,
   Coffee,
@@ -312,11 +313,9 @@ export function BusinessProfileClient({
                 className="
                   size-full
                   object-cover
-
                   transition-transform
                   duration-700
                   ease-out
-
                   hover:scale-[1.01]
                 "
               />
@@ -459,10 +458,8 @@ export function BusinessProfileClient({
                   className="
                     size-3.5
                     text-[#006241]
-
                     transition-transform
                     duration-200
-
                     group-hover:-rotate-6
                   "
                 />
@@ -482,10 +479,8 @@ export function BusinessProfileClient({
             <div
               className="
                 relative
-
                 flex
                 flex-col
-
                 border-b
                 border-black/[0.07]
                 pb-5
@@ -529,10 +524,8 @@ export function BusinessProfileClient({
                     className="
                       size-full
                       object-cover
-
                       transition-transform
                       duration-500
-
                       hover:scale-105
                     "
                   />
@@ -576,13 +569,11 @@ export function BusinessProfileClient({
                   <h1
                     className="
                       truncate
-
                       text-[28px]
                       font-black
                       leading-tight
                       tracking-[-0.045em]
                       text-[#17211c]
-
                       sm:text-[34px]
                     "
                   >
@@ -610,7 +601,6 @@ export function BusinessProfileClient({
                     items-center
                     gap-x-2
                     gap-y-1
-
                     text-[12px]
                     text-black/45
                   "
@@ -638,7 +628,6 @@ export function BusinessProfileClient({
                           flex
                           items-center
                           gap-1
-
                           font-semibold
                           text-[#39433e]
                         "
@@ -670,7 +659,6 @@ export function BusinessProfileClient({
                         className="
                           font-medium
                           transition-colors
-                          duration-200
                           hover:text-[#006241]
                         "
                       >
@@ -700,7 +688,6 @@ export function BusinessProfileClient({
               <div
                 className="
                   mt-4
-
                   flex
                   flex-wrap
                   gap-2
@@ -719,8 +706,6 @@ export function BusinessProfileClient({
                   <Link
                     href={`/business/${business.slug}/edit`}
                     className="
-                      group
-
                       inline-flex
                       h-10
                       flex-1
@@ -739,30 +724,16 @@ export function BusinessProfileClient({
                       text-[#006241]
 
                       shadow-sm
-
                       transition-all
                       duration-200
 
                       hover:-translate-y-0.5
-                      hover:border-[#006241]/20
                       hover:bg-[#dcece4]
-                      hover:shadow-md
-
-                      active:translate-y-0
-                      active:scale-[0.98]
 
                       sm:flex-none
                     "
                   >
-                    <Pencil
-                      className="
-                        size-3.5
-                        transition-transform
-                        duration-200
-                        group-hover:-rotate-6
-                      "
-                    />
-
+                    <Pencil className="size-3.5" />
                     Edit profile
                   </Link>
                 )}
@@ -788,22 +759,16 @@ export function BusinessProfileClient({
                     text-white
 
                     shadow-sm
-
                     transition-all
                     duration-200
 
                     hover:-translate-y-0.5
                     hover:bg-[#00754a]
-                    hover:shadow-md
-
-                    active:translate-y-0
-                    active:scale-[0.98]
 
                     sm:flex-none
                   "
                 >
                   <Navigation className="size-4" />
-
                   Directions
                 </a>
 
@@ -811,13 +776,6 @@ export function BusinessProfileClient({
                   className="
                     [&>button]:size-10
                     [&>button]:rounded-[10px]
-
-                    [&>button]:transition-all
-                    [&>button]:duration-200
-
-                    [&>button:hover]:-translate-y-0.5
-                    [&>button:active]:translate-y-0
-                    [&>button:active]:scale-95
                   "
                 >
                   <SaveBusinessButton
@@ -846,14 +804,9 @@ export function BusinessProfileClient({
                     text-[#39433e]
 
                     transition-all
-                    duration-200
-
-                    hover:-translate-y-0.5
                     hover:bg-[#dfe5e1]
                     hover:text-[#006241]
-                    hover:shadow-sm
 
-                    active:translate-y-0
                     active:scale-95
                   "
                   aria-label="Share business"
@@ -911,7 +864,6 @@ export function BusinessProfileClient({
                         rounded-full
                         px-1.5
                         py-0.5
-
                         text-[8px]
                         font-black
 
@@ -981,7 +933,6 @@ export function BusinessProfileClient({
           max-w-[1180px]
           px-3
           py-4
-
           sm:px-6
           lg:px-8
         "
@@ -1017,11 +968,6 @@ export function BusinessProfileClient({
             }
             canEdit={
               canEdit
-            }
-            onOpenMenu={() =>
-              setActiveTab(
-                "menu",
-              )
             }
             onOpenReviews={() =>
               setActiveTab(
@@ -1124,7 +1070,6 @@ function HomeTab({
   averageRating,
   reviewCount,
   canEdit,
-  onOpenMenu,
   onOpenReviews,
 }: {
   business: Business;
@@ -1145,7 +1090,6 @@ function HomeTab({
   averageRating: number;
   reviewCount: number;
   canEdit: boolean;
-  onOpenMenu: () => void;
   onOpenReviews: () => void;
 }) {
   return (
@@ -1154,14 +1098,12 @@ function HomeTab({
         grid
         items-start
         gap-4
-
         lg:grid-cols-[390px_minmax(0,1fr)]
       "
     >
       <aside
         className="
           space-y-4
-
           lg:sticky
           lg:top-4
         "
@@ -1187,19 +1129,12 @@ function HomeTab({
                   size-8
                   items-center
                   justify-center
-
                   rounded-full
                   text-black/35
-
-                  transition-all
-                  duration-200
-
+                  transition
                   hover:bg-[#e8f2ed]
                   hover:text-[#006241]
-
-                  active:scale-95
                 "
-                aria-label="Edit business intro"
               >
                 <Pencil className="size-3.5" />
               </Link>
@@ -1245,11 +1180,9 @@ function HomeTab({
                 <Store className="size-[18px]" />
               }
             >
-              <span>
-                {formatCategory(
-                  business.category,
-                )}
-              </span>
+              {formatCategory(
+                business.category,
+              )}
             </InfoRow>
 
             <InfoRow
@@ -1322,7 +1255,6 @@ function HomeTab({
                   target="_blank"
                   rel="noreferrer"
                   className="
-                    truncate
                     font-medium
                     text-[#006241]
                     hover:underline
@@ -1360,7 +1292,6 @@ function HomeTab({
                   rounded-full
                   px-2.5
                   py-1
-
                   text-[9px]
                   font-bold
 
@@ -1384,19 +1315,12 @@ function HomeTab({
                     size-7
                     items-center
                     justify-center
-
                     rounded-full
                     text-black/30
-
-                    transition-all
-                    duration-200
-
+                    transition
                     hover:bg-[#e8f2ed]
                     hover:text-[#006241]
-
-                    active:scale-95
                   "
-                  aria-label="Edit business hours"
                 >
                   <Pencil className="size-3" />
                 </Link>
@@ -1534,33 +1458,6 @@ function HomeTab({
                 on CAFÉTA
               </p>
             </div>
-
-            {canEdit && (
-              <Link
-                href={`/business/${business.slug}/edit`}
-                className="
-                  flex
-                  size-8
-                  shrink-0
-                  items-center
-                  justify-center
-
-                  rounded-full
-                  text-black/30
-
-                  transition-all
-                  duration-200
-
-                  hover:bg-[#e8f2ed]
-                  hover:text-[#006241]
-
-                  active:scale-95
-                "
-                aria-label="Edit business profile"
-              >
-                <Pencil className="size-3.5" />
-              </Link>
-            )}
           </div>
 
           <div
@@ -1570,11 +1467,6 @@ function HomeTab({
               bg-[#f5f7f5]
               px-4
               py-4
-
-              transition-colors
-              duration-300
-
-              hover:bg-[#f1f5f2]
             "
           >
             <p
@@ -1621,7 +1513,7 @@ function HomeTab({
           <div
             className="
               flex
-              items-center
+              items-start
               justify-between
               gap-4
             "
@@ -1638,101 +1530,144 @@ function HomeTab({
                   text-black/35
                 "
               >
-                See what&apos;s
+                A taste of what&apos;s
                 being served.
               </p>
             </div>
 
-            <div
-              className="
-                flex
-                items-center
-                gap-2
-              "
-            >
-              {canEdit && (
-                <Link
-                  href={`/business/${business.slug}/edit?section=menu`}
-                  className="
-                    inline-flex
-                    h-8
-                    items-center
-                    gap-1.5
+            {menuItems.length >
+              0 && (
+              <Link
+                href={`/business/${encodeURIComponent(
+                  business.slug,
+                )}/menu`}
+                className="
+                  inline-flex
+                  shrink-0
+                  items-center
+                  gap-1
 
-                    rounded-full
-                    bg-[#e8f2ed]
-                    px-3
+                  text-[10px]
+                  font-black
+                  text-[#006241]
 
-                    text-[10px]
-                    font-bold
-                    text-[#006241]
+                  transition
+                  hover:text-[#00754a]
+                "
+              >
+                View menu
 
-                    transition-all
-                    duration-200
-
-                    hover:-translate-y-0.5
-                    hover:bg-[#dcece4]
-
-                    active:translate-y-0
-                    active:scale-[0.98]
-                  "
-                >
-                  <Pencil className="size-3" />
-
-                  Update menu
-                </Link>
-              )}
-
-              {menuItems.length >
-                0 && (
-                <button
-                  type="button"
-                  onClick={
-                    onOpenMenu
-                  }
-                  className="
-                    text-[11px]
-                    font-bold
-                    text-[#006241]
-                    hover:underline
-                  "
-                >
-                  See all
-                </button>
-              )}
-            </div>
+                <ArrowRight className="size-3" />
+              </Link>
+            )}
           </div>
 
           {menuItems.length >
           0 ? (
-            <div
-              className="
-                mt-4
-                grid
-                grid-cols-2
-                gap-2
+            <>
+              <div
+                className="
+                  mt-4
+                  grid
+                  grid-cols-2
+                  gap-2
+                  sm:grid-cols-3
+                "
+              >
+                {menuItems
+                  .slice(
+                    0,
+                    6,
+                  )
+                  .map(
+                    (item) => (
+                      <FeaturedMenuItem
+                        key={
+                          item.id
+                        }
+                        item={
+                          item
+                        }
+                      />
+                    ),
+                  )}
+              </div>
 
-                sm:grid-cols-3
-              "
-            >
-              {menuItems
-                .slice(
-                  0,
-                  6,
-                )
-                .map(
-                  (item) => (
-                    <FeaturedMenuItem
-                      key={
-                        item.id
-                      }
-                      item={
-                        item
-                      }
-                    />
-                  ),
-                )}
-            </div>
+              <Link
+                href={`/business/${encodeURIComponent(
+                  business.slug,
+                )}/menu`}
+                className="
+                  group
+
+                  mt-4
+                  flex
+                  h-11
+                  w-full
+                  items-center
+                  justify-center
+                  gap-2
+
+                  rounded-[12px]
+                  border
+                  border-[#006241]/10
+                  bg-[#f2f8f5]
+
+                  text-[10px]
+                  font-black
+                  text-[#006241]
+
+                  transition-all
+                  duration-200
+
+                  hover:-translate-y-0.5
+                  hover:border-[#006241]/20
+                  hover:bg-[#e8f2ed]
+
+                  active:scale-[0.99]
+                "
+              >
+                <UtensilsCrossed className="size-3.5" />
+
+                View full menu
+
+                <ArrowRight
+                  className="
+                    size-3.5
+                    transition-transform
+                    group-hover:translate-x-0.5
+                  "
+                />
+              </Link>
+
+              {canEdit && (
+                <Link
+                  href={`/business/${business.slug}/edit?section=menu`}
+                  className="
+                    mt-2
+                    flex
+                    h-9
+                    items-center
+                    justify-center
+                    gap-1.5
+
+                    rounded-[10px]
+
+                    text-[9px]
+                    font-bold
+                    text-black/35
+
+                    transition
+                    hover:bg-black/[0.025]
+                    hover:text-[#006241]
+                  "
+                >
+                  <Pencil className="size-3" />
+
+                  Manage menu
+                </Link>
+              )}
+            </>
           ) : (
             <div
               className="
@@ -1767,19 +1702,22 @@ function HomeTab({
                   text-[#17211c]
                 "
               >
-                No menu items yet
+                Menu coming soon
               </p>
 
               <p
                 className="
+                  mx-auto
                   mt-1
+                  max-w-[300px]
                   text-[10px]
+                  leading-4
                   text-black/35
                 "
               >
                 {canEdit
-                  ? "Add your first menu item to showcase what you serve."
-                  : "This business hasn't added menu items yet."}
+                  ? "Create categories and add the food and drinks your business serves."
+                  : `${business.name} hasn't published menu items yet.`}
               </p>
 
               {canEdit && (
@@ -1800,20 +1738,13 @@ function HomeTab({
                     font-bold
                     text-white
 
-                    transition-all
-                    duration-200
-
-                    hover:-translate-y-0.5
+                    transition
                     hover:bg-[#00754a]
-                    hover:shadow-md
-
-                    active:translate-y-0
-                    active:scale-[0.98]
                   "
                 >
                   <Pencil className="size-3.5" />
 
-                  Add menu
+                  Build menu
                 </Link>
               )}
             </div>
@@ -1964,7 +1895,6 @@ function AboutTab({
         grid
         max-w-[900px]
         gap-4
-
         md:grid-cols-2
       "
     >
@@ -1982,7 +1912,6 @@ function AboutTab({
               size-10
               items-center
               justify-center
-
               rounded-full
               bg-[#e8f2ed]
               text-[#006241]
@@ -2019,27 +1948,15 @@ function AboutTab({
                 h-8
                 items-center
                 gap-1.5
-
                 rounded-full
                 bg-[#e8f2ed]
                 px-3
-
                 text-[10px]
                 font-bold
                 text-[#006241]
-
-                transition-all
-                duration-200
-
-                hover:-translate-y-0.5
-                hover:bg-[#dcece4]
-
-                active:translate-y-0
-                active:scale-[0.98]
               "
             >
               <Pencil className="size-3" />
-
               Edit
             </Link>
           )}
@@ -2120,10 +2037,7 @@ function AboutTab({
             >
               <a
                 href={`mailto:${business.email}`}
-                className="
-                  break-all
-                  hover:underline
-                "
+                className="hover:underline"
               >
                 {
                   business.email
@@ -2192,23 +2106,12 @@ function AboutTab({
                   h-8
                   items-center
                   gap-1.5
-
                   rounded-full
                   bg-[#e8f2ed]
                   px-3
-
                   text-[10px]
                   font-bold
                   text-[#006241]
-
-                  transition-all
-                  duration-200
-
-                  hover:-translate-y-0.5
-                  hover:bg-[#dcece4]
-
-                  active:translate-y-0
-                  active:scale-[0.98]
                 "
               >
                 <Pencil className="size-3" />
@@ -2304,12 +2207,28 @@ function MenuTab({
 
   canEdit: boolean;
 }) {
+  const totalItems =
+    menuGroups.reduce(
+      (
+        total,
+        group,
+      ) =>
+        total +
+        group.items.length,
+      0,
+    );
+
   return (
     <div
       className="
         mx-auto
         max-w-[900px]
         space-y-4
+
+        animate-in
+        fade-in
+        slide-in-from-bottom-2
+        duration-300
       "
     >
       <PageCard>
@@ -2323,10 +2242,10 @@ function MenuTab({
           <div
             className="
               flex
-              size-10
+              size-11
+              shrink-0
               items-center
               justify-center
-
               rounded-full
               bg-[#e8f2ed]
               text-[#006241]
@@ -2347,12 +2266,13 @@ function MenuTab({
 
             <p
               className="
+                mt-0.5
                 text-[10px]
                 text-black/35
               "
             >
-              Browse available
-              items
+              Browse what{" "}
+              {business.name} serves
             </p>
           </div>
 
@@ -2360,44 +2280,22 @@ function MenuTab({
             <Link
               href={`/business/${business.slug}/edit?section=menu`}
               className="
-                group
-
                 inline-flex
                 h-9
                 items-center
                 gap-2
-
                 rounded-full
-                bg-[#006241]
-                px-4
-
+                bg-[#e8f2ed]
+                px-3.5
                 text-[10px]
                 font-bold
-                text-white
-
-                shadow-sm
-
-                transition-all
-                duration-200
-
-                hover:-translate-y-0.5
-                hover:bg-[#00754a]
-                hover:shadow-md
-
-                active:translate-y-0
-                active:scale-[0.98]
+                text-[#006241]
+                transition
+                hover:bg-[#dcece4]
               "
             >
-              <Pencil
-                className="
-                  size-3.5
-                  transition-transform
-                  duration-200
-                  group-hover:-rotate-6
-                "
-              />
-
-              Update menu
+              <Pencil className="size-3.5" />
+              Edit
             </Link>
           )}
         </div>
@@ -2405,74 +2303,293 @@ function MenuTab({
 
       {menuGroups.length >
       0 ? (
-        menuGroups.map(
-          (group) => (
-            <PageCard
-              key={
-                group.id
-              }
+        <>
+          <PageCard>
+            <div
+              className="
+                flex
+                items-center
+                justify-between
+                gap-4
+              "
+            >
+              <div>
+                <p
+                  className="
+                    text-[10px]
+                    font-bold
+                    uppercase
+                    tracking-[0.08em]
+                    text-[#006241]
+                  "
+                >
+                  Menu categories
+                </p>
+
+                <h3
+                  className="
+                    mt-1
+                    text-[18px]
+                    font-black
+                    tracking-[-0.025em]
+                    text-[#17211c]
+                  "
+                >
+                  What&apos;s being served
+                </h3>
+
+                <p
+                  className="
+                    mt-1
+                    text-[10px]
+                    text-black/35
+                  "
+                >
+                  {totalItems}{" "}
+                  {totalItems === 1
+                    ? "menu item"
+                    : "menu items"}{" "}
+                  across{" "}
+                  {menuGroups.length}{" "}
+                  {menuGroups.length === 1
+                    ? "category"
+                    : "categories"}
+                </p>
+              </div>
+
+              <div
+                className="
+                  hidden
+                  size-12
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-[#f2f8f5]
+                  text-[#006241]
+                  sm:flex
+                "
+              >
+                <MenuIcon className="size-5" />
+              </div>
+            </div>
+
+            <div
+              className="
+                mt-5
+                grid
+                gap-2
+                sm:grid-cols-2
+              "
+            >
+              {menuGroups.map(
+                (
+                  group,
+                ) => (
+                  <Link
+                    key={
+                      group.id
+                    }
+                    href={
+                      group.id ===
+                      "uncategorized"
+                        ? `/business/${encodeURIComponent(
+                            business.slug,
+                          )}/menu`
+                        : `/business/${encodeURIComponent(
+                            business.slug,
+                          )}/menu?category=${encodeURIComponent(
+                            group.id,
+                          )}`
+                    }
+                    className="
+                      group
+
+                      flex
+                      min-h-[72px]
+                      items-center
+                      gap-3
+
+                      rounded-[14px]
+                      border
+                      border-black/[0.055]
+                      bg-[#fafbfa]
+                      p-3
+
+                      transition-all
+                      duration-200
+
+                      hover:-translate-y-0.5
+                      hover:border-[#006241]/15
+                      hover:bg-[#f3f8f5]
+                      hover:shadow-sm
+                    "
+                  >
+                    <div
+                      className="
+                        flex
+                        size-10
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-[11px]
+                        bg-[#e8f2ed]
+                        text-[#006241]
+                      "
+                    >
+                      <Coffee className="size-4" />
+                    </div>
+
+                    <div
+                      className="
+                        min-w-0
+                        flex-1
+                      "
+                    >
+                      <p
+                        className="
+                          truncate
+                          text-[12px]
+                          font-black
+                          text-[#17211c]
+                        "
+                      >
+                        {group.name}
+                      </p>
+
+                      <p
+                        className="
+                          mt-0.5
+                          text-[9px]
+                          text-black/35
+                        "
+                      >
+                        {
+                          group.items
+                            .length
+                        }{" "}
+                        {group.items
+                          .length ===
+                        1
+                          ? "item"
+                          : "items"}
+                      </p>
+                    </div>
+
+                    <ArrowRight
+                      className="
+                        size-4
+                        shrink-0
+                        text-black/20
+                        transition
+                        group-hover:translate-x-0.5
+                        group-hover:text-[#006241]
+                      "
+                    />
+                  </Link>
+                ),
+              )}
+            </div>
+          </PageCard>
+
+          <PageCard>
+            <div
+              className="
+                flex
+                flex-col
+                items-center
+                px-3
+                py-5
+                text-center
+              "
             >
               <div
                 className="
                   flex
+                  size-12
                   items-center
-                  justify-between
-                  gap-3
+                  justify-center
+                  rounded-full
+                  bg-[#e8f2ed]
+                  text-[#006241]
                 "
               >
-                <h3
-                  className="
-                    text-[17px]
-                    font-black
-                    text-[#17211c]
-                  "
-                >
-                  {group.name}
-                </h3>
-
-                <span
-                  className="
-                    text-[10px]
-                    text-black/30
-                  "
-                >
-                  {
-                    group.items
-                      .length
-                  }{" "}
-                  {group.items
-                    .length ===
-                  1
-                    ? "item"
-                    : "items"}
-                </span>
+                <UtensilsCrossed className="size-5" />
               </div>
 
-              <div
+              <h3
                 className="
-                  mt-4
-                  grid
-                  gap-3
-
-                  sm:grid-cols-2
+                  mt-3
+                  text-[15px]
+                  font-black
+                  text-[#17211c]
                 "
               >
-                {group.items.map(
-                  (item) => (
-                    <MenuItemCard
-                      key={
-                        item.id
-                      }
-                      item={
-                        item
-                      }
-                    />
-                  ),
-                )}
-              </div>
-            </PageCard>
-          ),
-        )
+                Explore the full menu
+              </h3>
+
+              <p
+                className="
+                  mt-1
+                  max-w-[420px]
+                  text-[10px]
+                  leading-4
+                  text-black/35
+                "
+              >
+                See all categories,
+                menu items, prices,
+                photos, descriptions,
+                and availability from{" "}
+                {business.name}.
+              </p>
+
+              <Link
+                href={`/business/${encodeURIComponent(
+                  business.slug,
+                )}/menu`}
+                className="
+                  group
+
+                  mt-5
+                  inline-flex
+                  h-11
+                  items-center
+                  justify-center
+                  gap-2
+
+                  rounded-full
+                  bg-[#006241]
+                  px-6
+
+                  text-[10px]
+                  font-black
+                  text-white
+
+                  shadow-[0_6px_18px_rgba(0,98,65,0.16)]
+
+                  transition-all
+                  duration-200
+
+                  hover:-translate-y-0.5
+                  hover:bg-[#00754a]
+
+                  active:scale-[0.98]
+                "
+              >
+                View full menu
+
+                <ArrowRight
+                  className="
+                    size-3.5
+                    transition-transform
+                    group-hover:translate-x-0.5
+                  "
+                />
+              </Link>
+            </div>
+          </PageCard>
+        </>
       ) : (
         <PageCard>
           <div
@@ -2488,7 +2605,6 @@ function MenuTab({
                 size-12
                 items-center
                 justify-center
-
                 rounded-full
                 bg-[#e8f2ed]
                 text-[#006241]
@@ -2510,14 +2626,17 @@ function MenuTab({
 
             <p
               className="
+                mx-auto
                 mt-1
+                max-w-[320px]
                 text-xs
+                leading-5
                 text-black/35
               "
             >
               {canEdit
-                ? "Add your first items to start building your menu."
-                : "This business hasn't added menu items yet."}
+                ? "Create categories and add the food and drinks your business serves."
+                : `${business.name} hasn't published its menu yet.`}
             </p>
 
             {canEdit && (
@@ -2529,29 +2648,17 @@ function MenuTab({
                   h-9
                   items-center
                   gap-2
-
                   rounded-full
                   bg-[#006241]
                   px-4
-
                   text-[10px]
                   font-bold
                   text-white
-
-                  transition-all
-                  duration-200
-
-                  hover:-translate-y-0.5
-                  hover:bg-[#00754a]
-                  hover:shadow-md
-
-                  active:translate-y-0
-                  active:scale-[0.98]
                 "
               >
                 <Pencil className="size-3.5" />
 
-                Add menu items
+                Build menu
               </Link>
             )}
           </div>
@@ -2582,62 +2689,51 @@ function ReviewsTab({
         <div
           className="
             flex
-            flex-col
-            gap-5
-
-            sm:flex-row
-            sm:items-center
+            items-center
+            gap-4
           "
         >
           <div
             className="
-              flex
-              items-center
-              gap-4
+              text-[42px]
+              font-black
+              leading-none
+              tracking-[-0.06em]
+              text-[#17211c]
             "
           >
-            <div
+            {reviewCount >
+            0
+              ? averageRating.toFixed(
+                  1,
+                )
+              : "—"}
+          </div>
+
+          <div>
+            <StarRating
+              rating={
+                Math.round(
+                  averageRating,
+                )
+              }
+              size="large"
+            />
+
+            <p
               className="
-                text-[42px]
-                font-black
-                leading-none
-                tracking-[-0.06em]
-                text-[#17211c]
+                mt-1
+                text-[11px]
+                text-black/35
               "
             >
-              {reviewCount >
-              0
-                ? averageRating.toFixed(
-                    1,
-                  )
-                : "—"}
-            </div>
-
-            <div>
-              <StarRating
-                rating={
-                  Math.round(
-                    averageRating,
-                  )
-                }
-                size="large"
-              />
-
-              <p
-                className="
-                  mt-1
-                  text-[11px]
-                  text-black/35
-                "
-              >
-                Based on{" "}
-                {reviewCount}{" "}
-                {reviewCount ===
-                1
-                  ? "review"
-                  : "reviews"}
-              </p>
-            </div>
+              Based on{" "}
+              {reviewCount}{" "}
+              {reviewCount ===
+              1
+                ? "review"
+                : "reviews"}
+            </p>
           </div>
         </div>
       </PageCard>
@@ -2695,10 +2791,8 @@ function PageTab({
         h-[52px]
         shrink-0
         px-4
-
         text-[12px]
         font-bold
-
         transition-all
         duration-200
 
@@ -2718,14 +2812,8 @@ function PageTab({
             inset-x-2
             bottom-0
             h-[3px]
-
             rounded-t-full
             bg-[#006241]
-
-            animate-in
-            fade-in
-            zoom-in-95
-            duration-200
           "
         />
       )}
@@ -2753,10 +2841,6 @@ function PageCard({
         fade-in
         slide-in-from-bottom-1
         duration-300
-
-        transition-shadow
-
-        hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]
 
         sm:p-5
       "
@@ -2798,7 +2882,6 @@ function InfoRow({
         flex
         items-start
         gap-3
-
         text-[12px]
         leading-5
         text-[#39433e]
@@ -2840,20 +2923,15 @@ function HoursRow({
         items-center
         justify-between
         gap-4
-
         rounded-[8px]
         px-2
         py-2
-
         text-[11px]
-
-        transition-colors
-        duration-200
 
         ${
           day.isToday
             ? "bg-[#f0f6f3]"
-            : "hover:bg-black/[0.018]"
+            : ""
         }
       `}
     >
@@ -2906,19 +2984,13 @@ function SocialLink({
       }
       className="
         group
-
         flex
         items-center
         gap-3
-
         rounded-[10px]
         px-2
         py-2
-
-        transition-all
-        duration-200
-
-        hover:translate-x-0.5
+        transition
         hover:bg-[#f4f6f4]
       "
     >
@@ -2929,15 +3001,9 @@ function SocialLink({
           shrink-0
           items-center
           justify-center
-
           rounded-full
           bg-[#e8f2ed]
           text-[#006241]
-
-          transition-transform
-          duration-200
-
-          group-hover:scale-105
         "
       >
         {icon}
@@ -2948,11 +3014,9 @@ function SocialLink({
           min-w-0
           flex-1
           truncate
-
           text-[12px]
           font-semibold
           text-[#39433e]
-
           group-hover:text-[#006241]
         "
       >
@@ -2964,12 +3028,6 @@ function SocialLink({
           className="
             size-3.5
             text-black/20
-
-            transition-transform
-            duration-200
-
-            group-hover:translate-x-0.5
-            group-hover:-translate-y-0.5
           "
         />
       )}
@@ -2991,7 +3049,6 @@ function BusinessAvatar({
         items-center
         justify-center
         overflow-hidden
-
         rounded-full
         bg-[#e8f2ed]
         text-[#006241]
@@ -3025,7 +3082,6 @@ function FeaturedMenuItem({
       className={`
         group
         overflow-hidden
-
         rounded-[12px]
         border
         border-black/[0.055]
@@ -3064,11 +3120,8 @@ function FeaturedMenuItem({
             className="
               size-full
               object-cover
-
               transition-transform
               duration-500
-              ease-out
-
               group-hover:scale-105
             "
           />
@@ -3130,156 +3183,6 @@ function FeaturedMenuItem({
   );
 }
 
-function MenuItemCard({
-  item,
-}: {
-  item: MenuItem;
-}) {
-  return (
-    <article
-      className={`
-        group
-
-        flex
-        gap-3
-
-        rounded-[14px]
-        border
-        border-black/[0.055]
-        bg-[#fafbfa]
-        p-3
-
-        transition-all
-        duration-300
-
-        hover:-translate-y-0.5
-        hover:bg-white
-        hover:shadow-sm
-
-        ${
-          item.is_available
-            ? ""
-            : "opacity-60"
-        }
-      `}
-    >
-      <div
-        className="
-          flex
-          size-[78px]
-          shrink-0
-          items-center
-          justify-center
-          overflow-hidden
-
-          rounded-[11px]
-          bg-[#e8f2ed]
-          text-[#006241]/35
-        "
-      >
-        {item.image_url ? (
-          <img
-            src={
-              item.image_url
-            }
-            alt={
-              item.name
-            }
-            loading="lazy"
-            className="
-              size-full
-              object-cover
-
-              transition-transform
-              duration-500
-
-              group-hover:scale-105
-            "
-          />
-        ) : (
-          <Coffee className="size-5" />
-        )}
-      </div>
-
-      <div
-        className="
-          min-w-0
-          flex-1
-        "
-      >
-        <div
-          className="
-            flex
-            items-start
-            justify-between
-            gap-2
-          "
-        >
-          <h4
-            className="
-              text-[12px]
-              font-bold
-              text-[#17211c]
-            "
-          >
-            {item.name}
-          </h4>
-
-          <span
-            className="
-              shrink-0
-              text-[11px]
-              font-black
-              text-[#006241]
-            "
-          >
-            {formatPrice(
-              item.price,
-            )}
-          </span>
-        </div>
-
-        {item.description && (
-          <p
-            className="
-              mt-1
-              line-clamp-2
-
-              text-[10px]
-              leading-4
-              text-black/35
-            "
-          >
-            {
-              item.description
-            }
-          </p>
-        )}
-
-        {!item.is_available && (
-          <span
-            className="
-              mt-2
-              inline-block
-
-              rounded-full
-              bg-black/[0.05]
-              px-2
-              py-1
-
-              text-[8px]
-              font-bold
-              text-black/40
-            "
-          >
-            Currently unavailable
-          </span>
-        )}
-      </div>
-    </article>
-  );
-}
-
 function ReviewCard({
   review,
 }: {
@@ -3296,11 +3199,6 @@ function ReviewCard({
     <article
       className="
         py-4
-
-        animate-in
-        fade-in
-        duration-300
-
         first:pt-0
         last:pb-0
       "
@@ -3320,7 +3218,6 @@ function ReviewCard({
             items-center
             justify-center
             overflow-hidden
-
             rounded-full
             bg-[#e8f2ed]
             text-[#006241]
@@ -3475,7 +3372,6 @@ function EmptyReviews() {
           size-11
           items-center
           justify-center
-
           rounded-full
           bg-[#e8f2ed]
           text-[#006241]
@@ -3636,7 +3532,6 @@ function getOpenState(
   ) {
     return {
       open: false,
-
       label:
         "Closed today",
     };
