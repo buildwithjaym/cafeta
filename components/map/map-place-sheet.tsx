@@ -9,8 +9,10 @@ import {
   Flame,
   Images,
   MapPin,
+  MessageCircle,
   Navigation,
   Sparkles,
+  Star,
   X,
 } from "lucide-react";
 
@@ -18,28 +20,91 @@ import {
   useEffect,
   useMemo,
   useState,
+  type ReactNode,
 } from "react";
 
 import type {
   MapBusiness,
 } from "@/lib/map/types";
 
+import {
+  createClient,
+} from "@/lib/supabase/client";
+
 type Props = {
   business: MapBusiness;
+
   onDirections: () => void;
+
   onClose: () => void;
+};
+
+type ReviewPreview = {
+  id: string;
+
+  rating: number;
+
+  content: string | null;
+
+  created_at: string;
+
+  author: {
+    id: string;
+
+    username: string | null;
+
+    full_name: string | null;
+
+    avatar_url: string | null;
+  } | null;
+};
+
+type RawReview = {
+  id: string;
+
+  rating: number;
+
+  content: string | null;
+
+  created_at: string;
+
+  author:
+    | ReviewPreview["author"]
+    | NonNullable<
+        ReviewPreview["author"]
+      >[]
+    | null;
+};
+
+type ReviewsState = {
+  averageRating: number;
+
+  reviewCount: number;
+
+  preview: ReviewPreview | null;
 };
 
 const CATEGORY_LABELS: Record<
   MapBusiness["category"],
   string
 > = {
-  coffee_shop: "Coffee Shop",
-  cafe: "Café",
-  milk_tea: "Milk Tea",
-  bakery_cafe: "Bakery Café",
-  restaurant_cafe: "Restaurant Café",
-  other: "Local Spot",
+  coffee_shop:
+    "Coffee Shop",
+
+  cafe:
+    "Café",
+
+  milk_tea:
+    "Milk Tea",
+
+  bakery_cafe:
+    "Bakery Café",
+
+  restaurant_cafe:
+    "Restaurant Café",
+
+  other:
+    "Local Spot",
 };
 
 export function MapPlaceSheet({
@@ -52,11 +117,197 @@ export function MapPlaceSheet({
     setLogoFailed,
   ] = useState(false);
 
+  const [
+    reviewAvatarFailed,
+    setReviewAvatarFailed,
+  ] = useState(false);
+
+  const [
+    reviews,
+    setReviews,
+  ] = useState<ReviewsState>({
+    averageRating: 0,
+    reviewCount: 0,
+    preview: null,
+  });
+
+  const [
+    reviewsLoading,
+    setReviewsLoading,
+  ] = useState(true);
+
   useEffect(() => {
     setLogoFailed(false);
+
+    setReviewAvatarFailed(
+      false,
+    );
   }, [
     business.id,
     business.logo_url,
+  ]);
+
+  useEffect(() => {
+    let cancelled =
+      false;
+
+    async function loadReviews() {
+      setReviewsLoading(
+        true,
+      );
+
+      setReviews({
+        averageRating: 0,
+        reviewCount: 0,
+        preview: null,
+      });
+
+      try {
+        const supabase =
+          createClient();
+
+        const {
+          data,
+          error,
+        } =
+          await supabase
+            .from(
+              "reviews",
+            )
+            .select(`
+              id,
+              rating,
+              content,
+              created_at,
+
+              author:profiles!reviews_user_id_fkey (
+                id,
+                username,
+                full_name,
+                avatar_url
+              )
+            `)
+            .eq(
+              "business_id",
+              business.id,
+            )
+            .order(
+              "created_at",
+              {
+                ascending:
+                  false,
+              },
+            );
+
+        if (error) {
+          throw error;
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const rawReviews =
+          (
+            data ??
+            []
+          ) as unknown as RawReview[];
+
+        const reviewCount =
+          rawReviews.length;
+
+        const averageRating =
+          reviewCount > 0
+            ? rawReviews.reduce(
+                (
+                  total,
+                  review,
+                ) =>
+                  total +
+                  Number(
+                    review.rating,
+                  ),
+                0,
+              ) /
+              reviewCount
+            : 0;
+
+        const previewSource =
+          rawReviews.find(
+            (review) =>
+              Boolean(
+                review.content
+                  ?.trim(),
+              ),
+          ) ??
+          rawReviews[0] ??
+          null;
+
+        const preview:
+          | ReviewPreview
+          | null =
+          previewSource
+            ? {
+                id:
+                  previewSource.id,
+
+                rating:
+                  Number(
+                    previewSource.rating,
+                  ),
+
+                content:
+                  previewSource.content,
+
+                created_at:
+                  previewSource.created_at,
+
+                author:
+                  firstRelation(
+                    previewSource.author,
+                  ),
+              }
+            : null;
+
+        setReviews({
+          averageRating,
+          reviewCount,
+          preview,
+        });
+      } catch (error) {
+        if (
+          !cancelled
+        ) {
+          console.error(
+            "[CAFÉTA] Failed to load map review preview:",
+            error,
+          );
+
+          setReviews({
+            averageRating: 0,
+            reviewCount: 0,
+            preview: null,
+          });
+        }
+      } finally {
+        if (
+          !cancelled
+        ) {
+          setReviewsLoading(
+            false,
+          );
+        }
+      }
+    }
+
+    void loadReviews();
+
+    return () => {
+      cancelled =
+        true;
+    };
+  }, [
+    business.id,
   ]);
 
   const categoryLabel =
@@ -72,7 +323,9 @@ export function MapPlaceSheet({
           business.city,
           business.province,
         ]
-          .filter(Boolean)
+          .filter(
+            Boolean,
+          )
           .join(", "),
       [
         business.barangay,
@@ -91,6 +344,11 @@ export function MapPlaceSheet({
       business.slug,
     )}`;
 
+  const reviewsUrl =
+    `/business/${encodeURIComponent(
+      business.slug,
+    )}/reviews`;
+
   const showLogo =
     Boolean(
       business.logo_url,
@@ -98,18 +356,23 @@ export function MapPlaceSheet({
     !logoFailed;
 
   const memoryCount =
-    business.memoryActivity
-      ?.memory_count ?? 0;
+    business
+      .memoryActivity
+      ?.memory_count ??
+    0;
 
   const hasMemories =
     memoryCount > 0;
 
   const activityLabel =
-    business.memoryActivityLabel;
+    business
+      .memoryActivityLabel;
 
   return (
     <div
-      key={business.id}
+      key={
+        business.id
+      }
       className="
         absolute inset-x-3
         bottom-[100px] z-30
@@ -127,33 +390,41 @@ export function MapPlaceSheet({
     >
       <div
         className="
-          relative overflow-hidden
+          relative
+          max-h-[calc(100dvh-180px)]
+          overflow-y-auto
           rounded-[28px]
-          border border-black/[0.06]
+
+          border
+          border-black/[0.06]
+
           bg-white/95
 
           shadow-[0_20px_60px_rgba(0,0,0,0.16)]
           backdrop-blur-xl
 
-          transition-[transform,box-shadow]
-          duration-300
-
-          hover:shadow-[0_24px_70px_rgba(0,0,0,0.18)]
+          [scrollbar-width:none]
+          [&::-webkit-scrollbar]:hidden
         "
       >
         <button
           type="button"
-          onClick={onClose}
+          onClick={
+            onClose
+          }
           aria-label="Close business preview"
           className="
-            absolute right-3 top-3 z-30
+            absolute
+            right-3 top-3
+            z-30
 
             flex size-9
             items-center
             justify-center
 
             rounded-full
-            border border-black/[0.06]
+            border
+            border-black/[0.06]
             bg-white/95
 
             text-black/40
@@ -173,13 +444,17 @@ export function MapPlaceSheet({
         >
           <X
             className="size-4"
-            strokeWidth={2}
+            strokeWidth={
+              2
+            }
           />
         </button>
 
         <div className="flex items-center gap-4 p-4 pr-14">
           <Link
-            href={businessUrl}
+            href={
+              businessUrl
+            }
             aria-label={`View ${business.name} business profile`}
             className="
               group/logo
@@ -190,7 +465,8 @@ export function MapPlaceSheet({
               overflow-hidden
 
               rounded-[22px]
-              border border-black/[0.06]
+              border
+              border-black/[0.06]
               bg-[#edf5f1]
 
               shadow-[0_8px_24px_rgba(0,0,0,0.07)]
@@ -218,7 +494,8 @@ export function MapPlaceSheet({
                   )
                 }
                 className="
-                  block size-full
+                  block
+                  size-full
                   object-cover
 
                   transition-transform
@@ -254,7 +531,9 @@ export function MapPlaceSheet({
                 >
                   <Coffee
                     className="size-5"
-                    strokeWidth={2}
+                    strokeWidth={
+                      2
+                    }
                   />
                 </div>
               </div>
@@ -298,7 +577,9 @@ export function MapPlaceSheet({
                     fill-[#1689e8]
                     text-white
                   "
-                  strokeWidth={2.4}
+                  strokeWidth={
+                    2.4
+                  }
                 />
               )}
             </div>
@@ -355,7 +636,9 @@ export function MapPlaceSheet({
 
                 {hasMemories && (
                   <span className="text-[9px] font-semibold text-black/30">
-                    {memoryCount}{" "}
+                    {
+                      memoryCount
+                    }{" "}
                     {memoryCount ===
                     1
                       ? "memory"
@@ -365,17 +648,7 @@ export function MapPlaceSheet({
               </div>
             )}
 
-            <div
-              className="
-                mt-3
-                flex items-start
-                gap-1.5
-
-                text-[11px]
-                leading-4
-                text-black/45
-              "
-            >
+            <div className="mt-3 flex items-start gap-1.5 text-[11px] leading-4 text-black/45">
               <MapPin
                 className="
                   mt-[1px]
@@ -383,7 +656,9 @@ export function MapPlaceSheet({
                   shrink-0
                   text-[#006241]
                 "
-                strokeWidth={2}
+                strokeWidth={
+                  2
+                }
               />
 
               <span className="line-clamp-2">
@@ -394,34 +669,34 @@ export function MapPlaceSheet({
             </div>
 
             {location && (
-              <p
-                className="
-                  mt-1.5
-                  truncate
-                  pl-5
-                  text-[10px]
-                  text-black/30
-                "
-              >
-                {location}
+              <p className="mt-1.5 truncate pl-5 text-[10px] text-black/30">
+                {
+                  location
+                }
               </p>
             )}
           </div>
         </div>
 
         {hasMemories && (
-          <div className="px-3 pb-3">
+          <div className="px-3 pb-2">
             <Link
-              href={memoriesUrl}
+              href={
+                memoriesUrl
+              }
               className="
                 group/memories
 
-                flex items-center
+                flex
+                items-center
                 justify-between
                 gap-3
 
                 rounded-[17px]
-                border border-[#006241]/[0.07]
+
+                border
+                border-[#006241]/[0.07]
+
                 bg-[#f3f8f5]
                 px-3.5 py-3
 
@@ -455,7 +730,9 @@ export function MapPlaceSheet({
                   </p>
 
                   <p className="mt-0.5 truncate text-[9px] text-black/35">
-                    {memoryCount}{" "}
+                    {
+                      memoryCount
+                    }{" "}
                     shared café{" "}
                     {memoryCount ===
                     1
@@ -472,7 +749,6 @@ export function MapPlaceSheet({
                   text-[#006241]
 
                   transition-transform
-                  duration-200
 
                   group-hover/memories:translate-x-0.5
                 "
@@ -481,16 +757,52 @@ export function MapPlaceSheet({
           </div>
         )}
 
+        <div className="px-3 pb-3">
+          <ReviewsPreview
+            businessName={
+              business.name
+            }
+            reviewsUrl={
+              reviewsUrl
+            }
+            loading={
+              reviewsLoading
+            }
+            averageRating={
+              reviews.averageRating
+            }
+            reviewCount={
+              reviews.reviewCount
+            }
+            review={
+              reviews.preview
+            }
+            avatarFailed={
+              reviewAvatarFailed
+            }
+            onAvatarFailed={() =>
+              setReviewAvatarFailed(
+                true,
+              )
+            }
+          />
+        </div>
+
         <div
           className="
-            grid grid-cols-2
+            sticky bottom-0
+
+            grid
+            grid-cols-2
             gap-2
 
             border-t
             border-black/[0.05]
 
-            bg-[#fcfdfc]
+            bg-[#fcfdfc]/95
             p-3
+
+            backdrop-blur-xl
           "
         >
           <button
@@ -500,6 +812,7 @@ export function MapPlaceSheet({
             }
             className="
               group
+
               flex h-11
               items-center
               justify-center
@@ -513,7 +826,6 @@ export function MapPlaceSheet({
               text-[#006241]
 
               transition-all
-              duration-200
 
               hover:-translate-y-0.5
               hover:bg-[#dcebe3]
@@ -523,24 +835,19 @@ export function MapPlaceSheet({
             "
           >
             <Navigation
-              className="
-                size-3.5
-
-                transition-transform
-                duration-200
-
-                group-hover:-translate-y-0.5
-                group-hover:translate-x-0.5
-              "
-              strokeWidth={2}
+              className="size-3.5"
+              strokeWidth={
+                2
+              }
             />
 
             Directions
           </button>
 
           <Link
-            href={businessUrl}
-            aria-label={`View ${business.name} business profile`}
+            href={
+              businessUrl
+            }
             className="
               group
 
@@ -559,12 +866,9 @@ export function MapPlaceSheet({
               shadow-[0_5px_14px_rgba(0,98,65,0.14)]
 
               transition-all
-              duration-200
 
               hover:-translate-y-0.5
               hover:bg-[#00754a]
-
-              hover:shadow-[0_8px_18px_rgba(0,98,65,0.18)]
 
               active:translate-y-0
               active:scale-[0.98]
@@ -573,19 +877,302 @@ export function MapPlaceSheet({
             View business
 
             <ArrowRight
-              className="
-                size-3.5
-
-                transition-transform
-                duration-200
-
-                group-hover:translate-x-0.5
-              "
-              strokeWidth={2}
+              className="size-3.5"
+              strokeWidth={
+                2
+              }
             />
           </Link>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ReviewsPreview({
+  businessName,
+  reviewsUrl,
+  loading,
+  averageRating,
+  reviewCount,
+  review,
+  avatarFailed,
+  onAvatarFailed,
+}: {
+  businessName: string;
+
+  reviewsUrl: string;
+
+  loading: boolean;
+
+  averageRating: number;
+
+  reviewCount: number;
+
+  review: ReviewPreview | null;
+
+  avatarFailed: boolean;
+
+  onAvatarFailed: () => void;
+}) {
+  if (loading) {
+    return (
+      <div
+        className="
+          rounded-[18px]
+          border
+          border-black/[0.055]
+          bg-white
+          p-3.5
+        "
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-3 w-20 animate-pulse rounded-full bg-black/[0.07]" />
+
+            <div className="mt-2 h-2 w-28 animate-pulse rounded-full bg-black/[0.05]" />
+          </div>
+
+          <div className="h-8 w-20 animate-pulse rounded-full bg-black/[0.05]" />
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    reviewCount ===
+    0
+  ) {
+    return (
+      <Link
+        href={
+          reviewsUrl
+        }
+        className="
+          group
+
+          flex items-center
+          justify-between
+          gap-3
+
+          rounded-[18px]
+          border
+          border-black/[0.055]
+
+          bg-white
+          p-3.5
+
+          transition-all
+
+          hover:-translate-y-0.5
+          hover:border-[#006241]/10
+          hover:bg-[#fbfdfc]
+        "
+      >
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#fff7df] text-[#d99000]">
+            <Star className="size-4" />
+          </div>
+
+          <div>
+            <p className="text-[11px] font-black text-[#17211c]">
+              No reviews yet
+            </p>
+
+            <p className="mt-0.5 text-[9px] text-black/35">
+              Be the first to
+              review{" "}
+              {
+                businessName
+              }.
+            </p>
+          </div>
+        </div>
+
+        <ArrowRight className="size-3.5 shrink-0 text-[#006241] transition-transform group-hover:translate-x-0.5" />
+      </Link>
+    );
+  }
+
+  const author =
+    review?.author;
+
+  const displayName =
+    author?.username
+      ? `@${author.username}`
+      : author?.full_name ||
+        "CAFÉTA user";
+
+  const avatarName =
+    author?.full_name ||
+    author?.username ||
+    "CAFÉTA";
+
+  return (
+    <div
+      className="
+        overflow-hidden
+        rounded-[18px]
+        border
+        border-black/[0.055]
+        bg-white
+      "
+    >
+      <div className="flex items-center justify-between gap-3 px-3.5 py-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-9 items-center justify-center rounded-full bg-[#fff7df] text-[#d99000]">
+            <Star className="size-4 fill-current" />
+          </div>
+
+          <div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[16px] font-black tracking-[-0.04em] text-[#17211c]">
+                {averageRating.toFixed(
+                  1,
+                )}
+              </span>
+
+              <span className="text-[9px] font-semibold text-black/35">
+                / 5
+              </span>
+            </div>
+
+            <p className="text-[9px] text-black/35">
+              {
+                reviewCount
+              }{" "}
+              {reviewCount ===
+              1
+                ? "review"
+                : "reviews"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-0.5">
+          {[
+            1,
+            2,
+            3,
+            4,
+            5,
+          ].map(
+            (
+              star,
+            ) => (
+              <Star
+                key={
+                  star
+                }
+                className={`
+                  size-3
+
+                  ${
+                    star <=
+                    Math.round(
+                      averageRating,
+                    )
+                      ? "fill-[#f4b740] text-[#f4b740]"
+                      : "fill-transparent text-black/15"
+                  }
+                `}
+              />
+            ),
+          )}
+        </div>
+      </div>
+
+      {review && (
+        <div className="border-t border-black/[0.045] px-3.5 py-3">
+          <div className="flex gap-2.5">
+            <div className="size-8 shrink-0 overflow-hidden rounded-full bg-[#e8f2ed]">
+              {author?.avatar_url &&
+              !avatarFailed ? (
+                <img
+                  src={
+                    author.avatar_url
+                  }
+                  alt=""
+                  referrerPolicy="no-referrer"
+                  onError={
+                    onAvatarFailed
+                  }
+                  className="size-full object-cover"
+                />
+              ) : (
+                <div className="flex size-full items-center justify-center text-[8px] font-black text-[#006241]">
+                  {getInitials(
+                    avatarName,
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="truncate text-[9px] font-black text-[#17211c]">
+                  {
+                    displayName
+                  }
+                </p>
+
+                <div className="flex shrink-0 items-center gap-1">
+                  <Star className="size-2.5 fill-[#f4b740] text-[#f4b740]" />
+
+                  <span className="text-[8px] font-black text-black/45">
+                    {
+                      review.rating
+                    }
+                  </span>
+                </div>
+              </div>
+
+              {review.content && (
+                <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-black/50">
+                  {
+                    review.content
+                  }
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Link
+        href={
+          reviewsUrl
+        }
+        className="
+          group
+
+          flex h-10
+          items-center
+          justify-between
+
+          border-t
+          border-black/[0.045]
+
+          bg-[#fafcfa]
+          px-3.5
+
+          text-[9px]
+          font-black
+          text-[#006241]
+
+          transition-colors
+
+          hover:bg-[#f0f7f3]
+        "
+      >
+        <span className="flex items-center gap-1.5">
+          <MessageCircle className="size-3" />
+
+          Read all reviews
+        </span>
+
+        <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
+      </Link>
     </div>
   );
 }
@@ -595,8 +1182,10 @@ function ActivityBadge({
   label,
   variant,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
+
   label: string;
+
   variant:
     | "trending"
     | "active"
@@ -628,7 +1217,47 @@ function ActivityBadge({
       `}
     >
       {icon}
+
       {label}
     </span>
   );
+}
+
+function firstRelation<T>(
+  value:
+    | T
+    | T[]
+    | null,
+): T | null {
+  if (
+    Array.isArray(
+      value,
+    )
+  ) {
+    return (
+      value[0] ??
+      null
+    );
+  }
+
+  return value;
+}
+
+function getInitials(
+  value: string,
+) {
+  return value
+    .trim()
+    .split(/\s+/)
+    .slice(
+      0,
+      2,
+    )
+    .map(
+      (part) =>
+        part[0] ??
+        "",
+    )
+    .join("")
+    .toUpperCase();
 }
