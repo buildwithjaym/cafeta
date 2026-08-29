@@ -1,18 +1,27 @@
-import { AuthShell } from "@/components/auth/auth-shell";
-import { RegisterForm } from "@/components/auth/register-form";
+import {
+  AuthShell,
+} from "@/components/auth/auth-shell";
+
+import {
+  RegisterForm,
+} from "@/components/auth/register-form";
 
 export default function RegisterPage() {
   return (
     <AuthShell
-      eyebrow="Local discovery starts here"
+      eyebrow="Your next spot starts here"
       title={
         <>
           Find your next
           <br />
-          “Kape tayo.”
+          favorite spot.
         </>
       }
-      description="Join CAFÉTA and turn the places around you into a collection of cafés, milk-tea shops, and local experiences worth remembering."
+      description="
+        Discover cafés, coffee shops,
+        milk-tea spots, and local favorites
+        around Basilan.
+      "
     >
       <RegisterForm />
     </AuthShell>

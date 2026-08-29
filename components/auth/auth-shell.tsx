@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import {
   ArrowLeft,
   Coffee,
@@ -21,46 +22,224 @@ export function AuthShell({
   description,
 }: AuthShellProps) {
   return (
-    <main className="h-dvh overflow-hidden bg-white">
-      <div className="grid h-full lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="relative hidden overflow-hidden bg-[#006241] lg:flex lg:flex-col">
-          <div className="pointer-events-none absolute -left-32 -top-32 size-[430px] rounded-full border border-white/10" />
-          <div className="pointer-events-none absolute -left-16 -top-16 size-[300px] rounded-full border border-white/10" />
+    <main
+      className="
+        min-h-dvh
+        w-full
+        overflow-x-hidden
+        bg-white
+      "
+    >
+      <div
+        className="
+          grid
+          min-h-dvh
+          w-full
 
-          <div className="pointer-events-none absolute -bottom-48 -right-24 size-[500px] rounded-full bg-[#004f35]" />
-          <div className="pointer-events-none absolute bottom-[-110px] right-[-30px] size-[350px] rounded-full border border-white/[0.07]" />
+          lg:grid-cols-[1.05fr_0.95fr]
+        "
+      >
+        {/* Desktop brand panel */}
+        <section
+          className="
+            relative
+            hidden
+            min-h-dvh
+            overflow-hidden
+            bg-[#006241]
 
-          <div className="relative z-10 flex h-full flex-col px-10 py-9 xl:px-14 xl:py-11">
+            lg:flex
+            lg:flex-col
+          "
+        >
+          <div
+            className="
+              pointer-events-none
+              absolute
+              -left-32
+              -top-32
+              size-[430px]
+              rounded-full
+              border
+              border-white/10
+            "
+          />
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              -left-16
+              -top-16
+              size-[300px]
+              rounded-full
+              border
+              border-white/10
+            "
+          />
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              -bottom-48
+              -right-24
+              size-[500px]
+              rounded-full
+              bg-[#004f35]
+            "
+          />
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              bottom-[-110px]
+              right-[-30px]
+              size-[350px]
+              rounded-full
+              border
+              border-white/[0.07]
+            "
+          />
+
+          <div
+            className="
+              relative
+              z-10
+              flex
+              min-h-dvh
+              flex-col
+
+              px-10
+              py-9
+
+              xl:px-14
+              xl:py-11
+            "
+          >
             <Link
               href="/"
-              className="inline-flex w-fit items-center gap-3 text-white"
+              className="
+                inline-flex
+                w-fit
+                items-center
+                gap-3
+                text-white
+              "
             >
-              <div className="flex size-10 items-center justify-center rounded-full bg-white">
-                <Coffee className="size-5 text-[#006241]" strokeWidth={2.2} />
+              <div
+                className="
+                  flex
+                  size-10
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-white
+                "
+              >
+                <Coffee
+                  className="size-5 text-[#006241]"
+                  strokeWidth={2.2}
+                />
               </div>
 
-              <span className="text-xl font-black tracking-[-0.045em]">
+              <span
+                className="
+                  text-xl
+                  font-black
+                  tracking-[-0.045em]
+                "
+              >
                 CAFÉTA
               </span>
             </Link>
 
-            <div className="my-auto max-w-[590px]">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold text-white/85">
+            <div
+              className="
+                my-auto
+                max-w-[590px]
+                py-10
+              "
+            >
+              <div
+                className="
+                  inline-flex
+                  items-center
+                  gap-2
+                  rounded-full
+                  border
+                  border-white/15
+                  bg-white/10
+                  px-4
+                  py-2
+                  text-xs
+                  font-semibold
+                  text-white/85
+                "
+              >
                 <MapPin className="size-3.5" />
                 {eyebrow}
               </div>
 
-              <h1 className="mt-7 text-[3.6rem] font-bold leading-[0.98] tracking-[-0.055em] text-white xl:text-[4.4rem]">
+              <h1
+                className="
+                  mt-7
+                  text-[3.6rem]
+                  font-bold
+                  leading-[0.98]
+                  tracking-[-0.055em]
+                  text-white
+
+                  xl:text-[4.4rem]
+                "
+              >
                 {title}
               </h1>
 
-              <p className="mt-6 max-w-[500px] text-[16px] leading-7 text-white/60 xl:text-[17px]">
+              <p
+                className="
+                  mt-6
+                  max-w-[500px]
+                  text-[16px]
+                  leading-7
+                  text-white/60
+
+                  xl:text-[17px]
+                "
+              >
                 {description}
               </p>
 
-              <div className="mt-10 grid max-w-[540px] grid-cols-2 gap-3">
-                <div className="rounded-[22px] border border-white/10 bg-white/[0.07] p-5 backdrop-blur-sm">
-                  <div className="flex size-9 items-center justify-center rounded-full bg-white/10">
+              <div
+                className="
+                  mt-10
+                  grid
+                  max-w-[540px]
+                  grid-cols-2
+                  gap-3
+                "
+              >
+                <div
+                  className="
+                    rounded-[22px]
+                    border
+                    border-white/10
+                    bg-white/[0.07]
+                    p-5
+                    backdrop-blur-sm
+                  "
+                >
+                  <div
+                    className="
+                      flex
+                      size-9
+                      items-center
+                      justify-center
+                      rounded-full
+                      bg-white/10
+                    "
+                  >
                     <Compass className="size-4 text-white" />
                   </div>
 
@@ -73,8 +252,26 @@ export function AuthShell({
                   </p>
                 </div>
 
-                <div className="rounded-[22px] border border-white/10 bg-white/[0.07] p-5 backdrop-blur-sm">
-                  <div className="flex size-9 items-center justify-center rounded-full bg-white/10">
+                <div
+                  className="
+                    rounded-[22px]
+                    border
+                    border-white/10
+                    bg-white/[0.07]
+                    p-5
+                    backdrop-blur-sm
+                  "
+                >
+                  <div
+                    className="
+                      flex
+                      size-9
+                      items-center
+                      justify-center
+                      rounded-full
+                      bg-white/10
+                    "
+                  >
                     <Sparkles className="size-4 text-white" />
                   </div>
 
@@ -83,40 +280,120 @@ export function AuthShell({
                   </p>
 
                   <p className="mt-1.5 text-xs leading-5 text-white/45">
-                    Save places and come back when it's time for coffee.
+                    Save places and come back when it&apos;s time for coffee.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-[11px] text-white/40">
+            <div
+              className="
+                flex
+                items-center
+                justify-between
+                text-[11px]
+                text-white/40
+              "
+            >
               <span>CAFÉTA · Basilan</span>
               <span>Kape tayo.</span>
             </div>
           </div>
         </section>
 
-        <section className="relative flex h-full min-h-0 items-center justify-center overflow-hidden bg-[#fbfcfa] px-5 py-5 sm:px-8 lg:px-10">
-          <div className="absolute left-5 top-5 lg:hidden">
+        {/* Auth form panel */}
+        <section
+          className="
+            relative
+            flex
+            min-h-dvh
+            w-full
+            justify-center
+            bg-[#fbfcfa]
+
+            px-4
+            pb-[calc(32px+env(safe-area-inset-bottom))]
+            pt-[calc(78px+env(safe-area-inset-top))]
+
+            sm:px-8
+            sm:pb-10
+            sm:pt-24
+
+            lg:min-h-dvh
+            lg:items-center
+            lg:px-10
+            lg:py-10
+          "
+        >
+          {/* Mobile back button */}
+          <div
+            className="
+              absolute
+              left-4
+              top-[calc(16px+env(safe-area-inset-top))]
+
+              sm:left-8
+
+              lg:hidden
+            "
+          >
             <Link
               href="/"
               aria-label="Back to CAFÉTA"
-              className="flex size-10 items-center justify-center rounded-full border border-black/[0.07] bg-white"
+              className="
+                flex
+                size-10
+                items-center
+                justify-center
+                rounded-full
+                border
+                border-black/[0.07]
+                bg-white
+                shadow-sm
+                transition
+
+                active:scale-95
+              "
             >
               <ArrowLeft className="size-4" />
             </Link>
           </div>
 
-          <div className="absolute right-5 top-5 lg:hidden">
+          {/* Mobile logo */}
+          <div
+            className="
+              absolute
+              right-4
+              top-[calc(18px+env(safe-area-inset-top))]
+
+              sm:right-8
+
+              lg:hidden
+            "
+          >
             <Link
               href="/"
-              className="text-lg font-black tracking-[-0.045em] text-[#006241]"
+              className="
+                text-lg
+                font-black
+                tracking-[-0.045em]
+                text-[#006241]
+              "
             >
               CAFÉTA
             </Link>
           </div>
 
-          <div className="w-full max-w-[430px]">{children}</div>
+          <div
+            className="
+              w-full
+              max-w-[520px]
+
+              lg:my-auto
+            "
+          >
+            {children}
+          </div>
         </section>
       </div>
     </main>
