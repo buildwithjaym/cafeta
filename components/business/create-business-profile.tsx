@@ -1,13 +1,9 @@
 "use client";
 
-import {
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
 import Link from "next/link";
-
+import { BusinessShareModal } from "@/components/business/share/business-share-modal";
 import {
   ArrowLeft,
   ArrowRight,
@@ -31,21 +27,13 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 
-import {
-  toast,
-} from "sonner";
+import { toast } from "sonner";
 
-import {
-  BusinessMemories,
-} from "@/components/business/memories/business-memories";
+import { BusinessMemories } from "@/components/business/memories/business-memories";
 
-import {
-  SaveBusinessButton,
-} from "@/components/explore/save-business-button";
+import { SaveBusinessButton } from "@/components/explore/save-business-button";
 
-import type {
-  BusinessMemoryPreview,
-} from "@/lib/memories/types";
+import type { BusinessMemoryPreview } from "@/lib/memories/types";
 
 type Business = {
   id: string;
@@ -131,15 +119,7 @@ type Props = {
   canEdit: boolean;
 };
 
-type Tab =
-  | "home"
-  | "memories"
-  | "about"
-  | "menu"
-  | "reviews";
-
-const [sharing, setSharing] = useState(false);
-
+type Tab = "home" | "memories" | "about" | "menu" | "reviews";
 
 export function BusinessProfileClient({
   business,
@@ -153,112 +133,67 @@ export function BusinessProfileClient({
   initialSaved,
   canEdit,
 }: Props) {
-  const [
-    activeTab,
-    setActiveTab,
-  ] = useState<Tab>(
-    "home",
-  );
+  const [activeTab, setActiveTab] = useState<Tab>("home");
+  const [sharing, setSharing] = useState(false);
 
-  const today =
-    new Date().getDay();
+  const [shareOpen, setShareOpen] = useState(false);
 
-  const todayHours =
-    hours.find(
-      (hour) =>
-        hour.day_of_week ===
-        today,
-    );
+  const today = new Date().getDay();
 
-  const openState =
-    getOpenState(
-      todayHours,
-    );
+  const todayHours = hours.find((hour) => hour.day_of_week === today);
 
-  const location = [
-    business.barangay,
-    business.city,
-    business.province,
-  ]
+  const openState = getOpenState(todayHours);
+
+  const location = [business.barangay, business.city, business.province]
     .filter(Boolean)
     .join(", ");
 
-  const mapUrl =
-    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      `${business.latitude},${business.longitude}`,
-    )}`;
+  const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    `${business.latitude},${business.longitude}`,
+  )}`;
 
-  const menuGroups =
-    useMemo(
-      () =>
-        buildMenuGroups(
-          categories,
-          menuItems,
-        ),
-      [
-        categories,
-        menuItems,
-      ],
-    );
+  const menuGroups = useMemo(
+    () => buildMenuGroups(categories, menuItems),
+    [categories, menuItems],
+  );
 
-  const week =
-    useMemo(
-      () =>
-        buildWeek(
-          hours,
-        ),
-      [hours],
-    );
+  const week = useMemo(() => buildWeek(hours), [hours]);
 
   async function shareBusiness() {
-  if (sharing) {
-    return;
-  }
+    if (sharing) {
+      return;
+    }
 
-  setSharing(true);
+    setSharing(true);
 
-  const url =
-    `https://www.cafeta.online/business/${encodeURIComponent(
+    const url = `https://www.cafeta.online/business/${encodeURIComponent(
       business.slug,
     )}`;
 
-  try {
-    if (navigator.share) {
-      await navigator.share({
-        title: business.name,
-        text:
-          `Check out ${business.name} on CAFÉTA ☕ View their menu, location, hours, and reviews.`,
-        url,
-      });
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: business.name,
+          text: `Check out ${business.name} on CAFÉTA ☕ View their menu, location, hours, and reviews.`,
+          url,
+        });
 
-      return;
+        return;
+      }
+
+      await navigator.clipboard.writeText(url);
+
+      toast.success("Business link copied.");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+
+      toast.error("Unable to share this business.");
+    } finally {
+      setSharing(false);
     }
-
-    await navigator.clipboard.writeText(url);
-
-    toast.success(
-      "Business link copied.",
-    );
-
-  } catch(error) {
-
-    if (
-      error instanceof DOMException &&
-      error.name === "AbortError"
-    ) {
-      return;
-    }
-
-    toast.error(
-      "Unable to share this business.",
-    );
-
-  } finally {
-
-    setSharing(false);
-
   }
-}
   return (
     <main
       className="
@@ -299,9 +234,7 @@ export function BusinessProfileClient({
           >
             {business.cover_url ? (
               <img
-                src={
-                  business.cover_url
-                }
+                src={business.cover_url}
                 alt={`${business.name} cover`}
                 className="
                   size-full
@@ -315,9 +248,7 @@ export function BusinessProfileClient({
             ) : business.logo_url ? (
               <>
                 <img
-                  src={
-                    business.logo_url
-                  }
+                  src={business.logo_url}
                   alt=""
                   aria-hidden="true"
                   className="
@@ -456,7 +387,6 @@ export function BusinessProfileClient({
                     group-hover:-rotate-6
                   "
                 />
-
                 Edit profile
               </Link>
             )}
@@ -510,9 +440,7 @@ export function BusinessProfileClient({
               >
                 {business.logo_url ? (
                   <img
-                    src={
-                      business.logo_url
-                    }
+                    src={business.logo_url}
                     alt={`${business.name} logo`}
                     className="
                       size-full
@@ -604,17 +532,12 @@ export function BusinessProfileClient({
                       text-[#006241]
                     "
                   >
-                    {formatCategory(
-                      business.category,
-                    )}
+                    {formatCategory(business.category)}
                   </span>
 
-                  {reviewCount >
-                    0 && (
+                  {reviewCount > 0 && (
                     <>
-                      <span>
-                        ·
-                      </span>
+                      <span>·</span>
 
                       <span
                         className="
@@ -633,46 +556,30 @@ export function BusinessProfileClient({
                           "
                         />
 
-                        {averageRating.toFixed(
-                          1,
-                        )}
+                        {averageRating.toFixed(1)}
                       </span>
 
-                      <span>
-                        ·
-                      </span>
+                      <span>·</span>
 
                       <button
                         type="button"
-                        onClick={() =>
-                          setActiveTab(
-                            "reviews",
-                          )
-                        }
+                        onClick={() => setActiveTab("reviews")}
                         className="
                           font-medium
                           transition-colors
                           hover:text-[#006241]
                         "
                       >
-                        {reviewCount}{" "}
-                        {reviewCount ===
-                        1
-                          ? "review"
-                          : "reviews"}
+                        {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
                       </button>
                     </>
                   )}
 
                   {location && (
                     <>
-                      <span>
-                        ·
-                      </span>
+                      <span>·</span>
 
-                      <span>
-                        {location}
-                      </span>
+                      <span>{location}</span>
                     </>
                   )}
                 </div>
@@ -772,38 +679,35 @@ export function BusinessProfileClient({
                   "
                 >
                   <SaveBusinessButton
-                    businessId={
-                      business.id
-                    }
-                    initialSaved={
-                      initialSaved
-                    }
+                    businessId={business.id}
+                    initialSaved={initialSaved}
                   />
                 </div>
 
                 <button
-  disabled={sharing}
-  onClick={() => void shareBusiness()}
-  className="
-    flex
-    size-10
-    items-center
-    justify-center
-
-    rounded-[10px]
-    bg-[#e8ebe9]
-    text-[#39433e]
-
-    transition-all
-    hover:bg-[#dfe5e1]
-    hover:text-[#006241]
-
-    active:scale-95
-  "
-  aria-label="Share business"
+onClick={() => setShareOpen(true)}
+className="
+flex
+size-10
+items-center
+justify-center
+rounded-xl
+border
+border-[#006241]/10
+bg-[#f2f8f5]
+text-[#006241]
+transition
+hover:bg-[#e8f2ed]
+"
 >
-  <Share2 className="size-4" />
+<Share2 className="size-4"/>
 </button>
+                {shareOpen && (
+                  <BusinessShareModal
+                    business={business}
+                    onClose={() => setShareOpen(false)}
+                  />
+                )}
               </div>
             </div>
 
@@ -815,29 +719,15 @@ export function BusinessProfileClient({
               "
             >
               <PageTab
-                active={
-                  activeTab ===
-                  "home"
-                }
-                onClick={() =>
-                  setActiveTab(
-                    "home",
-                  )
-                }
+                active={activeTab === "home"}
+                onClick={() => setActiveTab("home")}
               >
                 Home
               </PageTab>
 
               <PageTab
-                active={
-                  activeTab ===
-                  "memories"
-                }
-                onClick={() =>
-                  setActiveTab(
-                    "memories",
-                  )
-                }
+                active={activeTab === "memories"}
+                onClick={() => setActiveTab("memories")}
               >
                 <span
                   className="
@@ -847,9 +737,7 @@ export function BusinessProfileClient({
                   "
                 >
                   Memories
-
-                  {memories.length >
-                    0 && (
+                  {memories.length > 0 && (
                     <span
                       className={`
                         rounded-full
@@ -859,8 +747,7 @@ export function BusinessProfileClient({
                         font-black
 
                         ${
-                          activeTab ===
-                          "memories"
+                          activeTab === "memories"
                             ? "bg-[#006241]/10 text-[#006241]"
                             : "bg-black/[0.05] text-black/35"
                         }
@@ -873,43 +760,22 @@ export function BusinessProfileClient({
               </PageTab>
 
               <PageTab
-                active={
-                  activeTab ===
-                  "about"
-                }
-                onClick={() =>
-                  setActiveTab(
-                    "about",
-                  )
-                }
+                active={activeTab === "about"}
+                onClick={() => setActiveTab("about")}
               >
                 About
               </PageTab>
 
               <PageTab
-                active={
-                  activeTab ===
-                  "menu"
-                }
-                onClick={() =>
-                  setActiveTab(
-                    "menu",
-                  )
-                }
+                active={activeTab === "menu"}
+                onClick={() => setActiveTab("menu")}
               >
                 Menu
               </PageTab>
 
               <PageTab
-                active={
-                  activeTab ===
-                  "reviews"
-                }
-                onClick={() =>
-                  setActiveTab(
-                    "reviews",
-                  )
-                }
+                active={activeTab === "reviews"}
+                onClick={() => setActiveTab("reviews")}
               >
                 Reviews
               </PageTab>
@@ -928,48 +794,24 @@ export function BusinessProfileClient({
           lg:px-8
         "
       >
-        {activeTab ===
-          "home" && (
+        {activeTab === "home" && (
           <HomeTab
-            business={
-              business
-            }
+            business={business}
             week={week}
-            openState={
-              openState
-            }
+            openState={openState}
             mapUrl={mapUrl}
-            location={
-              location
-            }
-            menuItems={
-              menuItems
-            }
-            reviews={
-              reviews
-            }
-            memories={
-              memories
-            }
-            averageRating={
-              averageRating
-            }
-            reviewCount={
-              reviewCount
-            }
-            canEdit={
-              canEdit
-            }
-            onOpenReviews={() =>
-              setActiveTab(
-                "reviews",
-              )
-            }
+            location={location}
+            menuItems={menuItems}
+            reviews={reviews}
+            memories={memories}
+            averageRating={averageRating}
+            reviewCount={reviewCount}
+            canEdit={canEdit}
+            onOpenReviews={() => setActiveTab("reviews")}
           />
         )}
 
-        {activeTab ===
-          "memories" && (
+        {activeTab === "memories" && (
           <div
             className="
               mx-auto
@@ -982,66 +824,37 @@ export function BusinessProfileClient({
             "
           >
             <BusinessMemories
-              businessSlug={
-                business.slug
-              }
-              businessName={
-                business.name
-              }
-              memories={
-                memories
-              }
+              businessSlug={business.slug}
+              businessName={business.name}
+              memories={memories}
             />
           </div>
         )}
 
-        {activeTab ===
-          "about" && (
+        {activeTab === "about" && (
           <AboutTab
-            business={
-              business
-            }
+            business={business}
             week={week}
-            openState={
-              openState
-            }
+            openState={openState}
             mapUrl={mapUrl}
-            location={
-              location
-            }
-            canEdit={
-              canEdit
-            }
+            location={location}
+            canEdit={canEdit}
           />
         )}
 
-        {activeTab ===
-          "menu" && (
+        {activeTab === "menu" && (
           <MenuTab
-            business={
-              business
-            }
-            menuGroups={
-              menuGroups
-            }
-            canEdit={
-              canEdit
-            }
+            business={business}
+            menuGroups={menuGroups}
+            canEdit={canEdit}
           />
         )}
 
-        {activeTab ===
-          "reviews" && (
+        {activeTab === "reviews" && (
           <ReviewsTab
-            reviews={
-              reviews
-            }
-            averageRating={
-              averageRating
-            }
-            reviewCount={
-              reviewCount
-            }
+            reviews={reviews}
+            averageRating={averageRating}
+            reviewCount={reviewCount}
           />
         )}
       </div>
@@ -1065,13 +878,9 @@ function HomeTab({
 }: {
   business: Business;
 
-  week: ReturnType<
-    typeof buildWeek
-  >;
+  week: ReturnType<typeof buildWeek>;
 
-  openState: ReturnType<
-    typeof getOpenState
-  >;
+  openState: ReturnType<typeof getOpenState>;
 
   mapUrl: string;
   location: string;
@@ -1108,9 +917,7 @@ function HomeTab({
               gap-3
             "
           >
-            <CardTitle>
-              Intro
-            </CardTitle>
+            <CardTitle>Intro</CardTitle>
 
             {canEdit && (
               <Link
@@ -1142,9 +949,7 @@ function HomeTab({
                 text-[#39433e]
               "
             >
-              {
-                business.description
-              }
+              {business.description}
             </p>
           ) : (
             <p
@@ -1155,8 +960,7 @@ function HomeTab({
                 text-black/35
               "
             >
-              No description
-              added yet.
+              No description added yet.
             </p>
           )}
 
@@ -1166,21 +970,11 @@ function HomeTab({
               space-y-4
             "
           >
-            <InfoRow
-              icon={
-                <Store className="size-[18px]" />
-              }
-            >
-              {formatCategory(
-                business.category,
-              )}
+            <InfoRow icon={<Store className="size-[18px]" />}>
+              {formatCategory(business.category)}
             </InfoRow>
 
-            <InfoRow
-              icon={
-                <MapPin className="size-[18px]" />
-              }
-            >
+            <InfoRow icon={<MapPin className="size-[18px]" />}>
               <a
                 href={mapUrl}
                 target="_blank"
@@ -1192,17 +986,11 @@ function HomeTab({
               >
                 {business.address}
 
-                {location
-                  ? `, ${location}`
-                  : ""}
+                {location ? `, ${location}` : ""}
               </a>
             </InfoRow>
 
-            <InfoRow
-              icon={
-                <Clock3 className="size-[18px]" />
-              }
-            >
+            <InfoRow icon={<Clock3 className="size-[18px]" />}>
               <span
                 className={
                   openState.open
@@ -1210,39 +998,22 @@ function HomeTab({
                     : "font-semibold text-red-600"
                 }
               >
-                {
-                  openState.label
-                }
+                {openState.label}
               </span>
             </InfoRow>
 
             {business.phone && (
-              <InfoRow
-                icon={
-                  <Phone className="size-[18px]" />
-                }
-              >
-                <a
-                  href={`tel:${business.phone}`}
-                  className="hover:underline"
-                >
-                  {
-                    business.phone
-                  }
+              <InfoRow icon={<Phone className="size-[18px]" />}>
+                <a href={`tel:${business.phone}`} className="hover:underline">
+                  {business.phone}
                 </a>
               </InfoRow>
             )}
 
             {business.website_url && (
-              <InfoRow
-                icon={
-                  <Globe2 className="size-[18px]" />
-                }
-              >
+              <InfoRow icon={<Globe2 className="size-[18px]" />}>
                 <a
-                  href={
-                    business.website_url
-                  }
+                  href={business.website_url}
                   target="_blank"
                   rel="noreferrer"
                   className="
@@ -1267,9 +1038,7 @@ function HomeTab({
               gap-3
             "
           >
-            <CardTitle>
-              Hours
-            </CardTitle>
+            <CardTitle>Hours</CardTitle>
 
             <div
               className="
@@ -1293,9 +1062,7 @@ function HomeTab({
                   }
                 `}
               >
-                {openState.open
-                  ? "Open now"
-                  : "Closed"}
+                {openState.open ? "Open now" : "Closed"}
               </span>
 
               {canEdit && (
@@ -1325,23 +1092,14 @@ function HomeTab({
               space-y-1
             "
           >
-            {week.map(
-              (day) => (
-                <HoursRow
-                  key={
-                    day.day
-                  }
-                  day={day}
-                />
-              ),
-            )}
+            {week.map((day) => (
+              <HoursRow key={day.day} day={day} />
+            ))}
           </div>
         </PageCard>
 
         <PageCard>
-          <CardTitle>
-            Connect
-          </CardTitle>
+          <CardTitle>Connect</CardTitle>
 
           <div
             className="
@@ -1352,24 +1110,16 @@ function HomeTab({
           >
             {business.facebook_url && (
               <SocialLink
-                href={
-                  business.facebook_url
-                }
-                icon={
-                  <FacebookIcon className="size-[18px]" />
-                }
+                href={business.facebook_url}
+                icon={<FacebookIcon className="size-[18px]" />}
                 label="Facebook"
               />
             )}
 
             {business.instagram_url && (
               <SocialLink
-                href={
-                  business.instagram_url
-                }
-                icon={
-                  <InstagramIcon className="size-[18px]" />
-                }
+                href={business.instagram_url}
+                icon={<InstagramIcon className="size-[18px]" />}
                 label="Instagram"
               />
             )}
@@ -1377,15 +1127,9 @@ function HomeTab({
             {business.email && (
               <SocialLink
                 href={`mailto:${business.email}`}
-                icon={
-                  <Mail className="size-[18px]" />
-                }
-                label={
-                  business.email
-                }
-                external={
-                  false
-                }
+                icon={<Mail className="size-[18px]" />}
+                label={business.email}
+                external={false}
               />
             )}
 
@@ -1399,8 +1143,7 @@ function HomeTab({
                     text-black/35
                   "
                 >
-                  No social links
-                  added.
+                  No social links added.
                 </p>
               )}
           </div>
@@ -1416,11 +1159,7 @@ function HomeTab({
               gap-3
             "
           >
-            <BusinessAvatar
-              business={
-                business
-              }
-            />
+            <BusinessAvatar business={business} />
 
             <div
               className="
@@ -1445,8 +1184,7 @@ function HomeTab({
                   text-black/35
                 "
               >
-                Business profile
-                on CAFÉTA
+                Business profile on CAFÉTA
               </p>
             </div>
           </div>
@@ -1467,8 +1205,7 @@ function HomeTab({
                 text-[#17211c]
               "
             >
-              Welcome to{" "}
-              {business.name}
+              Welcome to {business.name}
             </p>
 
             <p
@@ -1486,18 +1223,9 @@ function HomeTab({
         </PageCard>
 
         <BusinessMemories
-          businessSlug={
-            business.slug
-          }
-          businessName={
-            business.name
-          }
-          memories={
-            memories.slice(
-              0,
-              3,
-            )
-          }
+          businessSlug={business.slug}
+          businessName={business.name}
+          memories={memories.slice(0, 3)}
         />
 
         <PageCard>
@@ -1510,9 +1238,7 @@ function HomeTab({
             "
           >
             <div>
-              <CardTitle>
-                Featured menu
-              </CardTitle>
+              <CardTitle>Featured menu</CardTitle>
 
               <p
                 className="
@@ -1521,17 +1247,13 @@ function HomeTab({
                   text-black/35
                 "
               >
-                A taste of what&apos;s
-                being served.
+                A taste of what&apos;s being served.
               </p>
             </div>
 
-            {menuItems.length >
-              0 && (
+            {menuItems.length > 0 && (
               <Link
-                href={`/business/${encodeURIComponent(
-                  business.slug,
-                )}/menu`}
+                href={`/business/${encodeURIComponent(business.slug)}/menu`}
                 className="
                   inline-flex
                   shrink-0
@@ -1547,14 +1269,12 @@ function HomeTab({
                 "
               >
                 View menu
-
                 <ArrowRight className="size-3" />
               </Link>
             )}
           </div>
 
-          {menuItems.length >
-          0 ? (
+          {menuItems.length > 0 ? (
             <>
               <div
                 className="
@@ -1565,29 +1285,13 @@ function HomeTab({
                   sm:grid-cols-3
                 "
               >
-                {menuItems
-                  .slice(
-                    0,
-                    6,
-                  )
-                  .map(
-                    (item) => (
-                      <FeaturedMenuItem
-                        key={
-                          item.id
-                        }
-                        item={
-                          item
-                        }
-                      />
-                    ),
-                  )}
+                {menuItems.slice(0, 6).map((item) => (
+                  <FeaturedMenuItem key={item.id} item={item} />
+                ))}
               </div>
 
               <Link
-                href={`/business/${encodeURIComponent(
-                  business.slug,
-                )}/menu`}
+                href={`/business/${encodeURIComponent(business.slug)}/menu`}
                 className="
                   group
 
@@ -1619,9 +1323,7 @@ function HomeTab({
                 "
               >
                 <UtensilsCrossed className="size-3.5" />
-
                 View full menu
-
                 <ArrowRight
                   className="
                     size-3.5
@@ -1654,7 +1356,6 @@ function HomeTab({
                   "
                 >
                   <Pencil className="size-3" />
-
                   Manage menu
                 </Link>
               )}
@@ -1734,7 +1435,6 @@ function HomeTab({
                   "
                 >
                   <Pencil className="size-3.5" />
-
                   Build menu
                 </Link>
               )}
@@ -1752,12 +1452,9 @@ function HomeTab({
             "
           >
             <div>
-              <CardTitle>
-                Reviews
-              </CardTitle>
+              <CardTitle>Reviews</CardTitle>
 
-              {reviewCount >
-                0 && (
+              {reviewCount > 0 && (
                 <div
                   className="
                     mt-1
@@ -1781,9 +1478,7 @@ function HomeTab({
                       text-[#17211c]
                     "
                   >
-                    {averageRating.toFixed(
-                      1,
-                    )}
+                    {averageRating.toFixed(1)}
                   </span>
 
                   <span
@@ -1792,23 +1487,16 @@ function HomeTab({
                       text-black/35
                     "
                   >
-                    · {reviewCount}{" "}
-                    {reviewCount ===
-                    1
-                      ? "review"
-                      : "reviews"}
+                    · {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
                   </span>
                 </div>
               )}
             </div>
 
-            {reviewCount >
-              0 && (
+            {reviewCount > 0 && (
               <button
                 type="button"
-                onClick={
-                  onOpenReviews
-                }
+                onClick={onOpenReviews}
                 className="
                   text-[11px]
                   font-bold
@@ -1821,8 +1509,7 @@ function HomeTab({
             )}
           </div>
 
-          {reviews.length >
-          0 ? (
+          {reviews.length > 0 ? (
             <div
               className="
                 mt-4
@@ -1830,23 +1517,9 @@ function HomeTab({
                 divide-black/[0.06]
               "
             >
-              {reviews
-                .slice(
-                  0,
-                  3,
-                )
-                .map(
-                  (review) => (
-                    <ReviewCard
-                      key={
-                        review.id
-                      }
-                      review={
-                        review
-                      }
-                    />
-                  ),
-                )}
+              {reviews.slice(0, 3).map((review) => (
+                <ReviewCard key={review.id} review={review} />
+              ))}
             </div>
           ) : (
             <EmptyReviews />
@@ -1867,13 +1540,9 @@ function AboutTab({
 }: {
   business: Business;
 
-  week: ReturnType<
-    typeof buildWeek
-  >;
+  week: ReturnType<typeof buildWeek>;
 
-  openState: ReturnType<
-    typeof getOpenState
-  >;
+  openState: ReturnType<typeof getOpenState>;
 
   mapUrl: string;
   location: string;
@@ -1917,9 +1586,7 @@ function AboutTab({
               flex-1
             "
           >
-            <CardTitle>
-              About
-            </CardTitle>
+            <CardTitle>About</CardTitle>
 
             <p
               className="
@@ -1974,21 +1641,11 @@ function AboutTab({
             pt-5
           "
         >
-          <InfoRow
-            icon={
-              <Store className="size-[18px]" />
-            }
-          >
-            {formatCategory(
-              business.category,
-            )}
+          <InfoRow icon={<Store className="size-[18px]" />}>
+            {formatCategory(business.category)}
           </InfoRow>
 
-          <InfoRow
-            icon={
-              <MapPin className="size-[18px]" />
-            }
-          >
+          <InfoRow icon={<MapPin className="size-[18px]" />}>
             <a
               href={mapUrl}
               target="_blank"
@@ -1997,56 +1654,30 @@ function AboutTab({
             >
               {business.address}
 
-              {location
-                ? `, ${location}`
-                : ""}
+              {location ? `, ${location}` : ""}
             </a>
           </InfoRow>
 
           {business.phone && (
-            <InfoRow
-              icon={
-                <Phone className="size-[18px]" />
-              }
-            >
-              <a
-                href={`tel:${business.phone}`}
-                className="hover:underline"
-              >
-                {
-                  business.phone
-                }
+            <InfoRow icon={<Phone className="size-[18px]" />}>
+              <a href={`tel:${business.phone}`} className="hover:underline">
+                {business.phone}
               </a>
             </InfoRow>
           )}
 
           {business.email && (
-            <InfoRow
-              icon={
-                <Mail className="size-[18px]" />
-              }
-            >
-              <a
-                href={`mailto:${business.email}`}
-                className="hover:underline"
-              >
-                {
-                  business.email
-                }
+            <InfoRow icon={<Mail className="size-[18px]" />}>
+              <a href={`mailto:${business.email}`} className="hover:underline">
+                {business.email}
               </a>
             </InfoRow>
           )}
 
           {business.website_url && (
-            <InfoRow
-              icon={
-                <Globe2 className="size-[18px]" />
-              }
-            >
+            <InfoRow icon={<Globe2 className="size-[18px]" />}>
               <a
-                href={
-                  business.website_url
-                }
+                href={business.website_url}
                 target="_blank"
                 rel="noreferrer"
                 className="
@@ -2072,9 +1703,7 @@ function AboutTab({
             "
           >
             <div>
-              <CardTitle>
-                Opening hours
-              </CardTitle>
+              <CardTitle>Opening hours</CardTitle>
 
               <p
                 className={
@@ -2083,9 +1712,7 @@ function AboutTab({
                     : "mt-1 text-[10px] font-bold text-red-600"
                 }
               >
-                {
-                  openState.label
-                }
+                {openState.label}
               </p>
             </div>
 
@@ -2106,7 +1733,6 @@ function AboutTab({
                 "
               >
                 <Pencil className="size-3" />
-
                 Edit hours
               </Link>
             )}
@@ -2118,23 +1744,14 @@ function AboutTab({
               space-y-1
             "
           >
-            {week.map(
-              (day) => (
-                <HoursRow
-                  key={
-                    day.day
-                  }
-                  day={day}
-                />
-              ),
-            )}
+            {week.map((day) => (
+              <HoursRow key={day.day} day={day} />
+            ))}
           </div>
         </PageCard>
 
         <PageCard>
-          <CardTitle>
-            Social links
-          </CardTitle>
+          <CardTitle>Social links</CardTitle>
 
           <div
             className="
@@ -2144,40 +1761,30 @@ function AboutTab({
           >
             {business.facebook_url && (
               <SocialLink
-                href={
-                  business.facebook_url
-                }
-                icon={
-                  <FacebookIcon className="size-[18px]" />
-                }
+                href={business.facebook_url}
+                icon={<FacebookIcon className="size-[18px]" />}
                 label="Facebook"
               />
             )}
 
             {business.instagram_url && (
               <SocialLink
-                href={
-                  business.instagram_url
-                }
-                icon={
-                  <InstagramIcon className="size-[18px]" />
-                }
+                href={business.instagram_url}
+                icon={<InstagramIcon className="size-[18px]" />}
                 label="Instagram"
               />
             )}
 
-            {!business.facebook_url &&
-              !business.instagram_url && (
-                <p
-                  className="
+            {!business.facebook_url && !business.instagram_url && (
+              <p
+                className="
                     text-xs
                     text-black/35
                   "
-                >
-                  No social media
-                  links added yet.
-                </p>
-              )}
+              >
+                No social media links added yet.
+              </p>
+            )}
           </div>
         </PageCard>
       </div>
@@ -2192,22 +1799,14 @@ function MenuTab({
 }: {
   business: Business;
 
-  menuGroups: ReturnType<
-    typeof buildMenuGroups
-  >;
+  menuGroups: ReturnType<typeof buildMenuGroups>;
 
   canEdit: boolean;
 }) {
-  const totalItems =
-    menuGroups.reduce(
-      (
-        total,
-        group,
-      ) =>
-        total +
-        group.items.length,
-      0,
-    );
+  const totalItems = menuGroups.reduce(
+    (total, group) => total + group.items.length,
+    0,
+  );
 
   return (
     <div
@@ -2251,9 +1850,7 @@ function MenuTab({
               flex-1
             "
           >
-            <CardTitle>
-              Menu
-            </CardTitle>
+            <CardTitle>Menu</CardTitle>
 
             <p
               className="
@@ -2262,8 +1859,7 @@ function MenuTab({
                 text-black/35
               "
             >
-              Browse what{" "}
-              {business.name} serves
+              Browse what {business.name} serves
             </p>
           </div>
 
@@ -2292,8 +1888,7 @@ function MenuTab({
         </div>
       </PageCard>
 
-      {menuGroups.length >
-      0 ? (
+      {menuGroups.length > 0 ? (
         <>
           <PageCard>
             <div
@@ -2336,15 +1931,9 @@ function MenuTab({
                     text-black/35
                   "
                 >
-                  {totalItems}{" "}
-                  {totalItems === 1
-                    ? "menu item"
-                    : "menu items"}{" "}
-                  across{" "}
-                  {menuGroups.length}{" "}
-                  {menuGroups.length === 1
-                    ? "category"
-                    : "categories"}
+                  {totalItems} {totalItems === 1 ? "menu item" : "menu items"}{" "}
+                  across {menuGroups.length}{" "}
+                  {menuGroups.length === 1 ? "category" : "categories"}
                 </p>
               </div>
 
@@ -2373,27 +1962,17 @@ function MenuTab({
                 sm:grid-cols-2
               "
             >
-              {menuGroups.map(
-                (
-                  group,
-                ) => (
-                  <Link
-                    key={
-                      group.id
-                    }
-                    href={
-                      group.id ===
-                      "uncategorized"
-                        ? `/business/${encodeURIComponent(
-                            business.slug,
-                          )}/menu`
-                        : `/business/${encodeURIComponent(
-                            business.slug,
-                          )}/menu?category=${encodeURIComponent(
-                            group.id,
-                          )}`
-                    }
-                    className="
+              {menuGroups.map((group) => (
+                <Link
+                  key={group.id}
+                  href={
+                    group.id === "uncategorized"
+                      ? `/business/${encodeURIComponent(business.slug)}/menu`
+                      : `/business/${encodeURIComponent(
+                          business.slug,
+                        )}/menu?category=${encodeURIComponent(group.id)}`
+                  }
+                  className="
                       group
 
                       flex
@@ -2415,9 +1994,9 @@ function MenuTab({
                       hover:bg-[#f3f8f5]
                       hover:shadow-sm
                     "
-                  >
-                    <div
-                      className="
+                >
+                  <div
+                    className="
                         flex
                         size-10
                         shrink-0
@@ -2427,48 +2006,41 @@ function MenuTab({
                         bg-[#e8f2ed]
                         text-[#006241]
                       "
-                    >
-                      <Coffee className="size-4" />
-                    </div>
+                  >
+                    <Coffee className="size-4" />
+                  </div>
 
-                    <div
-                      className="
+                  <div
+                    className="
                         min-w-0
                         flex-1
                       "
-                    >
-                      <p
-                        className="
+                  >
+                    <p
+                      className="
                           truncate
                           text-[12px]
                           font-black
                           text-[#17211c]
                         "
-                      >
-                        {group.name}
-                      </p>
+                    >
+                      {group.name}
+                    </p>
 
-                      <p
-                        className="
+                    <p
+                      className="
                           mt-0.5
                           text-[9px]
                           text-black/35
                         "
-                      >
-                        {
-                          group.items
-                            .length
-                        }{" "}
-                        {group.items
-                          .length ===
-                        1
-                          ? "item"
-                          : "items"}
-                      </p>
-                    </div>
+                    >
+                      {group.items.length}{" "}
+                      {group.items.length === 1 ? "item" : "items"}
+                    </p>
+                  </div>
 
-                    <ArrowRight
-                      className="
+                  <ArrowRight
+                    className="
                         size-4
                         shrink-0
                         text-black/20
@@ -2476,10 +2048,9 @@ function MenuTab({
                         group-hover:translate-x-0.5
                         group-hover:text-[#006241]
                       "
-                    />
-                  </Link>
-                ),
-              )}
+                  />
+                </Link>
+              ))}
             </div>
           </PageCard>
 
@@ -2528,17 +2099,12 @@ function MenuTab({
                   text-black/35
                 "
               >
-                See all categories,
-                menu items, prices,
-                photos, descriptions,
-                and availability from{" "}
-                {business.name}.
+                See all categories, menu items, prices, photos, descriptions,
+                and availability from {business.name}.
               </p>
 
               <Link
-                href={`/business/${encodeURIComponent(
-                  business.slug,
-                )}/menu`}
+                href={`/business/${encodeURIComponent(business.slug)}/menu`}
                 className="
                   group
 
@@ -2569,7 +2135,6 @@ function MenuTab({
                 "
               >
                 View full menu
-
                 <ArrowRight
                   className="
                     size-3.5
@@ -2648,7 +2213,6 @@ function MenuTab({
                 "
               >
                 <Pencil className="size-3.5" />
-
                 Build menu
               </Link>
             )}
@@ -2693,23 +2257,11 @@ function ReviewsTab({
               text-[#17211c]
             "
           >
-            {reviewCount >
-            0
-              ? averageRating.toFixed(
-                  1,
-                )
-              : "—"}
+            {reviewCount > 0 ? averageRating.toFixed(1) : "—"}
           </div>
 
           <div>
-            <StarRating
-              rating={
-                Math.round(
-                  averageRating,
-                )
-              }
-              size="large"
-            />
+            <StarRating rating={Math.round(averageRating)} size="large" />
 
             <p
               className="
@@ -2718,24 +2270,16 @@ function ReviewsTab({
                 text-black/35
               "
             >
-              Based on{" "}
-              {reviewCount}{" "}
-              {reviewCount ===
-              1
-                ? "review"
-                : "reviews"}
+              Based on {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
             </p>
           </div>
         </div>
       </PageCard>
 
       <PageCard>
-        <CardTitle>
-          Customer reviews
-        </CardTitle>
+        <CardTitle>Customer reviews</CardTitle>
 
-        {reviews.length >
-        0 ? (
+        {reviews.length > 0 ? (
           <div
             className="
               mt-4
@@ -2743,18 +2287,9 @@ function ReviewsTab({
               divide-black/[0.06]
             "
           >
-            {reviews.map(
-              (review) => (
-                <ReviewCard
-                  key={
-                    review.id
-                  }
-                  review={
-                    review
-                  }
-                />
-              ),
-            )}
+            {reviews.map((review) => (
+              <ReviewCard key={review.id} review={review} />
+            ))}
           </div>
         ) : (
           <EmptyReviews />
@@ -2812,11 +2347,7 @@ function PageTab({
   );
 }
 
-function PageCard({
-  children,
-}: {
-  children: ReactNode;
-}) {
+function PageCard({ children }: { children: ReactNode }) {
   return (
     <div
       className="
@@ -2841,11 +2372,7 @@ function PageCard({
   );
 }
 
-function CardTitle({
-  children,
-}: {
-  children: ReactNode;
-}) {
+function CardTitle({ children }: { children: ReactNode }) {
   return (
     <h2
       className="
@@ -2860,13 +2387,7 @@ function CardTitle({
   );
 }
 
-function InfoRow({
-  icon,
-  children,
-}: {
-  icon: ReactNode;
-  children: ReactNode;
-}) {
+function InfoRow({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
     <div
       className="
@@ -2900,13 +2421,7 @@ function InfoRow({
   );
 }
 
-function HoursRow({
-  day,
-}: {
-  day: ReturnType<
-    typeof buildWeek
-  >[number];
-}) {
+function HoursRow({ day }: { day: ReturnType<typeof buildWeek>[number] }) {
   return (
     <div
       className={`
@@ -2919,18 +2434,12 @@ function HoursRow({
         py-2
         text-[11px]
 
-        ${
-          day.isToday
-            ? "bg-[#f0f6f3]"
-            : ""
-        }
+        ${day.isToday ? "bg-[#f0f6f3]" : ""}
       `}
     >
       <span
         className={
-          day.isToday
-            ? "font-bold text-[#006241]"
-            : "font-medium text-black/50"
+          day.isToday ? "font-bold text-[#006241]" : "font-medium text-black/50"
         }
       >
         {day.label}
@@ -2938,9 +2447,7 @@ function HoursRow({
 
       <span
         className={
-          day.closed
-            ? "text-black/30"
-            : "font-semibold text-[#39433e]"
+          day.closed ? "text-black/30" : "font-semibold text-[#39433e]"
         }
       >
         {day.value}
@@ -2963,16 +2470,8 @@ function SocialLink({
   return (
     <a
       href={href}
-      target={
-        external
-          ? "_blank"
-          : undefined
-      }
-      rel={
-        external
-          ? "noopener noreferrer"
-          : undefined
-      }
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener noreferrer" : undefined}
       className="
         group
         flex
@@ -3026,11 +2525,7 @@ function SocialLink({
   );
 }
 
-function BusinessAvatar({
-  business,
-}: {
-  business: Business;
-}) {
+function BusinessAvatar({ business }: { business: Business }) {
   return (
     <div
       className="
@@ -3047,9 +2542,7 @@ function BusinessAvatar({
     >
       {business.logo_url ? (
         <img
-          src={
-            business.logo_url
-          }
+          src={business.logo_url}
           alt=""
           className="
             size-full
@@ -3063,11 +2556,7 @@ function BusinessAvatar({
   );
 }
 
-function FeaturedMenuItem({
-  item,
-}: {
-  item: MenuItem;
-}) {
+function FeaturedMenuItem({ item }: { item: MenuItem }) {
   return (
     <div
       className={`
@@ -3085,11 +2574,7 @@ function FeaturedMenuItem({
         hover:bg-white
         hover:shadow-md
 
-        ${
-          item.is_available
-            ? ""
-            : "opacity-60"
-        }
+        ${item.is_available ? "" : "opacity-60"}
       `}
     >
       <div
@@ -3101,12 +2586,8 @@ function FeaturedMenuItem({
       >
         {item.image_url ? (
           <img
-            src={
-              item.image_url
-            }
-            alt={
-              item.name
-            }
+            src={item.image_url}
+            alt={item.name}
             loading="lazy"
             className="
               size-full
@@ -3152,9 +2633,7 @@ function FeaturedMenuItem({
             text-[#006241]
           "
         >
-          {formatPrice(
-            item.price,
-          )}
+          {formatPrice(item.price)}
         </p>
 
         {!item.is_available && (
@@ -3174,17 +2653,9 @@ function FeaturedMenuItem({
   );
 }
 
-function ReviewCard({
-  review,
-}: {
-  review: Review;
-}) {
+function ReviewCard({ review }: { review: Review }) {
   const name =
-    review.profile
-      ?.full_name ||
-    review.profile
-      ?.username ||
-    "CAFÉTA User";
+    review.profile?.full_name || review.profile?.username || "CAFÉTA User";
 
   return (
     <article
@@ -3214,13 +2685,9 @@ function ReviewCard({
             text-[#006241]
           "
         >
-          {review.profile
-            ?.avatar_url ? (
+          {review.profile?.avatar_url ? (
             <img
-              src={
-                review.profile
-                  .avatar_url
-              }
+              src={review.profile.avatar_url}
               alt={name}
               loading="lazy"
               referrerPolicy="no-referrer"
@@ -3266,17 +2733,11 @@ function ReviewCard({
                   text-black/30
                 "
               >
-                {formatReviewDate(
-                  review.created_at,
-                )}
+                {formatReviewDate(review.created_at)}
               </p>
             </div>
 
-            <StarRating
-              rating={
-                review.rating
-              }
-            />
+            <StarRating rating={review.rating} />
           </div>
 
           {review.content && (
@@ -3302,9 +2763,7 @@ function StarRating({
   size = "normal",
 }: {
   rating: number;
-  size?:
-    | "normal"
-    | "large";
+  size?: "normal" | "large";
 }) {
   return (
     <div
@@ -3316,30 +2775,20 @@ function StarRating({
     >
       {Array.from({
         length: 5,
-      }).map(
-        (_, index) => (
-          <Star
-            key={
-              index
-            }
-            className={`
-              ${
-                size ===
-                "large"
-                  ? "size-4"
-                  : "size-3"
-              }
+      }).map((_, index) => (
+        <Star
+          key={index}
+          className={`
+              ${size === "large" ? "size-4" : "size-3"}
 
               ${
-                index <
-                rating
+                index < rating
                   ? "fill-[#f5a623] text-[#f5a623]"
                   : "text-black/10"
               }
             `}
-          />
-        ),
-      )}
+        />
+      ))}
     </div>
   );
 }
@@ -3389,241 +2838,117 @@ function EmptyReviews() {
           text-black/35
         "
       >
-        Be the first to share
-        your experience.
+        Be the first to share your experience.
       </p>
     </div>
   );
 }
 
-function buildMenuGroups(
-  categories: MenuCategory[],
-  items: MenuItem[],
-) {
-  const groups =
-    categories
-      .map(
-        (category) => ({
-          id:
-            category.id,
+function buildMenuGroups(categories: MenuCategory[], items: MenuItem[]) {
+  const groups = categories
+    .map((category) => ({
+      id: category.id,
 
-          name:
-            category.name,
+      name: category.name,
 
-          items:
-            items.filter(
-              (item) =>
-                item.category_id ===
-                category.id,
-            ),
-        }),
-      )
-      .filter(
-        (group) =>
-          group.items.length >
-          0,
-      );
+      items: items.filter((item) => item.category_id === category.id),
+    }))
+    .filter((group) => group.items.length > 0);
 
-  const uncategorized =
-    items.filter(
-      (item) =>
-        !item.category_id ||
-        !categories.some(
-          (category) =>
-            category.id ===
-            item.category_id,
-        ),
-    );
+  const uncategorized = items.filter(
+    (item) =>
+      !item.category_id ||
+      !categories.some((category) => category.id === item.category_id),
+  );
 
-  if (
-    uncategorized.length >
-    0
-  ) {
+  if (uncategorized.length > 0) {
     groups.push({
-      id:
-        "uncategorized",
+      id: "uncategorized",
 
-      name:
-        "More",
+      name: "More",
 
-      items:
-        uncategorized,
+      items: uncategorized,
     });
   }
 
   return groups;
 }
 
-function buildWeek(
-  hours: BusinessHour[],
-) {
-  const today =
-    new Date().getDay();
+function buildWeek(hours: BusinessHour[]) {
+  const today = new Date().getDay();
 
-  return [
-    0,
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-  ].map(
-    (day) => {
-      const hour =
-        hours.find(
-          (entry) =>
-            entry.day_of_week ===
-            day,
-        );
+  return [0, 1, 2, 3, 4, 5, 6].map((day) => {
+    const hour = hours.find((entry) => entry.day_of_week === day);
 
-      const closed =
-        !hour ||
-        hour.is_closed ||
-        !hour.opens_at ||
-        !hour.closes_at;
+    const closed = !hour || hour.is_closed || !hour.opens_at || !hour.closes_at;
 
-      return {
-        day,
+    return {
+      day,
 
-        label:
-          getDayName(
-            day,
-          ),
+      label: getDayName(day),
 
-        isToday:
-          day ===
-          today,
+      isToday: day === today,
 
-        closed,
+      closed,
 
-        value:
-          closed
-            ? "Closed"
-            : `${formatTime(
-                hour.opens_at!,
-              )} – ${formatTime(
-                hour.closes_at!,
-              )}`,
-      };
-    },
-  );
+      value: closed
+        ? "Closed"
+        : `${formatTime(hour.opens_at!)} – ${formatTime(hour.closes_at!)}`,
+    };
+  });
 }
 
-function getOpenState(
-  hours:
-    | BusinessHour
-    | undefined,
-) {
-  if (
-    !hours ||
-    hours.is_closed ||
-    !hours.opens_at ||
-    !hours.closes_at
-  ) {
+function getOpenState(hours: BusinessHour | undefined) {
+  if (!hours || hours.is_closed || !hours.opens_at || !hours.closes_at) {
     return {
       open: false,
-      label:
-        "Closed today",
+      label: "Closed today",
     };
   }
 
-  const now =
-    new Date();
+  const now = new Date();
 
-  const currentMinutes =
-    now.getHours() *
-      60 +
-    now.getMinutes();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-  const openMinutes =
-    timeToMinutes(
-      hours.opens_at,
-    );
+  const openMinutes = timeToMinutes(hours.opens_at);
 
-  const closeMinutes =
-    timeToMinutes(
-      hours.closes_at,
-    );
+  const closeMinutes = timeToMinutes(hours.closes_at);
 
   const open =
-    closeMinutes >
-    openMinutes
-      ? currentMinutes >=
-          openMinutes &&
-        currentMinutes <
-          closeMinutes
-      : currentMinutes >=
-          openMinutes ||
-        currentMinutes <
-          closeMinutes;
+    closeMinutes > openMinutes
+      ? currentMinutes >= openMinutes && currentMinutes < closeMinutes
+      : currentMinutes >= openMinutes || currentMinutes < closeMinutes;
 
   return {
     open,
 
     label: open
-      ? `Open · closes ${formatTime(
-          hours.closes_at,
-        )}`
-      : `Closed · opens ${formatTime(
-          hours.opens_at,
-        )}`,
+      ? `Open · closes ${formatTime(hours.closes_at)}`
+      : `Closed · opens ${formatTime(hours.opens_at)}`,
   };
 }
 
-function timeToMinutes(
-  value: string,
-) {
-  const [
-    hour,
-    minute,
-  ] =
-    value
-      .split(":")
-      .map(Number);
+function timeToMinutes(value: string) {
+  const [hour, minute] = value.split(":").map(Number);
 
-  return (
-    hour * 60 +
-    minute
-  );
+  return hour * 60 + minute;
 }
 
-function formatTime(
-  value: string,
-) {
-  const [
-    hours,
-    minutes,
-  ] =
-    value.split(":");
+function formatTime(value: string) {
+  const [hours, minutes] = value.split(":");
 
-  const date =
-    new Date();
+  const date = new Date();
 
-  date.setHours(
-    Number(hours),
-    Number(minutes),
-    0,
-    0,
-  );
+  date.setHours(Number(hours), Number(minutes), 0, 0);
 
-  return new Intl.DateTimeFormat(
-    "en-PH",
-    {
-      hour:
-        "numeric",
+  return new Intl.DateTimeFormat("en-PH", {
+    hour: "numeric",
 
-      minute:
-        "2-digit",
-    },
-  ).format(
-    date,
-  );
+    minute: "2-digit",
+  }).format(date);
 }
 
-function getDayName(
-  day: number,
-) {
+function getDayName(day: number) {
   const names = [
     "Sunday",
     "Monday",
@@ -3634,63 +2959,33 @@ function getDayName(
     "Saturday",
   ];
 
-  return (
-    names[day] ??
-    ""
-  );
+  return names[day] ?? "";
 }
 
-function formatPrice(
-  price: number,
-) {
-  return new Intl.NumberFormat(
-    "en-PH",
-    {
-      style:
-        "currency",
+function formatPrice(price: number) {
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
 
-      currency:
-        "PHP",
+    currency: "PHP",
 
-      minimumFractionDigits:
-        0,
+    minimumFractionDigits: 0,
 
-      maximumFractionDigits:
-        2,
-    },
-  ).format(
-    price,
-  );
+    maximumFractionDigits: 2,
+  }).format(price);
 }
 
-function formatReviewDate(
-  value: string,
-) {
-  return new Intl.DateTimeFormat(
-    "en-PH",
-    {
-      month:
-        "short",
+function formatReviewDate(value: string) {
+  return new Intl.DateTimeFormat("en-PH", {
+    month: "short",
 
-      day:
-        "numeric",
+    day: "numeric",
 
-      year:
-        "numeric",
-    },
-  ).format(
-    new Date(
-      value,
-    ),
-  );
+    year: "numeric",
+  }).format(new Date(value));
 }
 
-function formatCategory(
-  category: string,
-) {
-  switch (
-    category
-  ) {
+function formatCategory(category: string) {
+  switch (category) {
     case "coffee_shop":
       return "Coffee Shop";
 
@@ -3710,25 +3005,16 @@ function formatCategory(
       return "Local Spot";
 
     default:
-      return category.replace(
-        /_/g,
-        " ",
-      );
+      return category.replace(/_/g, " ");
   }
 }
 
-function FacebookIcon({
-  className,
-}: {
-  className?: string;
-}) {
+function FacebookIcon({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
       aria-hidden="true"
-      className={
-        className
-      }
+      className={className}
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -3737,18 +3023,12 @@ function FacebookIcon({
   );
 }
 
-function InstagramIcon({
-  className,
-}: {
-  className?: string;
-}) {
+function InstagramIcon({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
       aria-hidden="true"
-      className={
-        className
-      }
+      className={className}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -3762,20 +3042,9 @@ function InstagramIcon({
         strokeWidth="2"
       />
 
-      <circle
-        cx="12"
-        cy="12"
-        r="4"
-        stroke="currentColor"
-        strokeWidth="2"
-      />
+      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" />
 
-      <circle
-        cx="17.4"
-        cy="6.6"
-        r="1.15"
-        fill="currentColor"
-      />
+      <circle cx="17.4" cy="6.6" r="1.15" fill="currentColor" />
     </svg>
   );
 }
