@@ -17,6 +17,9 @@ import {
   createClient,
 } from "@/lib/supabase/server";
 
+const SITE_URL =
+  "https://cafeta.online";
+
 const REGISTER_ROUTE =
   "/auth/register";
 
@@ -99,6 +102,53 @@ type BusinessMember = {
   role: string;
 };
 
+function formatCategory(
+  category: string,
+) {
+  return category
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) =>
+      letter.toUpperCase(),
+    );
+}
+
+function createBusinessDescription({
+  name,
+  description,
+  category,
+  barangay,
+  city,
+  province,
+}: {
+  name: string;
+  description: string | null;
+  category: string;
+  barangay: string | null;
+  city: string;
+  province: string;
+}) {
+  if (
+    description?.trim()
+  ) {
+    return description
+      .trim()
+      .slice(0, 160);
+  }
+
+  const categoryName =
+    formatCategory(category);
+
+  const location = [
+    barangay,
+    city,
+    province,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return `Discover ${name}, a ${categoryName.toLowerCase()} in ${location}. View its location, menu, reviews, hours, and more on CAFÉTA.`;
+}
+
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
@@ -110,50 +160,188 @@ export async function generateMetadata({
 
   const {
     data: business,
-  } =
-    await supabase
-      .from("businesses")
-      .select(`
-        name,
-        description,
-        cover_url
-      `)
-      .eq("slug", slug)
-      .eq(
-        "status",
-        "approved",
-      )
-      .maybeSingle();
+    error,
+  } = await supabase
+    .from("businesses")
+    .select(`
+      name,
+      slug,
+      category,
+      description,
+      logo_url,
+      cover_url,
+      address,
+      barangay,
+      city,
+      province,
+      is_verified
+    `)
+    .eq("slug", slug)
+    .eq(
+      "status",
+      "approved",
+    )
+    .maybeSingle();
 
-  if (!business) {
+  if (
+    error ||
+    !business
+  ) {
     return {
       title:
-        "Business | CAFÉTA",
+        "Business not found",
+
+      description:
+        "Explore cafés, coffee shops, milk tea spots, and local places on CAFÉTA.",
+
+      robots: {
+        index: false,
+        follow: false,
+      },
     };
   }
 
-  return {
-    title:
-      `${business.name} | CAFÉTA`,
+  const category =
+    formatCategory(
+      business.category,
+    );
 
-    description:
-      business.description ??
-      `Discover ${business.name} on CAFÉTA.`,
+  const description =
+    createBusinessDescription(
+      {
+        name:
+          business.name,
+
+        description:
+          business.description,
+
+        category:
+          business.category,
+
+        barangay:
+          business.barangay,
+
+        city:
+          business.city,
+
+        province:
+          business.province,
+      },
+    );
+
+  const canonicalPath =
+    `/business/${encodeURIComponent(
+      business.slug,
+    )}`;
+
+  const canonicalUrl =
+    `${SITE_URL}${canonicalPath}`;
+
+  const title =
+    `${business.name} — ${category} in ${business.city}`;
+
+  const images =
+    business.cover_url
+      ? [
+          {
+            url:
+              business.cover_url,
+
+            alt:
+              `${business.name} in ${business.city}, ${business.province}`,
+          },
+        ]
+      : business.logo_url
+        ? [
+            {
+              url:
+                business.logo_url,
+
+              alt:
+                `${business.name} logo`,
+            },
+          ]
+        : [
+            {
+              url:
+                "/og-image.png",
+
+              width: 1200,
+              height: 630,
+
+              alt:
+                "CAFÉTA — Discover cafés in Basilan",
+            },
+          ];
+
+  return {
+    title,
+    description,
+
+    alternates: {
+      canonical:
+        canonicalPath,
+    },
 
     openGraph: {
-      title:
-        `${business.name} | CAFÉTA`,
+      type: "website",
 
-      description:
-        business.description ??
-        `Discover ${business.name} on CAFÉTA.`,
+      locale: "en_PH",
+
+      url:
+        canonicalUrl,
+
+      siteName:
+        "CAFÉTA",
+
+      title:
+        `${title} | CAFÉTA`,
+
+      description,
+
+      images,
+    },
+
+    twitter: {
+      card:
+        "summary_large_image",
+
+      title:
+        `${title} | CAFÉTA`,
+
+      description,
 
       images:
         business.cover_url
           ? [
               business.cover_url,
             ]
-          : [],
+          : business.logo_url
+            ? [
+                business.logo_url,
+              ]
+            : [
+                "/og-image.png",
+              ],
+    },
+
+    robots: {
+      index: true,
+      follow: true,
+
+      googleBot: {
+        index: true,
+        follow: true,
+
+        "max-image-preview":
+          "large",
+
+        "max-snippet":
+          -1,
+
+        "max-video-preview":
+          -1,
+      },
     },
   };
 }
@@ -660,107 +848,323 @@ export default async function BusinessPage({
         reviewCount
       : 0;
 
-  return (
-    <BusinessProfileClient
-      business={{
-        id:
-          business.id,
+  const businessUrl =
+    `${SITE_URL}/business/${encodeURIComponent(
+      business.slug,
+    )}`;
 
-        name:
-          business.name,
+  const jsonLd = {
+    "@context":
+      "https://schema.org",
 
-        slug:
-          business.slug,
+    "@type":
+      business.category ===
+        "restaurant_cafe"
+        ? "Restaurant"
+        : business.category ===
+              "coffee_shop" ||
+            business.category ===
+              "cafe"
+          ? "CafeOrCoffeeShop"
+          : "LocalBusiness",
 
-        category:
-          business.category,
+    "@id":
+      `${businessUrl}#business`,
 
-        description:
-          business.description,
+    name:
+      business.name,
 
-        logo_url:
-          business.logo_url,
+    url:
+      businessUrl,
 
-        cover_url:
-          business.cover_url,
+    ...(business.description
+      ? {
+          description:
+            business.description,
+        }
+      : {}),
 
-        phone:
-          business.phone,
+    ...(business.logo_url
+      ? {
+          logo:
+            business.logo_url,
+        }
+      : {}),
 
-        email:
-          business.email,
+    ...(business.cover_url
+      ? {
+          image: [
+            business.cover_url,
+          ],
+        }
+      : business.logo_url
+        ? {
+            image: [
+              business.logo_url,
+            ],
+          }
+        : {}),
 
-        facebook_url:
-          business.facebook_url,
+    address: {
+      "@type":
+        "PostalAddress",
 
-        instagram_url:
-          business.instagram_url,
+      streetAddress:
+        business.address,
 
-        website_url:
-          business.website_url,
+      ...(business.barangay
+        ? {
+            addressLocality:
+              business.barangay,
+          }
+        : {}),
 
-        address:
-          business.address,
+      addressRegion:
+        business.province,
 
-        barangay:
-          business.barangay,
+      addressCountry:
+        "PH",
+    },
 
-        city:
-          business.city,
+    geo: {
+      "@type":
+        "GeoCoordinates",
 
-        province:
-          business.province,
+      latitude:
+        Number(
+          business.latitude,
+        ),
 
-        latitude:
-          Number(
-            business.latitude,
-          ),
+      longitude:
+        Number(
+          business.longitude,
+        ),
+    },
 
-        longitude:
-          Number(
-            business.longitude,
-          ),
+    ...(business.phone
+      ? {
+          telephone:
+            business.phone,
+        }
+      : {}),
 
-        is_verified:
-          business.is_verified ===
-          true,
-      }}
-      hours={hours}
-      categories={
-        categories
-      }
-      menuItems={
-        menuItems.map(
-          (item) => ({
-            ...item,
+    ...(business.email
+      ? {
+          email:
+            business.email,
+        }
+      : {}),
 
-            price:
+    ...(business.website_url
+      ? {
+          sameAs: [
+            business.website_url,
+            business.facebook_url,
+            business.instagram_url,
+          ].filter(Boolean),
+        }
+      : business.facebook_url ||
+          business.instagram_url
+        ? {
+            sameAs: [
+              business.facebook_url,
+              business.instagram_url,
+            ].filter(Boolean),
+          }
+        : {}),
+
+    ...(reviewCount > 0
+      ? {
+          aggregateRating: {
+            "@type":
+              "AggregateRating",
+
+            ratingValue:
               Number(
-                item.price,
+                averageRating.toFixed(
+                  2,
+                ),
               ),
-          }),
-        )
-      }
-      reviews={
-        reviews
-      }
-      memories={
-        memories
-      }
-      averageRating={
-        averageRating
-      }
-      reviewCount={
-        reviewCount
-      }
-      initialSaved={
-        Boolean(
-          savedResult.data,
-        )
-      }
-      canEdit={
-        canEdit
-      }
-    />
+
+            reviewCount,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+
+    ...(hours.length > 0
+      ? {
+          openingHoursSpecification:
+            hours
+              .filter(
+                (hour) =>
+                  !hour.is_closed &&
+                  hour.opens_at &&
+                  hour.closes_at,
+              )
+              .map(
+                (hour) => ({
+                  "@type":
+                    "OpeningHoursSpecification",
+
+                  dayOfWeek:
+                    getSchemaDay(
+                      hour.day_of_week,
+                    ),
+
+                  opens:
+                    hour.opens_at?.slice(
+                      0,
+                      5,
+                    ),
+
+                  closes:
+                    hour.closes_at?.slice(
+                      0,
+                      5,
+                    ),
+                }),
+              ),
+        }
+      : {}),
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html:
+            JSON.stringify(
+              jsonLd,
+            ).replace(
+              /</g,
+              "\\u003c",
+            ),
+        }}
+      />
+
+      <BusinessProfileClient
+        business={{
+          id:
+            business.id,
+
+          name:
+            business.name,
+
+          slug:
+            business.slug,
+
+          category:
+            business.category,
+
+          description:
+            business.description,
+
+          logo_url:
+            business.logo_url,
+
+          cover_url:
+            business.cover_url,
+
+          phone:
+            business.phone,
+
+          email:
+            business.email,
+
+          facebook_url:
+            business.facebook_url,
+
+          instagram_url:
+            business.instagram_url,
+
+          website_url:
+            business.website_url,
+
+          address:
+            business.address,
+
+          barangay:
+            business.barangay,
+
+          city:
+            business.city,
+
+          province:
+            business.province,
+
+          latitude:
+            Number(
+              business.latitude,
+            ),
+
+          longitude:
+            Number(
+              business.longitude,
+            ),
+
+          is_verified:
+            business.is_verified ===
+            true,
+        }}
+        hours={hours}
+        categories={
+          categories
+        }
+        menuItems={
+          menuItems.map(
+            (item) => ({
+              ...item,
+
+              price:
+                Number(
+                  item.price,
+                ),
+            }),
+          )
+        }
+        reviews={
+          reviews
+        }
+        memories={
+          memories
+        }
+        averageRating={
+          averageRating
+        }
+        reviewCount={
+          reviewCount
+        }
+        initialSaved={
+          Boolean(
+            savedResult.data,
+          )
+        }
+        canEdit={
+          canEdit
+        }
+      />
+    </>
+  );
+}
+
+function getSchemaDay(
+  day: number,
+) {
+  const days = [
+    "https://schema.org/Sunday",
+    "https://schema.org/Monday",
+    "https://schema.org/Tuesday",
+    "https://schema.org/Wednesday",
+    "https://schema.org/Thursday",
+    "https://schema.org/Friday",
+    "https://schema.org/Saturday",
+  ];
+
+  return (
+    days[day] ??
+    "https://schema.org/Monday"
   );
 }
