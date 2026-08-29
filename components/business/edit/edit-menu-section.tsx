@@ -2,39 +2,46 @@
 
 import {
   Coffee,
+  FolderOpen,
   Pencil,
   Plus,
   Trash2,
 } from "lucide-react";
 
-import {
+import type {
   EditableMenuCategory,
   EditableMenuItem,
 } from "./edit-menu-item-modal";
 
 type Props = {
-  categories: EditableMenuCategory[];
+  categories:
+    EditableMenuCategory[];
 
-  items: EditableMenuItem[];
+  items:
+    EditableMenuItem[];
 
   onAddCategory: () => void;
 
   onEditCategory: (
-    category: EditableMenuCategory,
+    category:
+      EditableMenuCategory,
   ) => void;
 
   onDeleteCategory: (
-    category: EditableMenuCategory,
+    category:
+      EditableMenuCategory,
   ) => void;
 
   onAddItem: () => void;
 
   onEditItem: (
-    item: EditableMenuItem,
+    item:
+      EditableMenuItem,
   ) => void;
 
   onDeleteItem: (
-    item: EditableMenuItem,
+    item:
+      EditableMenuItem,
   ) => void;
 };
 
@@ -50,7 +57,9 @@ export function EditMenuSection({
 }: Props) {
   const groups =
     categories.map(
-      (category) => ({
+      (
+        category,
+      ) => ({
         category,
 
         items:
@@ -69,94 +78,47 @@ export function EditMenuSection({
     );
 
   return (
-    <div
-      className="
-        space-y-4
-        animate-in
-        fade-in
-        slide-in-from-bottom-2
-        duration-300
-      "
-    >
-      <section
-        className="
-          rounded-[22px]
-          border
-          border-black/[0.055]
-          bg-white
-          p-5
-          shadow-[0_2px_12px_rgba(23,33,28,0.035)]
-          sm:p-6
-        "
-      >
-        <div
-          className="
-            flex
-            flex-col
-            gap-4
-            sm:flex-row
-            sm:items-center
-            sm:justify-between
-          "
-        >
-          <div>
-            <h2
-              className="
-                text-[17px]
-                font-black
-                text-[#17211c]
-              "
-            >
-              Menu
-            </h2>
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <section className="rounded-[22px] border border-black/[0.055] bg-white p-5 shadow-[0_2px_12px_rgba(23,33,28,0.035)] sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="max-w-lg">
+            <div className="flex items-center gap-2">
+              <div className="flex size-8 items-center justify-center rounded-full bg-[#e8f2ed] text-[#006241]">
+                <Coffee className="size-3.5" />
+              </div>
 
-            <p
-              className="
-                mt-1
-                text-[10px]
-                text-black/35
-              "
-            >
-              Manage categories,
-              items, prices,
-              photos and
-              availability.
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#006241]">
+                  Public menu
+                </p>
+
+                <h2 className="text-[17px] font-black text-[#17211c]">
+                  Menu
+                </h2>
+              </div>
+            </div>
+
+            <p className="mt-3 text-[10px] leading-5 text-black/40">
+              Organize what your
+              business serves into
+              categories. Customers
+              can browse these
+              categories on your
+              dedicated menu page.
             </p>
           </div>
 
-          <div
-            className="
-              flex
-              gap-2
-            "
-          >
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={
                 onAddCategory
               }
-              className="
-                inline-flex
-                h-9
-                items-center
-                gap-1.5
-                rounded-full
-                border
-                border-black/[0.07]
-                bg-[#fafbfa]
-                px-4
-                text-[9px]
-                font-bold
-                text-[#39433e]
-                transition-all
-                hover:-translate-y-0.5
-                hover:border-[#006241]/15
-                hover:text-[#006241]
-              "
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-black/[0.07] bg-[#fafbfa] px-4 text-[9px] font-bold text-[#39433e] transition-all hover:-translate-y-0.5 hover:border-[#006241]/15 hover:text-[#006241]"
             >
-              <Plus className="size-3.5" />
+              <FolderOpen className="size-3.5" />
 
-              Category
+              Add category
             </button>
 
             <button
@@ -164,28 +126,94 @@ export function EditMenuSection({
               onClick={
                 onAddItem
               }
-              className="
-                inline-flex
-                h-9
-                items-center
-                gap-1.5
-                rounded-full
-                bg-[#006241]
-                px-4
-                text-[9px]
-                font-bold
-                text-white
-                transition-all
-                hover:-translate-y-0.5
-                hover:bg-[#00754a]
-              "
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#006241] px-4 text-[9px] font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-[#00754a]"
             >
               <Plus className="size-3.5" />
 
-              Menu item
+              Add item
             </button>
           </div>
         </div>
+
+        {categories.length >
+        0 ? (
+          <div className="mt-5 border-t border-black/[0.05] pt-4">
+            <p className="text-[9px] font-bold text-black/35">
+              Your menu categories
+            </p>
+
+            <div className="mt-2 flex flex-wrap gap-2">
+              {categories.map(
+                (
+                  category,
+                ) => {
+                  const count =
+                    items.filter(
+                      (item) =>
+                        item.category_id ===
+                        category.id,
+                    ).length;
+
+                  return (
+                    <button
+                      key={
+                        category.id
+                      }
+                      type="button"
+                      onClick={() =>
+                        onEditCategory(
+                          category,
+                        )
+                      }
+                      className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#006241]/10 bg-[#f2f7f4] px-3 text-[9px] font-bold text-[#006241] transition hover:border-[#006241]/25 hover:bg-[#e8f2ed]"
+                    >
+                      {
+                        category.name
+                      }
+
+                      <span className="rounded-full bg-white px-1.5 py-0.5 text-[7px] text-black/35">
+                        {count}
+                      </span>
+                    </button>
+                  );
+                },
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-5 rounded-[16px] border border-dashed border-[#006241]/15 bg-[#f7faf8] p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#e8f2ed] text-[#006241]">
+                <FolderOpen className="size-4" />
+              </div>
+
+              <div>
+                <p className="text-[10px] font-bold text-[#17211c]">
+                  Start with categories
+                </p>
+
+                <p className="mt-1 text-[9px] leading-4 text-black/40">
+                  For example: Coffee,
+                  Milk Tea, Non-Coffee,
+                  Meals, Pastries,
+                  Desserts, or Snacks.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={
+                    onAddCategory
+                  }
+                  className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-full bg-[#006241] px-3.5 text-[8px] font-bold text-white"
+                >
+                  <Plus className="size-3" />
+
+                  Create first category
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {groups.map(
@@ -203,6 +231,9 @@ export function EditMenuSection({
             }
             items={
               categoryItems
+            }
+            onAddItem={
+              onAddItem
             }
             onEditTitle={() =>
               onEditCategory(
@@ -231,6 +262,9 @@ export function EditMenuSection({
           items={
             uncategorized
           }
+          onAddItem={
+            onAddItem
+          }
           onEditItem={
             onEditItem
           }
@@ -242,57 +276,20 @@ export function EditMenuSection({
 
       {items.length ===
         0 && (
-        <section
-          className="
-            rounded-[22px]
-            border
-            border-black/[0.055]
-            bg-white
-            px-5
-            py-14
-            text-center
-          "
-        >
-          <div
-            className="
-              mx-auto
-              flex
-              size-12
-              items-center
-              justify-center
-              rounded-full
-              bg-[#e8f2ed]
-              text-[#006241]
-            "
-          >
+        <section className="rounded-[22px] border border-black/[0.055] bg-white px-5 py-14 text-center">
+          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-[#e8f2ed] text-[#006241]">
             <Coffee className="size-5" />
           </div>
 
-          <h3
-            className="
-              mt-3
-              text-[13px]
-              font-black
-              text-[#17211c]
-            "
-          >
+          <h3 className="mt-3 text-[13px] font-black text-[#17211c]">
             Your menu is empty
           </h3>
 
-          <p
-            className="
-              mx-auto
-              mt-1
-              max-w-sm
-              text-[10px]
-              leading-4
-              text-black/35
-            "
-          >
-            Add your first menu
-            item to start showing
-            customers what your
-            business serves.
+          <p className="mx-auto mt-1 max-w-sm text-[10px] leading-5 text-black/35">
+            Add food, drinks,
+            desserts, or anything
+            else customers can get
+            from your business.
           </p>
 
           <button
@@ -300,19 +297,7 @@ export function EditMenuSection({
             onClick={
               onAddItem
             }
-            className="
-              mt-4
-              inline-flex
-              h-9
-              items-center
-              gap-1.5
-              rounded-full
-              bg-[#006241]
-              px-4
-              text-[9px]
-              font-bold
-              text-white
-            "
+            className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-full bg-[#006241] px-4 text-[9px] font-bold text-white"
           >
             <Plus className="size-3.5" />
 
@@ -327,6 +312,7 @@ export function EditMenuSection({
 function MenuGroup({
   title,
   items,
+  onAddItem,
   onEditTitle,
   onDeleteTitle,
   onEditItem,
@@ -334,58 +320,34 @@ function MenuGroup({
 }: {
   title: string;
 
-  items: EditableMenuItem[];
+  items:
+    EditableMenuItem[];
+
+  onAddItem: () => void;
 
   onEditTitle?: () => void;
 
   onDeleteTitle?: () => void;
 
   onEditItem: (
-    item: EditableMenuItem,
+    item:
+      EditableMenuItem,
   ) => void;
 
   onDeleteItem: (
-    item: EditableMenuItem,
+    item:
+      EditableMenuItem,
   ) => void;
 }) {
   return (
-    <section
-      className="
-        rounded-[22px]
-        border
-        border-black/[0.055]
-        bg-white
-        p-5
-        shadow-[0_2px_12px_rgba(23,33,28,0.035)]
-        sm:p-6
-      "
-    >
-      <div
-        className="
-          flex
-          items-center
-          justify-between
-          gap-4
-        "
-      >
+    <section className="rounded-[22px] border border-black/[0.055] bg-white p-5 shadow-[0_2px_12px_rgba(23,33,28,0.035)] sm:p-6">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h3
-            className="
-              text-[14px]
-              font-black
-              text-[#17211c]
-            "
-          >
+          <h3 className="text-[14px] font-black text-[#17211c]">
             {title}
           </h3>
 
-          <p
-            className="
-              mt-0.5
-              text-[9px]
-              text-black/30
-            "
-          >
+          <p className="mt-0.5 text-[9px] text-black/30">
             {items.length}{" "}
             {items.length ===
             1
@@ -394,66 +356,51 @@ function MenuGroup({
           </p>
         </div>
 
-        {onEditTitle && (
-          <div
-            className="
-              flex
-              gap-1
-            "
+        <div className="flex gap-1">
+          <button
+            type="button"
+            onClick={
+              onAddItem
+            }
+            aria-label={`Add item to ${title}`}
+            className="flex size-8 items-center justify-center rounded-full text-[#006241] transition hover:bg-[#e8f2ed]"
           >
-            <button
-              type="button"
-              onClick={
-                onEditTitle
-              }
-              className="
-                flex
-                size-8
-                items-center
-                justify-center
-                rounded-full
-                text-black/35
-                transition
-                hover:bg-[#e8f2ed]
-                hover:text-[#006241]
-              "
-            >
-              <Pencil className="size-3.5" />
-            </button>
+            <Plus className="size-3.5" />
+          </button>
 
-            <button
-              type="button"
-              onClick={
-                onDeleteTitle
-              }
-              className="
-                flex
-                size-8
-                items-center
-                justify-center
-                rounded-full
-                text-black/35
-                transition
-                hover:bg-red-50
-                hover:text-red-600
-              "
-            >
-              <Trash2 className="size-3.5" />
-            </button>
-          </div>
-        )}
+          {onEditTitle && (
+            <>
+              <button
+                type="button"
+                onClick={
+                  onEditTitle
+                }
+                aria-label={`Edit ${title}`}
+                className="flex size-8 items-center justify-center rounded-full text-black/35 transition hover:bg-[#e8f2ed] hover:text-[#006241]"
+              >
+                <Pencil className="size-3.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  onDeleteTitle
+                }
+                aria-label={`Delete ${title}`}
+                className="flex size-8 items-center justify-center rounded-full text-black/35 transition hover:bg-red-50 hover:text-red-600"
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
-      <div
-        className="
-          mt-4
-          grid
-          gap-2
-          sm:grid-cols-2
-        "
-      >
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
         {items.map(
-          (item) => (
+          (
+            item,
+          ) => (
             <MenuRow
               key={
                 item.id ??
@@ -478,21 +425,20 @@ function MenuGroup({
 
         {items.length ===
           0 && (
-          <div
-            className="
-              col-span-full
-              rounded-[14px]
-              bg-[#fafbfa]
-              px-4
-              py-6
-              text-center
-              text-[10px]
-              text-black/30
-            "
+          <button
+            type="button"
+            onClick={
+              onAddItem
+            }
+            className="col-span-full rounded-[14px] border border-dashed border-black/[0.07] bg-[#fafbfa] px-4 py-6 text-center transition hover:border-[#006241]/15 hover:bg-[#f7faf8]"
           >
-            No items in this
-            category.
-          </div>
+            <Plus className="mx-auto size-4 text-[#006241]" />
+
+            <span className="mt-1.5 block text-[9px] font-bold text-black/35">
+              Add an item to this
+              category
+            </span>
+          </button>
         )}
       </div>
     </section>
@@ -504,7 +450,8 @@ function MenuRow({
   onEdit,
   onDelete,
 }: {
-  item: EditableMenuItem;
+  item:
+    EditableMenuItem;
 
   onEdit: () => void;
 
@@ -535,19 +482,7 @@ function MenuRow({
         }
       `}
     >
-      <div
-        className="
-          flex
-          size-14
-          shrink-0
-          items-center
-          justify-center
-          overflow-hidden
-          rounded-[11px]
-          bg-[#e8f2ed]
-          text-[#006241]/30
-        "
-      >
+      <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-[11px] bg-[#e8f2ed] text-[#006241]/30">
         {item.image_url ? (
           <img
             src={
@@ -556,92 +491,41 @@ function MenuRow({
             alt={
               item.name
             }
-            className="
-              size-full
-              object-cover
-            "
+            className="size-full object-cover"
           />
         ) : (
           <Coffee className="size-4" />
         )}
       </div>
 
-      <div
-        className="
-          min-w-0
-          flex-1
-        "
-      >
-        <p
-          className="
-            truncate
-            text-[11px]
-            font-bold
-            text-[#17211c]
-          "
-        >
-          {item.name}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[11px] font-bold text-[#17211c]">
+          {
+            item.name
+          }
         </p>
 
-        <p
-          className="
-            mt-0.5
-            text-[10px]
-            font-black
-            text-[#006241]
-          "
-        >
-          ₱
-          {Number(
-            item.price || 0,
-          ).toLocaleString(
-            "en-PH",
-            {
-              minimumFractionDigits:
-                0,
-
-              maximumFractionDigits:
-                2,
-            },
+        <p className="mt-0.5 text-[10px] font-black text-[#006241]">
+          {formatPrice(
+            item.price,
           )}
         </p>
 
-        <p
-          className="
-            mt-0.5
-            text-[8px]
-            text-black/30
-          "
-        >
+        <p className="mt-0.5 text-[8px] text-black/30">
           {item.is_available
             ? "Available"
             : "Unavailable"}
         </p>
       </div>
 
-      <div
-        className="
-          flex
-          shrink-0
-          gap-1
-        "
-      >
+      <div className="flex shrink-0 gap-1">
         <button
           type="button"
           onClick={
             onEdit
           }
-          className="
-            flex
-            size-8
-            items-center
-            justify-center
-            rounded-full
-            text-black/35
-            transition
-            hover:bg-[#e8f2ed]
-            hover:text-[#006241]
-          "
+          aria-label={`Edit ${item.name}`}
+          className="flex size-8 items-center justify-center rounded-full text-black/35 transition hover:bg-[#e8f2ed] hover:text-[#006241]"
         >
           <Pencil className="size-3.5" />
         </button>
@@ -651,21 +535,45 @@ function MenuRow({
           onClick={
             onDelete
           }
-          className="
-            flex
-            size-8
-            items-center
-            justify-center
-            rounded-full
-            text-black/35
-            transition
-            hover:bg-red-50
-            hover:text-red-600
-          "
+          aria-label={`Delete ${item.name}`}
+          className="flex size-8 items-center justify-center rounded-full text-black/35 transition hover:bg-red-50 hover:text-red-600"
         >
           <Trash2 className="size-3.5" />
         </button>
       </div>
     </article>
+  );
+}
+
+function formatPrice(
+  value: string,
+) {
+  const price =
+    Number(
+      value ||
+        0,
+    );
+
+  return new Intl.NumberFormat(
+    "en-PH",
+    {
+      style:
+        "currency",
+
+      currency:
+        "PHP",
+
+      minimumFractionDigits:
+        price %
+          1 ===
+        0
+          ? 0
+          : 2,
+
+      maximumFractionDigits:
+        2,
+    },
+  ).format(
+    price,
   );
 }
