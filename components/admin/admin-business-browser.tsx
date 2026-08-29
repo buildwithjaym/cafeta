@@ -3,6 +3,8 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  BadgeCheck,
+  Building2,
   CheckCircle2,
   ChevronDown,
   Clock3,
@@ -10,40 +12,50 @@ import {
   List,
   MapPin,
   Search,
-  ShieldCheck,
+  ShieldAlert,
   Store,
   X,
   XCircle,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-
 import {
-  BusinessStatusBadge,
-  type BusinessStatus,
-} from "@/components/admin/businesses/business-status-badge";
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
+import {
+  useEffect,
+  useState,
+  useTransition,
+} from "react";
+
+import { BusinessPagination } from "@/components/admin/businesses/business-pagination";
+import { BusinessStatusBadge } from "@/components/admin/businesses/business-status-badge";
+import type {
+  AdminBusinessCounts,
+  AdminBusinessSort,
+  AdminBusinessStatusFilter,
+} from "@/lib/admin/get-admin-businesses";
 
 export type AdminBusiness = {
   id: string;
   name: string;
   slug: string;
   category: string;
-
   description: string | null;
-
   logo_url: string | null;
   cover_url: string | null;
-
   address: string;
   barangay: string | null;
   city: string;
   province: string;
-
-  status: BusinessStatus;
+  status:
+    | "draft"
+    | "pending"
+    | "approved"
+    | "rejected"
+    | "suspended";
   is_verified: boolean;
-
   created_at: string;
   submitted_at: string | null;
-
   owner: {
     full_name: string | null;
     username: string | null;
@@ -51,289 +63,427 @@ export type AdminBusiness = {
   } | null;
 };
 
-type Filter =
-  | "all"
-  | "pending"
-  | "approved"
-  | "verified"
-  | "rejected"
-  | "suspended";
-
-type Sort =
-  | "newest"
-  | "oldest"
-  | "name";
-
-type View = "grid" | "list";
-
 type AdminBusinessBrowserProps = {
   businesses: AdminBusiness[];
+  counts: AdminBusinessCounts;
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  status: AdminBusinessStatusFilter;
+  search: string;
+  sort: AdminBusinessSort;
 };
 
-const FILTERS: {
-  id: Filter;
+type ViewMode =
+  | "grid"
+  | "list";
+
+const filters: {
+  value: AdminBusinessStatusFilter;
   label: string;
+  icon: typeof Store;
 }[] = [
-  { id: "all", label: "All" },
-  { id: "pending", label: "Pending" },
-  { id: "approved", label: "Approved" },
-  { id: "verified", label: "Verified" },
-  { id: "rejected", label: "Rejected" },
-  { id: "suspended", label: "Suspended" },
+  {
+    value: "all",
+    label: "All",
+    icon: Store,
+  },
+  {
+    value: "pending",
+    label: "Pending",
+    icon: Clock3,
+  },
+  {
+    value: "approved",
+    label: "Approved",
+    icon: CheckCircle2,
+  },
+  {
+    value: "verified",
+    label: "Verified",
+    icon: BadgeCheck,
+  },
+  {
+    value: "rejected",
+    label: "Rejected",
+    icon: XCircle,
+  },
+  {
+    value: "suspended",
+    label: "Suspended",
+    icon: ShieldAlert,
+  },
 ];
 
-function formatCategory(value: string) {
-  return value
+const sortOptions: {
+  value: AdminBusinessSort;
+  label: string;
+}[] = [
+  {
+    value: "newest",
+    label: "Newest first",
+  },
+  {
+    value: "oldest",
+    label: "Oldest first",
+  },
+  {
+    value: "name",
+    label: "Name A–Z",
+  },
+];
+
+function formatNumber(
+  value: number,
+) {
+  return new Intl.NumberFormat(
+    "en-US",
+  ).format(value);
+}
+
+function formatCategory(
+  category: string,
+) {
+  return category
     .replaceAll("_", " ")
     .replace(/\b\w/g, (letter) =>
       letter.toUpperCase(),
     );
 }
 
-function formatDate(value: string | null) {
+function formatDate(
+  value: string | null,
+) {
   if (!value) {
     return "Not submitted";
   }
 
-  return new Intl.DateTimeFormat("en-PH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
+  return new Intl.DateTimeFormat(
+    "en-US",
+    {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    },
+  ).format(new Date(value));
 }
 
-function ownerName(
-  owner: AdminBusiness["owner"],
+function getOwnerName(
+  business: AdminBusiness,
 ) {
-  if (!owner) {
-    return "No owner";
+  if (
+    business.owner?.username
+  ) {
+    return `@${business.owner.username}`;
   }
 
-  if (owner.username) {
-    return `@${owner.username}`;
+  if (
+    business.owner?.full_name
+  ) {
+    return business.owner.full_name;
   }
 
-  return (
-    owner.full_name?.trim() ||
-    "CAFÉTA user"
-  );
+  return "CAFÉTA owner";
+}
+
+function getLocation(
+  business: AdminBusiness,
+) {
+  return [
+    business.barangay,
+    business.city,
+    business.province,
+  ]
+    .filter(Boolean)
+    .join(", ");
 }
 
 export function AdminBusinessBrowser({
   businesses,
+  counts,
+  totalCount,
+  currentPage,
+  totalPages,
+  pageSize,
+  status,
+  search,
+  sort,
 }: AdminBusinessBrowserProps) {
-  const [filter, setFilter] =
-    useState<Filter>("all");
+  const router = useRouter();
 
-  const [search, setSearch] =
-    useState("");
+  const searchParams =
+    useSearchParams();
 
-  const [sort, setSort] =
-    useState<Sort>("newest");
+  const [
+    searchValue,
+    setSearchValue,
+  ] = useState(search);
 
-  const [view, setView] =
-    useState<View>("grid");
-
-  const counts = useMemo(() => {
-    return {
-      all: businesses.length,
-
-      pending: businesses.filter(
-        (business) =>
-          business.status === "pending",
-      ).length,
-
-      approved: businesses.filter(
-        (business) =>
-          business.status === "approved",
-      ).length,
-
-      verified: businesses.filter(
-        (business) =>
-          business.status === "approved" &&
-          business.is_verified,
-      ).length,
-
-      rejected: businesses.filter(
-        (business) =>
-          business.status === "rejected",
-      ).length,
-
-      suspended: businesses.filter(
-        (business) =>
-          business.status === "suspended",
-      ).length,
-    };
-  }, [businesses]);
-
-  const visibleBusinesses = useMemo(() => {
-    const query = search
-      .trim()
-      .toLowerCase();
-
-    let result = businesses.filter(
-      (business) => {
-        if (
-          filter === "verified" &&
-          !(
-            business.status === "approved" &&
-            business.is_verified
-          )
-        ) {
-          return false;
-        }
-
-        if (
-          filter !== "all" &&
-          filter !== "verified" &&
-          business.status !== filter
-        ) {
-          return false;
-        }
-
-        if (!query) {
-          return true;
-        }
-
-        const searchable = [
-          business.name,
-          business.category,
-          business.address,
-          business.barangay,
-          business.city,
-          business.province,
-          business.owner?.full_name,
-          business.owner?.username,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-
-        return searchable.includes(query);
-      },
+  const [
+    viewMode,
+    setViewMode,
+  ] =
+    useState<ViewMode>(
+      "grid",
     );
 
-    result = [...result].sort((a, b) => {
-      if (sort === "name") {
-        return a.name.localeCompare(b.name);
-      }
+  const [
+    sortOpen,
+    setSortOpen,
+  ] = useState(false);
 
-      const aDate = new Date(
-        a.submitted_at || a.created_at,
-      ).getTime();
+  const [
+    isPending,
+    startTransition,
+  ] = useTransition();
 
-      const bDate = new Date(
-        b.submitted_at || b.created_at,
-      ).getTime();
+  useEffect(() => {
+    setSearchValue(search);
+  }, [search]);
 
-      return sort === "oldest"
-        ? aDate - bDate
-        : bDate - aDate;
-    });
+  useEffect(() => {
+    const normalized =
+      searchValue.trim();
 
-    return result;
+    if (
+      normalized === search
+    ) {
+      return;
+    }
+
+    const timeout =
+      window.setTimeout(() => {
+        const params =
+          new URLSearchParams(
+            searchParams.toString(),
+          );
+
+        if (normalized) {
+          params.set(
+            "search",
+            normalized,
+          );
+        } else {
+          params.delete(
+            "search",
+          );
+        }
+
+        params.delete("page");
+
+        navigate(params);
+      }, 400);
+
+    return () => {
+      window.clearTimeout(
+        timeout,
+      );
+    };
   }, [
-    businesses,
-    filter,
+    searchValue,
     search,
-    sort,
+    searchParams,
   ]);
 
+  function navigate(
+    params: URLSearchParams,
+  ) {
+    const query =
+      params.toString();
+
+    startTransition(() => {
+      router.replace(
+        query
+          ? `/admin?${query}`
+          : "/admin",
+        {
+          scroll: false,
+        },
+      );
+    });
+  }
+
+  function changeStatus(
+    nextStatus: AdminBusinessStatusFilter,
+  ) {
+    if (
+      nextStatus === status
+    ) {
+      return;
+    }
+
+    const params =
+      new URLSearchParams(
+        searchParams.toString(),
+      );
+
+    if (
+      nextStatus === "all"
+    ) {
+      params.delete(
+        "status",
+      );
+    } else {
+      params.set(
+        "status",
+        nextStatus,
+      );
+    }
+
+    params.delete("page");
+
+    navigate(params);
+  }
+
+  function changeSort(
+    nextSort: AdminBusinessSort,
+  ) {
+    setSortOpen(false);
+
+    if (
+      nextSort === sort
+    ) {
+      return;
+    }
+
+    const params =
+      new URLSearchParams(
+        searchParams.toString(),
+      );
+
+    if (
+      nextSort === "newest"
+    ) {
+      params.delete("sort");
+    } else {
+      params.set(
+        "sort",
+        nextSort,
+      );
+    }
+
+    params.delete("page");
+
+    navigate(params);
+  }
+
+  function clearSearch() {
+    setSearchValue("");
+
+    const params =
+      new URLSearchParams(
+        searchParams.toString(),
+      );
+
+    params.delete("search");
+    params.delete("page");
+
+    navigate(params);
+  }
+
+  const selectedSort =
+    sortOptions.find(
+      (option) =>
+        option.value === sort,
+    ) ?? sortOptions[0];
+
   return (
-    <>
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard
-          label="Applications"
-          value={counts.all}
-          description="Businesses in CAFÉTA"
-          icon={Store}
-        />
+    <div
+      className={`overflow-hidden rounded-[24px] border border-black/[0.06] bg-white transition-opacity duration-200 ${
+        isPending
+          ? "opacity-60"
+          : "opacity-100"
+      }`}
+    >
+      <div className="border-b border-black/[0.06] px-4 py-4 sm:px-5">
+        <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {filters.map(
+            (filter) => {
+              const active =
+                filter.value ===
+                status;
 
-        <SummaryCard
-          label="Waiting for review"
-          value={counts.pending}
-          description="Pending applications"
-          icon={Clock3}
-          important={counts.pending > 0}
-        />
+              const count =
+                counts[
+                  filter.value
+                ];
 
-        <SummaryCard
-          label="Approved"
-          value={counts.approved}
-          description="Active businesses"
-          icon={CheckCircle2}
-        />
+              return (
+                <button
+                  key={
+                    filter.value
+                  }
+                  type="button"
+                  onClick={() =>
+                    changeStatus(
+                      filter.value,
+                    )
+                  }
+                  disabled={
+                    isPending
+                  }
+                  className={`group flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-[11px] font-semibold transition-all duration-200 disabled:pointer-events-none ${
+                    active
+                      ? "bg-[#006241] text-white shadow-[0_4px_12px_rgba(0,98,65,0.15)]"
+                      : "bg-[#F5F7F6] text-black/45 hover:bg-[#EEF3F0] hover:text-[#006241]"
+                  }`}
+                >
+                  <span>
+                    {filter.label}
+                  </span>
 
-        <SummaryCard
-          label="Verified"
-          value={counts.verified}
-          description="Trusted businesses"
-          icon={ShieldCheck}
-        />
-      </section>
-
-      <section className="mt-7 overflow-hidden rounded-[28px] border border-black/[0.06] bg-white">
-        <div className="border-b border-black/[0.06] px-4 pt-4 sm:px-5 sm:pt-5">
-          <div className="overflow-x-auto pb-4">
-            <div className="flex min-w-max gap-2">
-              {FILTERS.map((item) => {
-                const active =
-                  filter === item.id;
-
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() =>
-                      setFilter(item.id)
-                    }
-                    className={`flex h-10 items-center gap-2 rounded-full px-4 text-xs font-semibold transition ${
+                  <span
+                    className={`flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
                       active
-                        ? "bg-[#006241] text-white shadow-sm"
-                        : "bg-[#F5F7F5] text-black/50 hover:bg-[#EBEFEC] hover:text-black/70"
+                        ? "bg-white/15 text-white"
+                        : "bg-white text-black/30"
                     }`}
                   >
-                    {item.label}
-
-                    <span
-                      className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
-                        active
-                          ? "bg-white/15"
-                          : "bg-black/[0.05]"
-                      }`}
-                    >
-                      {counts[item.id]}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                    {count >
+                    999
+                      ? formatNumber(
+                          count,
+                        )
+                      : count}
+                  </span>
+                </button>
+              );
+            },
+          )}
         </div>
+      </div>
 
-        <div className="flex flex-col gap-3 border-b border-black/[0.06] p-4 sm:p-5 lg:flex-row lg:items-center">
-          <div className="relative min-w-0 flex-1">
-            <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-black/30" />
+      <div className="border-b border-black/[0.06] px-4 py-4 sm:px-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-black/25" />
 
             <input
-              value={search}
-              onChange={(event) =>
-                setSearch(
-                  event.target.value,
+              type="search"
+              value={
+                searchValue
+              }
+              onChange={(
+                event,
+              ) =>
+                setSearchValue(
+                  event.target
+                    .value,
                 )
               }
-              placeholder="Search business, owner, location..."
-              className="h-11 w-full rounded-2xl border border-black/[0.07] bg-[#F8F9F8] pl-11 pr-11 text-sm outline-none transition placeholder:text-black/30 focus:border-[#006241]/25 focus:bg-white focus:ring-4 focus:ring-[#006241]/5"
+              placeholder="Search business, location..."
+              className="h-11 w-full rounded-2xl border border-black/[0.08] bg-[#FAFBFA] pl-11 pr-11 text-xs text-[#122019] outline-none transition duration-200 placeholder:text-black/25 focus:border-[#006241]/25 focus:bg-white focus:ring-4 focus:ring-[#006241]/[0.05]"
             />
 
-            {search ? (
+            {searchValue ? (
               <button
                 type="button"
-                onClick={() =>
-                  setSearch("")
+                onClick={
+                  clearSearch
                 }
-                className="absolute right-3 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-black/30 hover:bg-black/[0.05]"
                 aria-label="Clear search"
+                className="absolute right-4 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-black/25 transition hover:bg-black/[0.05] hover:text-black/50"
               >
                 <X className="size-3.5" />
               </button>
@@ -341,44 +491,79 @@ export function AdminBusinessBrowser({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="relative flex-1 sm:flex-none">
-              <select
-                value={sort}
-                onChange={(event) =>
-                  setSort(
-                    event.target
-                      .value as Sort,
-                  )
-                }
-                className="h-11 w-full appearance-none rounded-2xl border border-black/[0.07] bg-white pl-4 pr-10 text-xs font-semibold text-black/55 outline-none sm:w-[150px]"
-              >
-                <option value="newest">
-                  Newest first
-                </option>
-
-                <option value="oldest">
-                  Oldest first
-                </option>
-
-                <option value="name">
-                  Name A–Z
-                </option>
-              </select>
-
-              <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-black/30" />
-            </div>
-
-            <div className="flex h-11 rounded-2xl border border-black/[0.07] bg-[#F8F9F8] p-1">
+            <div className="relative flex-1 lg:flex-none">
               <button
                 type="button"
                 onClick={() =>
-                  setView("grid")
+                  setSortOpen(
+                    (current) =>
+                      !current,
+                  )
+                }
+                className="flex h-11 w-full min-w-[150px] items-center justify-between gap-3 rounded-2xl border border-black/[0.08] bg-white px-4 text-[11px] font-semibold text-black/45 transition hover:border-black/[0.13] hover:text-black/65"
+              >
+                {
+                  selectedSort.label
+                }
+
+                <ChevronDown
+                  className={`size-3.5 transition-transform duration-200 ${
+                    sortOpen
+                      ? "rotate-180"
+                      : ""
+                  }`}
+                />
+              </button>
+
+              <div
+                className={`absolute right-0 top-[calc(100%+7px)] z-30 w-full min-w-[170px] origin-top-right rounded-2xl border border-black/[0.07] bg-white p-1.5 shadow-[0_15px_40px_rgba(18,32,25,0.12)] transition-all duration-200 ${
+                  sortOpen
+                    ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
+                    : "pointer-events-none -translate-y-1 scale-[0.98] opacity-0"
+                }`}
+              >
+                {sortOptions.map(
+                  (option) => (
+                    <button
+                      key={
+                        option.value
+                      }
+                      type="button"
+                      onClick={() =>
+                        changeSort(
+                          option.value,
+                        )
+                      }
+                      className={`w-full rounded-xl px-3 py-2.5 text-left text-[11px] font-semibold transition ${
+                        option.value ===
+                        sort
+                          ? "bg-[#006241]/[0.07] text-[#006241]"
+                          : "text-black/45 hover:bg-black/[0.03] hover:text-black/70"
+                      }`}
+                    >
+                      {
+                        option.label
+                      }
+                    </button>
+                  ),
+                )}
+              </div>
+            </div>
+
+            <div className="flex rounded-2xl border border-black/[0.08] bg-[#F7F8F7] p-1">
+              <button
+                type="button"
+                onClick={() =>
+                  setViewMode(
+                    "grid",
+                  )
                 }
                 aria-label="Grid view"
-                className={`flex size-9 items-center justify-center rounded-xl transition ${
-                  view === "grid"
+                className={`flex size-9 items-center justify-center rounded-xl transition duration-200 ${
+                  viewMode ===
+                  "grid"
                     ? "bg-white text-[#006241] shadow-sm"
-                    : "text-black/30"
+                    : "text-black/25 hover:text-black/50"
                 }`}
               >
                 <Grid2X2 className="size-4" />
@@ -387,13 +572,16 @@ export function AdminBusinessBrowser({
               <button
                 type="button"
                 onClick={() =>
-                  setView("list")
+                  setViewMode(
+                    "list",
+                  )
                 }
                 aria-label="List view"
-                className={`flex size-9 items-center justify-center rounded-xl transition ${
-                  view === "list"
+                className={`flex size-9 items-center justify-center rounded-xl transition duration-200 ${
+                  viewMode ===
+                  "list"
                     ? "bg-white text-[#006241] shadow-sm"
-                    : "text-black/30"
+                    : "text-black/25 hover:text-black/50"
                 }`}
               >
                 <List className="size-4" />
@@ -401,255 +589,242 @@ export function AdminBusinessBrowser({
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="flex items-center justify-between px-4 py-4 sm:px-5">
-          <p className="text-xs text-black/40">
-            <strong className="font-semibold text-black/65">
-              {visibleBusinesses.length}
-            </strong>{" "}
-            {visibleBusinesses.length === 1
+      <div className="px-4 pt-4 sm:px-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[11px] text-black/35">
+            <span className="font-bold text-[#122019]">
+              {formatNumber(
+                totalCount,
+              )}
+            </span>{" "}
+            {totalCount === 1
               ? "business"
               : "businesses"}
           </p>
 
-          {filter !== "all" ||
-          search ? (
-            <button
-              type="button"
-              onClick={() => {
-                setFilter("all");
-                setSearch("");
-              }}
-              className="text-xs font-semibold text-[#006241]"
-            >
-              Clear filters
-            </button>
+          {search ? (
+            <p className="max-w-full truncate text-[10px] text-black/30">
+              Results for{" "}
+              <span className="font-semibold text-[#122019]">
+                “{search}”
+              </span>
+            </p>
           ) : null}
         </div>
-
-        {visibleBusinesses.length === 0 ? (
-          <EmptyBusinesses
-            filter={filter}
-            search={search}
-          />
-        ) : view === "grid" ? (
-          <div className="grid gap-4 px-4 pb-5 sm:grid-cols-2 sm:px-5 xl:grid-cols-3">
-            {visibleBusinesses.map(
-              (business) => (
-                <BusinessCard
-                  key={business.id}
-                  business={business}
-                />
-              ),
-            )}
-          </div>
-        ) : (
-          <div className="divide-y divide-black/[0.05] border-t border-black/[0.05]">
-            {visibleBusinesses.map(
-              (business) => (
-                <BusinessRow
-                  key={business.id}
-                  business={business}
-                />
-              ),
-            )}
-          </div>
-        )}
-      </section>
-    </>
-  );
-}
-
-function SummaryCard({
-  label,
-  value,
-  description,
-  icon: Icon,
-  important = false,
-}: {
-  label: string;
-  value: number;
-  description: string;
-  icon: typeof Store;
-  important?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-[24px] border p-5 ${
-        important
-          ? "border-amber-200 bg-amber-50"
-          : "border-black/[0.06] bg-white"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p
-            className={`text-xs font-semibold ${
-              important
-                ? "text-amber-700"
-                : "text-black/40"
-            }`}
-          >
-            {label}
-          </p>
-
-          <p className="mt-2 text-3xl font-bold tracking-[-0.04em] text-[#122019]">
-            {value}
-          </p>
-
-          <p className="mt-1 text-xs text-black/35">
-            {description}
-          </p>
-        </div>
-
-        <div
-          className={`flex size-10 items-center justify-center rounded-2xl ${
-            important
-              ? "bg-amber-100 text-amber-700"
-              : "bg-[#006241]/8 text-[#006241]"
-          }`}
-        >
-          <Icon className="size-[18px]" />
-        </div>
       </div>
+
+      <div className="p-4 sm:p-5">
+        {businesses.length >
+        0 ? (
+          viewMode ===
+          "grid" ? (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {businesses.map(
+                (business) => (
+                  <BusinessGridCard
+                    key={
+                      business.id
+                    }
+                    business={
+                      business
+                    }
+                  />
+                ),
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {businesses.map(
+                (business) => (
+                  <BusinessListCard
+                    key={
+                      business.id
+                    }
+                    business={
+                      business
+                    }
+                  />
+                ),
+              )}
+            </div>
+          )
+        ) : (
+          <EmptyState
+            search={search}
+            status={status}
+          />
+        )}
+      </div>
+
+      <BusinessPagination
+        currentPage={
+          currentPage
+        }
+        totalPages={
+          totalPages
+        }
+        totalCount={
+          totalCount
+        }
+        pageSize={pageSize}
+      />
     </div>
   );
 }
 
-function BusinessCard({
+function BusinessGridCard({
   business,
 }: {
   business: AdminBusiness;
 }) {
+  const location =
+    getLocation(business);
+
   return (
-    <article className="group overflow-hidden rounded-[24px] border border-black/[0.07] bg-white transition duration-200 hover:-translate-y-0.5 hover:border-[#006241]/15 hover:shadow-[0_12px_35px_rgba(0,0,0,0.06)]">
-      <div className="relative h-36 overflow-hidden bg-[#EAF0EC]">
+    <article className="group overflow-hidden rounded-[22px] border border-black/[0.07] bg-white transition-all duration-300 hover:-translate-y-0.5 hover:border-[#006241]/10 hover:shadow-[0_14px_35px_rgba(18,32,25,0.07)]">
+      <div className="relative h-[130px] overflow-hidden bg-[#EDF2EF]">
         {business.cover_url ? (
           <img
-            src={business.cover_url}
+            src={
+              business.cover_url
+            }
             alt=""
-            className="size-full object-cover transition duration-500 group-hover:scale-[1.02]"
+            referrerPolicy="no-referrer"
+            className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
           />
         ) : (
-          <div className="flex size-full items-center justify-center text-[#006241]/20">
-            <Store className="size-10" />
+          <div className="flex size-full items-center justify-center bg-[#F1F5F2]">
+            <Building2 className="size-8 text-[#006241]/20" />
           </div>
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
-
-        <div className="absolute right-3 top-3">
+        <div className="absolute right-3 top-3 flex flex-wrap justify-end gap-1.5">
           <BusinessStatusBadge
-            status={business.status}
-            verified={
-              business.is_verified
+            status={
+              business.status
             }
           />
+
+          {business.is_verified ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#006241] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.06em] text-white shadow-sm">
+              <BadgeCheck className="size-3" />
+              Verified
+            </span>
+          ) : null}
         </div>
 
-        <div className="absolute -bottom-px left-4 translate-y-1/2">
+        <div className="absolute bottom-3 left-3">
           {business.logo_url ? (
             <img
-              src={business.logo_url}
+              src={
+                business.logo_url
+              }
               alt=""
-              className="size-16 rounded-[18px] border-4 border-white bg-white object-cover shadow-sm"
+              referrerPolicy="no-referrer"
+              className="size-12 rounded-2xl border-2 border-white bg-white object-cover shadow-sm"
             />
           ) : (
-            <div className="flex size-16 items-center justify-center rounded-[18px] border-4 border-white bg-[#EAF0EC] text-[#006241] shadow-sm">
+            <div className="flex size-12 items-center justify-center rounded-2xl border-2 border-white bg-[#006241] text-white shadow-sm">
               <Store className="size-5" />
             </div>
           )}
         </div>
       </div>
 
-      <div className="px-4 pb-4 pt-10">
-        <h3 className="truncate text-base font-bold tracking-[-0.025em] text-[#122019]">
+      <div className="p-4">
+        <h3 className="truncate text-sm font-bold tracking-[-0.025em] text-[#122019]">
           {business.name}
         </h3>
 
-        <p className="mt-1 text-xs font-medium text-[#006241]">
+        <p className="mt-1 text-[11px] font-medium text-[#006241]">
           {formatCategory(
             business.category,
           )}
         </p>
 
-        <div className="mt-4 flex items-start gap-2 text-xs leading-5 text-black/40">
-          <MapPin className="mt-0.5 size-3.5 shrink-0" />
+        <div className="mt-4 flex min-w-0 items-center gap-2 text-black/35">
+          <MapPin className="size-3.5 shrink-0" />
 
-          <span className="line-clamp-2">
-            {[
-              business.barangay,
-              business.city,
-              business.province,
-            ]
-              .filter(Boolean)
-              .join(", ")}
+          <span className="truncate text-[10px]">
+            {location ||
+              business.address}
           </span>
         </div>
 
-        <div className="mt-4 flex items-center justify-between border-t border-black/[0.05] pt-4">
-          <div className="min-w-0">
-            <p className="max-w-[150px] truncate text-xs font-semibold text-black/55">
-              {ownerName(
-                business.owner,
-              )}
-            </p>
+        <div className="mt-4 border-t border-black/[0.06] pt-3">
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-[10px] font-medium text-black/45">
+                {getOwnerName(
+                  business,
+                )}
+              </p>
 
-            <p className="mt-0.5 text-[10px] text-black/30">
-              {business.status ===
-              "draft"
-                ? "Created"
-                : "Submitted"}{" "}
-              {formatDate(
-                business.submitted_at ||
-                  business.created_at,
-              )}
-            </p>
+              <p className="mt-1 text-[9px] text-black/25">
+                {business.submitted_at
+                  ? `Submitted ${formatDate(
+                      business.submitted_at,
+                    )}`
+                  : `Created ${formatDate(
+                      business.created_at,
+                    )}`}
+              </p>
+            </div>
+
+            <Link
+              href={`/admin/businesses/${business.id}`}
+              className="group/button flex h-9 shrink-0 items-center gap-2 rounded-full bg-[#F3F7F4] px-4 text-[10px] font-bold text-[#006241] transition duration-200 hover:bg-[#006241] hover:text-white"
+            >
+              Manage
+
+              <ArrowRight className="size-3 transition-transform duration-200 group-hover/button:translate-x-0.5" />
+            </Link>
           </div>
-
-          <Link
-            href={`/admin/businesses/${business.id}`}
-            className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold transition ${
-              business.status ===
-              "pending"
-                ? "bg-[#006241] text-white hover:bg-[#005438]"
-                : "bg-[#F3F6F4] text-[#006241] hover:bg-[#E8EFEA]"
-            }`}
-          >
-            {business.status ===
-            "pending"
-              ? "Review"
-              : "Manage"}
-
-            <ArrowRight className="size-3.5" />
-          </Link>
         </div>
       </div>
     </article>
   );
 }
 
-function BusinessRow({
+function BusinessListCard({
   business,
 }: {
   business: AdminBusiness;
 }) {
+  const location =
+    getLocation(business);
+
   return (
-    <Link
-      href={`/admin/businesses/${business.id}`}
-      className="group flex items-center gap-4 px-4 py-4 transition hover:bg-[#FAFCFA] sm:px-5"
-    >
-      {business.logo_url ? (
-        <img
-          src={business.logo_url}
-          alt=""
-          className="size-12 shrink-0 rounded-2xl border border-black/[0.06] object-cover"
-        />
-      ) : (
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#006241]/8 text-[#006241]">
-          <Store className="size-5" />
-        </div>
-      )}
+    <article className="group flex flex-col gap-4 rounded-[20px] border border-black/[0.06] p-3 transition-all duration-200 hover:border-[#006241]/10 hover:bg-[#FAFCFB] sm:flex-row sm:items-center">
+      <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-2xl bg-[#EDF2EF] sm:size-20">
+        {business.cover_url ? (
+          <img
+            src={
+              business.cover_url
+            }
+            alt=""
+            referrerPolicy="no-referrer"
+            className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex size-full items-center justify-center">
+            <Store className="size-5 text-[#006241]/25" />
+          </div>
+        )}
+
+        {business.logo_url ? (
+          <img
+            src={
+              business.logo_url
+            }
+            alt=""
+            referrerPolicy="no-referrer"
+            className="absolute bottom-1.5 left-1.5 size-8 rounded-xl border-2 border-white bg-white object-cover"
+          />
+        ) : null}
+      </div>
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
@@ -658,86 +833,90 @@ function BusinessRow({
           </h3>
 
           <BusinessStatusBadge
-            status={business.status}
-            verified={
-              business.is_verified
+            status={
+              business.status
             }
           />
+
+          {business.is_verified ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#006241]/[0.07] px-2 py-1 text-[8px] font-bold uppercase tracking-[0.06em] text-[#006241]">
+              <BadgeCheck className="size-2.5" />
+              Verified
+            </span>
+          ) : null}
         </div>
 
-        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-black/40">
-          <span>
-            {formatCategory(
-              business.category,
-            )}
-          </span>
-
-          <span>
-            {[
-              business.barangay,
-              business.city,
-            ]
-              .filter(Boolean)
-              .join(", ")}
-          </span>
-
-          <span>
-            {ownerName(
-              business.owner,
-            )}
-          </span>
-        </div>
-      </div>
-
-      <div className="hidden text-right md:block">
-        <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-black/25">
-          {business.status === "draft"
-            ? "Created"
-            : "Submitted"}
-        </p>
-
-        <p className="mt-1 text-xs font-medium text-black/50">
-          {formatDate(
-            business.submitted_at ||
-              business.created_at,
+        <p className="mt-1 text-[10px] font-medium text-[#006241]">
+          {formatCategory(
+            business.category,
           )}
         </p>
+
+        <div className="mt-2 flex min-w-0 items-center gap-1.5 text-black/30">
+          <MapPin className="size-3 shrink-0" />
+
+          <span className="truncate text-[10px]">
+            {location ||
+              business.address}
+          </span>
+        </div>
       </div>
 
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl text-black/25 transition group-hover:bg-[#006241]/8 group-hover:text-[#006241]">
-        <ArrowRight className="size-4" />
+      <div className="flex shrink-0 items-center justify-between gap-4 border-t border-black/[0.05] pt-3 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
+        <div className="min-w-0 sm:text-right">
+          <p className="max-w-[150px] truncate text-[10px] font-medium text-black/45">
+            {getOwnerName(
+              business,
+            )}
+          </p>
+
+          <p className="mt-1 text-[9px] text-black/25">
+            {business.submitted_at
+              ? formatDate(
+                  business.submitted_at,
+                )
+              : formatDate(
+                  business.created_at,
+                )}
+          </p>
+        </div>
+
+        <Link
+          href={`/admin/businesses/${business.id}`}
+          className="group/button flex h-9 items-center gap-2 rounded-full bg-[#F3F7F4] px-4 text-[10px] font-bold text-[#006241] transition duration-200 hover:bg-[#006241] hover:text-white"
+        >
+          Manage
+
+          <ArrowRight className="size-3 transition-transform group-hover/button:translate-x-0.5" />
+        </Link>
       </div>
-    </Link>
+    </article>
   );
 }
 
-function EmptyBusinesses({
-  filter,
+function EmptyState({
   search,
+  status,
 }: {
-  filter: Filter;
   search: string;
+  status: AdminBusinessStatusFilter;
 }) {
   return (
-    <div className="flex min-h-[360px] flex-col items-center justify-center px-6 pb-8 text-center">
-      <div className="flex size-16 items-center justify-center rounded-full bg-[#006241]/8 text-[#006241]">
-        {filter === "rejected" ? (
-          <XCircle className="size-7" />
-        ) : (
-          <Store className="size-7" />
-        )}
+    <div className="flex min-h-[320px] flex-col items-center justify-center px-5 text-center">
+      <div className="flex size-14 items-center justify-center rounded-[20px] bg-[#006241]/[0.06] text-[#006241]">
+        <Store className="size-6" />
       </div>
 
-      <h3 className="mt-5 text-base font-bold text-[#122019]">
+      <h3 className="mt-4 text-sm font-bold text-[#122019]">
         No businesses found
       </h3>
 
-      <p className="mt-2 max-w-sm text-sm leading-6 text-black/40">
+      <p className="mt-1.5 max-w-sm text-xs leading-5 text-black/35">
         {search
-          ? `No businesses match “${search}”.`
-          : filter === "pending"
-            ? "There are currently no applications waiting for review."
-            : `There are currently no ${filter === "all" ? "" : `${filter} `}businesses.`}
+          ? `No businesses match “${search}”. Try a different search.`
+          : status === "all"
+            ? "Business applications will appear here when owners submit them to CAFÉTA."
+            : `There are currently no ${status} businesses.`}
       </p>
     </div>
   );

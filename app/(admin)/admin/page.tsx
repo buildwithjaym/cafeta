@@ -1,16 +1,18 @@
-import {
-  AdminBusinessBrowser,
-  type AdminBusiness,
-} from "@/components/admin/admin-business-browser";
+import { AdminBusinessBrowser } from "@/components/admin/admin-business-browser";
 import { AdminWorkspaceTabs } from "@/components/admin/admin-workspace-tabs";
 import { AnalyticsOverview } from "@/components/admin/analytics/analytics-overview";
 import {
   getAdminAnalytics,
   type AnalyticsPeriod,
 } from "@/lib/admin/get-admin-analytics";
-import { createClient } from "@/lib/supabase/server";
+import {
+  getAdminBusinesses,
+  type AdminBusinessSort,
+  type AdminBusinessStatusFilter,
+} from "@/lib/admin/get-admin-businesses";
 
-export const dynamic = "force-dynamic";
+export const dynamic =
+  "force-dynamic";
 
 type AdminView =
   | "businesses"
@@ -20,6 +22,10 @@ type AdminPageProps = {
   searchParams: Promise<{
     view?: string;
     period?: string;
+    page?: string;
+    status?: string;
+    search?: string;
+    sort?: string;
   }>;
 };
 
@@ -40,17 +46,68 @@ function getPeriod(
 function getView(
   value?: string,
 ): AdminView {
-  if (value === "analytics") {
+  if (
+    value === "analytics"
+  ) {
     return "analytics";
   }
 
   return "businesses";
 }
 
+function getStatus(
+  value?: string,
+): AdminBusinessStatusFilter {
+  switch (value) {
+    case "pending":
+    case "approved":
+    case "verified":
+    case "rejected":
+    case "suspended":
+      return value;
+
+    default:
+      return "all";
+  }
+}
+
+function getSort(
+  value?: string,
+): AdminBusinessSort {
+  switch (value) {
+    case "oldest":
+    case "name":
+      return value;
+
+    default:
+      return "newest";
+  }
+}
+
+function getPage(
+  value?: string,
+) {
+  const parsed =
+    Number.parseInt(
+      value ?? "1",
+      10,
+    );
+
+  if (
+    !Number.isFinite(parsed) ||
+    parsed < 1
+  ) {
+    return 1;
+  }
+
+  return parsed;
+}
+
 export default async function AdminPage({
   searchParams,
 }: AdminPageProps) {
-  const params = await searchParams;
+  const params =
+    await searchParams;
 
   const view = getView(
     params.view,
@@ -60,77 +117,40 @@ export default async function AdminPage({
     params.period,
   );
 
-  const supabase =
-    await createClient();
+  const status = getStatus(
+    params.status,
+  );
 
-  const businessesPromise =
-    supabase
-      .from("businesses")
-      .select(`
-        id,
-        name,
-        slug,
-        category,
-        description,
-        logo_url,
-        cover_url,
-        address,
-        barangay,
-        city,
-        province,
-        status,
-        is_verified,
-        created_at,
-        submitted_at,
-        owner:profiles!businesses_created_by_fkey (
-          full_name,
-          username,
-          avatar_url
-        )
-      `)
-      .order("submitted_at", {
-        ascending: false,
-        nullsFirst: false,
-      })
-      .order("created_at", {
-        ascending: false,
-      });
+  const sort = getSort(
+    params.sort,
+  );
+
+  const page = getPage(
+    params.page,
+  );
+
+  const search =
+    params.search
+      ?.trim()
+      .slice(0, 100) ?? "";
 
   const [
-    businessesResult,
+    businessData,
     analytics,
   ] = await Promise.all([
-    businessesPromise,
+    getAdminBusinesses({
+      page,
+      status,
+      search,
+      sort,
+    }),
 
     view === "analytics"
-      ? getAdminAnalytics(period)
+      ? getAdminAnalytics(
+          period,
+        )
       : Promise.resolve(null),
   ]);
-
-  if (businessesResult.error) {
-    console.error(
-      "[CAFÉTA Admin] Failed to load businesses:",
-      businessesResult.error,
-    );
-  }
-
-  const businesses = (
-    businessesResult.data ?? []
-  ).map((business) => ({
-    ...business,
-
-    owner: Array.isArray(
-      business.owner,
-    )
-      ? business.owner[0] ?? null
-      : business.owner ?? null,
-  })) as unknown as AdminBusiness[];
-
-  const pendingCount =
-    businesses.filter(
-      (business) =>
-        business.status === "pending",
-    ).length;
 
   return (
     <div className="mx-auto w-full max-w-[1500px] px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
@@ -142,13 +162,15 @@ export default async function AdminPage({
             </p>
 
             <h1 className="mt-3 text-3xl font-bold tracking-[-0.05em] text-[#122019] sm:text-4xl">
-              {view === "analytics"
+              {view ===
+              "analytics"
                 ? "Platform analytics"
                 : "Business applications"}
             </h1>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-black/45">
-              {view === "analytics"
+              {view ===
+              "analytics"
                 ? "Understand how the CAFÉTA community, businesses, Memories, reviews, and engagement are growing."
                 : "Review, approve, verify, reject, suspend, and manage businesses joining CAFÉTA."}
             </p>
@@ -171,31 +193,57 @@ export default async function AdminPage({
           <AdminWorkspaceTabs
             activeView={view}
             pendingCount={
-              pendingCount
+              businessData
+                .counts
+                .pending
             }
           />
         </div>
       </section>
 
-      {view === "businesses" ? (
+      {view ===
+      "businesses" ? (
         <section
           key="businesses"
           className="mt-7 animate-[adminSectionIn_350ms_ease-out]"
         >
           <AdminBusinessBrowser
-            businesses={businesses}
+            businesses={
+              businessData.businesses
+            }
+            counts={
+              businessData.counts
+            }
+            totalCount={
+              businessData.totalCount
+            }
+            currentPage={
+              businessData.currentPage
+            }
+            totalPages={
+              businessData.totalPages
+            }
+            pageSize={
+              businessData.pageSize
+            }
+            status={status}
+            search={search}
+            sort={sort}
           />
         </section>
       ) : null}
 
-      {view === "analytics" &&
+      {view ===
+        "analytics" &&
       analytics ? (
         <section
           key="analytics"
           className="mt-8 animate-[adminSectionIn_350ms_ease-out]"
         >
           <AnalyticsOverview
-            analytics={analytics}
+            analytics={
+              analytics
+            }
           />
         </section>
       ) : null}
