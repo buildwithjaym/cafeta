@@ -1,5 +1,6 @@
-import { AppNavbar } from "@/components/app/app-navbar";
-import { MobileNavigation } from "@/components/app/mobile-navigation";
+import {
+  AppNavigationWrapper,
+} from "@/components/app/app-navigation-wrapper";
 
 export default function UserLayout({
   children,
@@ -8,11 +9,7 @@ export default function UserLayout({
 }>) {
   return (
     <div className="min-h-dvh bg-[#f7f8f6]">
-      <div className="hidden md:block">
-        <AppNavbar />
-      </div>
-
-      <MobileNavigation />
+      <AppNavigationWrapper />
 
       {children}
     </div>
