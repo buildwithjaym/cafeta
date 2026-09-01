@@ -265,3 +265,305 @@ on function public.create_business(
   double precision
 )
 to authenticated;
+
+
+-- ============================================================
+-- CAFÉTA BASIC BUSINESS MENU
+-- ============================================================
+
+create table public.menu_categories (
+  id uuid primary key default gen_random_uuid(),
+
+  business_id uuid not null
+    references public.businesses(id)
+    on delete cascade,
+
+  name text not null,
+
+  sort_order integer not null default 0,
+
+  created_at timestamptz not null default now(),
+
+  constraint menu_categories_name_not_empty
+    check (char_length(trim(name)) > 0),
+
+  constraint menu_categories_unique_name
+    unique (business_id, name)
+);
+
+
+create table public.menu_items (
+  id uuid primary key default gen_random_uuid(),
+
+  business_id uuid not null
+    references public.businesses(id)
+    on delete cascade,
+
+  category_id uuid
+    references public.menu_categories(id)
+    on delete set null,
+
+  name text not null,
+
+  description text,
+
+  price numeric(10, 2) not null,
+
+  image_url text,
+
+  is_available boolean not null default true,
+
+  sort_order integer not null default 0,
+
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+
+  constraint menu_items_name_not_empty
+    check (char_length(trim(name)) > 0),
+
+  constraint menu_items_price_check
+    check (price >= 0)
+);
+
+
+-- ============================================================
+-- INDEXES
+-- ============================================================
+
+create index menu_categories_business_idx
+on public.menu_categories(
+  business_id,
+  sort_order
+);
+
+create index menu_items_business_idx
+on public.menu_items(
+  business_id,
+  sort_order
+);
+
+create index menu_items_category_idx
+on public.menu_items(
+  category_id,
+  sort_order
+);
+
+create index menu_items_available_idx
+on public.menu_items(
+  business_id,
+  is_available
+);
+
+
+-- ============================================================
+-- UPDATED AT
+-- ============================================================
+
+create trigger on_menu_item_updated
+before update on public.menu_items
+for each row
+execute procedure public.handle_updated_at();
+
+
+-- ============================================================
+-- RLS
+-- ============================================================
+
+alter table public.menu_categories
+enable row level security;
+
+alter table public.menu_items
+enable row level security;
+
+
+-- Public can view menu categories belonging to approved businesses.
+
+create policy "Approved business menu categories are public"
+on public.menu_categories
+for select
+to anon, authenticated
+using (
+  exists (
+    select 1
+    from public.businesses b
+    where b.id = menu_categories.business_id
+      and b.status = 'approved'
+  )
+);
+
+
+-- Business members can view their own menu categories,
+-- including draft/pending businesses.
+
+create policy "Business members can view own menu categories"
+on public.menu_categories
+for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.business_members bm
+    where bm.business_id = menu_categories.business_id
+      and bm.user_id = (select auth.uid())
+  )
+);
+
+
+create policy "Business managers can create menu categories"
+on public.menu_categories
+for insert
+to authenticated
+with check (
+  exists (
+    select 1
+    from public.business_members bm
+    where bm.business_id = menu_categories.business_id
+      and bm.user_id = (select auth.uid())
+      and bm.role in ('owner', 'manager')
+  )
+);
+
+
+create policy "Business managers can update menu categories"
+on public.menu_categories
+for update
+to authenticated
+using (
+  exists (
+    select 1
+    from public.business_members bm
+    where bm.business_id = menu_categories.business_id
+      and bm.user_id = (select auth.uid())
+      and bm.role in ('owner', 'manager')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.business_members bm
+    where bm.business_id = menu_categories.business_id
+      and bm.user_id = (select auth.uid())
+      and bm.role in ('owner', 'manager')
+  )
+);
+
+
+create policy "Business managers can delete menu categories"
+on public.menu_categories
+for delete
+to authenticated
+using (
+  exists (
+    select 1
+    from public.business_members bm
+    where bm.business_id = menu_categories.business_id
+      and bm.user_id = (select auth.uid())
+      and bm.role in ('owner', 'manager')
+  )
+);
+
+
+-- Public menu items.
+
+create policy "Approved business menu items are public"
+on public.menu_items
+for select
+to anon, authenticated
+using (
+  exists (
+    select 1
+    from public.businesses b
+    where b.id = menu_items.business_id
+      and b.status = 'approved'
+  )
+);
+
+
+create policy "Business members can view own menu items"
+on public.menu_items
+for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.business_members bm
+    where bm.business_id = menu_items.business_id
+      and bm.user_id = (select auth.uid())
+  )
+);
+
+
+create policy "Business managers can create menu items"
+on public.menu_items
+for insert
+to authenticated
+with check (
+  exists (
+    select 1
+    from public.business_members bm
+    where bm.business_id = menu_items.business_id
+      and bm.user_id = (select auth.uid())
+      and bm.role in ('owner', 'manager')
+  )
+
+  and (
+    menu_items.category_id is null
+
+    or exists (
+      select 1
+      from public.menu_categories mc
+      where mc.id = menu_items.category_id
+        and mc.business_id = menu_items.business_id
+    )
+  )
+);
+
+
+create policy "Business managers can update menu items"
+on public.menu_items
+for update
+to authenticated
+using (
+  exists (
+    select 1
+    from public.business_members bm
+    where bm.business_id = menu_items.business_id
+      and bm.user_id = (select auth.uid())
+      and bm.role in ('owner', 'manager')
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.business_members bm
+    where bm.business_id = menu_items.business_id
+      and bm.user_id = (select auth.uid())
+      and bm.role in ('owner', 'manager')
+  )
+
+  and (
+    menu_items.category_id is null
+
+    or exists (
+      select 1
+      from public.menu_categories mc
+      where mc.id = menu_items.category_id
+        and mc.business_id = menu_items.business_id
+    )
+  )
+);
+
+
+create policy "Business managers can delete menu items"
+on public.menu_items
+for delete
+to authenticated
+using (
+  exists (
+    select 1
+    from public.business_members bm
+    where bm.business_id = menu_items.business_id
+      and bm.user_id = (select auth.uid())
+      and bm.role in ('owner', 'manager')
+  )
+);

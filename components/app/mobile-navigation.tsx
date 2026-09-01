@@ -415,7 +415,7 @@ export function MobileNavigation() {
             />
 
             <Link
-              href="/memories/create"
+              href="/memories"
               aria-label="Create memory"
               className="
                 group

@@ -21,6 +21,7 @@ import {
   Pencil,
   Phone,
   Share2,
+  ChartNoAxesColumn,
   Star,
   Store,
   UserRound,
@@ -108,15 +109,26 @@ type Review = {
 
 type Props = {
   business: Business;
+
   hours: BusinessHour[];
+
   categories: MenuCategory[];
+
   menuItems: MenuItem[];
+
   reviews: Review[];
+
   memories: BusinessMemoryPreview[];
+
   averageRating: number;
+
   reviewCount: number;
+
   initialSaved: boolean;
+
   canEdit: boolean;
+
+  canViewDashboard: boolean;
 };
 
 type Tab = "home" | "memories" | "about" | "menu" | "reviews";
@@ -132,6 +144,7 @@ export function BusinessProfileClient({
   reviewCount,
   initialSaved,
   canEdit,
+  canViewDashboard,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [sharing, setSharing] = useState(false);
@@ -390,6 +403,40 @@ export function BusinessProfileClient({
                 Edit profile
               </Link>
             )}
+
+            {canViewDashboard && (
+              <Link
+                href={`/business/${business.slug}/dashboard`}
+                className="
+      inline-flex
+      h-10
+      items-center
+      justify-center
+      gap-2
+
+      rounded-[10px]
+
+      bg-[#006241]
+
+      px-4
+
+      text-[11px]
+
+      font-bold
+
+      text-white
+
+      transition
+
+      hover:bg-[#00754a]
+
+      active:scale-95
+    "
+              >
+                <ChartNoAxesColumn className="size-4" />
+                Dashboard
+              </Link>
+            )}
           </div>
 
           <div
@@ -602,11 +649,12 @@ export function BusinessProfileClient({
                   sm:justify-end
                 "
               >
-                {canEdit && (
+                
+                {canViewDashboard && (
                   <Link
-                    href={`/business/${business.slug}/edit`}
+                    href={`/business/${business.slug}/dashboard`}
                     className="
-                      inline-flex
+inline-flex
                       h-10
                       flex-1
                       items-center
@@ -631,13 +679,12 @@ export function BusinessProfileClient({
                       hover:bg-[#dcece4]
 
                       sm:flex-none
-                    "
+"
                   >
-                    <Pencil className="size-3.5" />
-                    Edit profile
+                    <ChartNoAxesColumn className="size-4" />
+                    Dashboard
                   </Link>
                 )}
-
                 <a
                   href={mapUrl}
                   target="_blank"
@@ -685,8 +732,8 @@ export function BusinessProfileClient({
                 </div>
 
                 <button
-onClick={() => setShareOpen(true)}
-className="
+                  onClick={() => setShareOpen(true)}
+                  className="
 flex
 size-10
 items-center
@@ -699,9 +746,9 @@ text-[#006241]
 transition
 hover:bg-[#e8f2ed]
 "
->
-<Share2 className="size-4"/>
-</button>
+                >
+                  <Share2 className="size-4" />
+                </button>
                 {shareOpen && (
                   <BusinessShareModal
                     business={business}

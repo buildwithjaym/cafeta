@@ -18,91 +18,171 @@ import {
   createClient,
 } from "@/lib/supabase/server";
 
+
 export const metadata: Metadata = {
-  title: "Saved Places",
+  title:
+    "Saved Places",
 
   description:
     "View and manage your saved cafés, coffee shops, milk-tea shops, and local favorites on CAFÉTA.",
 };
 
-export default async function SavedPage() {
+
+
+type Props = {
+  searchParams: Promise<{
+    page?: string;
+  }>;
+};
+
+
+
+const PAGE_SIZE = 12;
+
+
+
+export default async function SavedPage({
+  searchParams,
+}:Props){
+
+
+  const {
+    page = "1",
+  } =
+  await searchParams;
+
+
+
+  const parsedPage =
+    Number(page);
+
+
+
+  const currentPage =
+  Number.isFinite(parsedPage) &&
+  parsedPage > 0
+    ? Math.floor(parsedPage)
+    : 1;
+
+
+
+  const from =
+    (
+      currentPage - 1
+    )
+    *
+    PAGE_SIZE;
+
+
+
+  const to =
+    from +
+    PAGE_SIZE -
+    1;
+
+
+
   const supabase =
     await createClient();
 
-  /* =====================================================
-     AUTH
-  ===================================================== */
+
 
   const {
-    data: {
+    data:{
       user,
     },
-    error: authError,
+    error:
+      authError,
   } =
-    await supabase.auth.getUser();
+  await supabase.auth.getUser();
 
-  if (
+
+
+  if(
     authError ||
     !user
-  ) {
+  ){
+
     redirect(
       "/auth/login?next=/saved",
     );
+
   }
 
-  /* =====================================================
-     LOAD SAVED BUSINESSES
-  ===================================================== */
+
 
   const {
     data,
     error,
+    count,
   } =
-    await supabase
-      .from(
-        "saved_businesses",
-      )
-      .select(`
+  await supabase
+  .from(
+    "saved_businesses",
+  )
+  .select(
+    `
+      id,
+      created_at,
+
+      business:businesses(
         id,
-        created_at,
+        name,
+        slug,
+        category,
+        description,
 
-        business:businesses (
-          id,
-          name,
-          slug,
-          category,
-          description,
+        logo_url,
+        cover_url,
 
-          logo_url,
-          cover_url,
+        address,
+        barangay,
+        city,
+        province,
 
-          address,
-          barangay,
-          city,
-          province,
+        latitude,
+        longitude,
 
-          latitude,
-          longitude,
-
-          is_verified
-        )
-      `)
-      .eq(
-        "user_id",
-        user.id,
+        is_verified
       )
-      .order(
-        "created_at",
-        {
-          ascending: false,
-        },
-      );
+    `,
+    {
+      count:
+        "exact",
+    },
+  )
+  .eq(
+    "user_id",
+    user.id,
+  )
+  .order(
+    "created_at",
+    {
+      ascending:false,
+    },
+  )
+  .range(
+    from,
+    to,
+  );
 
-  /* =====================================================
-     QUERY ERROR
-  ===================================================== */
 
-  if (error) {
+
+  const totalItems =
+    count ?? 0;
+
+
+
+  const totalPages =
+    Math.ceil(
+      totalItems /
+      PAGE_SIZE,
+    );
+
+
+
+  if(error){
+
     console.error(
       "[CAFÉTA] Failed to load saved businesses:",
       {
@@ -120,25 +200,41 @@ export default async function SavedPage() {
       },
     );
 
+
     return (
       <SavedPageClient
+
         initialSaved={[]}
+
         hasError
+
+        pagination={{
+          currentPage,
+
+          totalPages:0,
+
+          totalItems:0,
+        }}
+
       />
     );
+
   }
 
-  /* =====================================================
-     NORMALIZE SUPABASE RELATION
-  ===================================================== */
 
-  const savedBusinesses: SavedBusiness[] =
+
+  const savedBusinesses:
+    SavedBusiness[] =
     [];
 
-  for (
+
+
+  for(
     const item of
     data ?? []
-  ) {
+  ){
+
+
     const business =
       Array.isArray(
         item.business,
@@ -146,76 +242,119 @@ export default async function SavedPage() {
         ? item.business[0]
         : item.business;
 
-    if (!business) {
+
+
+    if(!business){
+
       continue;
+
     }
 
+
+
     savedBusinesses.push({
+
       savedId:
         item.id,
+
 
       savedAt:
         item.created_at,
 
-      business: {
+
+
+      business:{
+
         id:
           business.id,
+
 
         name:
           business.name,
 
+
         slug:
           business.slug,
+
 
         category:
           business.category as SavedBusiness["business"]["category"],
 
+
         description:
           business.description,
 
-        /*
-         * These URLs come directly
-         * from public.businesses.
-         */
+
         logo_url:
           business.logo_url,
+
 
         cover_url:
           business.cover_url,
 
+
         address:
           business.address,
+
 
         barangay:
           business.barangay,
 
+
         city:
           business.city,
+
 
         province:
           business.province,
 
+
         latitude:
-          business.latitude,
+          Number(
+            business.latitude,
+          ),
+
 
         longitude:
-          business.longitude,
+          Number(
+            business.longitude,
+          ),
+
 
         is_verified:
           business.is_verified,
+
       },
+
     });
+
+
   }
 
-  /* =====================================================
-     PAGE
-  ===================================================== */
+
+
 
   return (
+
     <SavedPageClient
+
       initialSaved={
         savedBusinesses
       }
+
+
+      pagination={{
+
+        currentPage,
+
+        totalPages,
+
+        totalItems,
+
+      }}
+
     />
+
   );
+
 }

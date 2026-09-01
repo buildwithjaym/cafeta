@@ -6,6 +6,12 @@ import {
 } from "react";
 
 import {
+  useRouter,
+} from "next/navigation";
+
+import {
+  ChevronLeft,
+  ChevronRight,
   Coffee,
   CupSoda,
   Search,
@@ -28,9 +34,6 @@ import {
   createClient,
 } from "@/lib/supabase/client";
 
-/* =========================================================
-   TYPES
-========================================================= */
 
 export type SavedBusinessCategory =
   | "coffee_shop"
@@ -40,520 +43,691 @@ export type SavedBusinessCategory =
   | "restaurant_cafe"
   | "other";
 
+
 export type SavedBusiness = {
-  savedId: string;
 
-  savedAt: string;
+  savedId:string;
 
-  business: {
-    id: string;
+  savedAt:string;
 
-    name: string;
+  business:{
+    id:string;
 
-    slug: string;
+    name:string;
 
-    category: SavedBusinessCategory;
+    slug:string;
 
-    description:
-      | string
-      | null;
+    category:SavedBusinessCategory;
 
-    logo_url:
-      | string
-      | null;
+    description:string | null;
 
-    cover_url:
-      | string
-      | null;
+    logo_url:string | null;
 
-    address: string;
+    cover_url:string | null;
 
-    barangay:
-      | string
-      | null;
+    address:string;
 
-    city: string;
+    barangay:string | null;
 
-    province: string;
+    city:string;
 
-    latitude: number;
+    province:string;
 
-    longitude: number;
+    latitude:number;
 
-    is_verified: boolean;
+    longitude:number;
+
+    is_verified:boolean;
   };
+
 };
+
+
 
 type Props = {
-  initialSaved: SavedBusiness[];
 
-  hasError?: boolean;
+  initialSaved:SavedBusiness[];
+
+  hasError?:boolean;
+
+
+  pagination:{
+    currentPage:number;
+
+    totalPages:number;
+
+    totalItems:number;
+  };
+
 };
+
+
 
 type Filter =
   | "all"
   | "coffee"
   | "milk-tea";
 
-/* =========================================================
-   FILTERS
-========================================================= */
 
-const FILTERS: {
-  value: Filter;
-  label: string;
-  icon: typeof Coffee;
-}[] = [
+
+const FILTERS = [
   {
-    value: "all",
-    label: "All",
-    icon: Coffee,
+    value:"all" as Filter,
+    label:"All",
+    icon:Coffee,
   },
 
   {
-    value: "coffee",
-    label: "Coffee",
-    icon: Coffee,
+    value:"coffee" as Filter,
+    label:"Coffee",
+    icon:Coffee,
   },
 
   {
-    value: "milk-tea",
-    label: "Milk Tea",
-    icon: CupSoda,
+    value:"milk-tea" as Filter,
+    label:"Milk Tea",
+    icon:CupSoda,
   },
 ];
 
-const COFFEE_CATEGORIES: SavedBusinessCategory[] =
-  [
-    "coffee_shop",
-    "cafe",
-    "bakery_cafe",
-    "restaurant_cafe",
-  ];
 
-/* =========================================================
-   COMPONENT
-========================================================= */
+
+const COFFEE_CATEGORIES:
+SavedBusinessCategory[] = [
+  "coffee_shop",
+  "cafe",
+  "bakery_cafe",
+  "restaurant_cafe",
+];
+
+
 
 export function SavedPageClient({
   initialSaved,
-  hasError = false,
-}: Props) {
+  hasError=false,
+  pagination,
+}:Props){
+
+
+  const router =
+    useRouter();
+
+
+
   const [
     saved,
     setSaved,
   ] =
-    useState<SavedBusiness[]>(
-      initialSaved,
-    );
+  useState(
+    initialSaved,
+  );
+
+
 
   const [
     search,
     setSearch,
   ] =
-    useState("");
+  useState("");
+
+
 
   const [
     filter,
     setFilter,
   ] =
-    useState<Filter>(
-      "all",
-    );
+  useState<Filter>(
+    "all",
+  );
+
+
 
   const [
     removingId,
     setRemovingId,
   ] =
-    useState<
-      string | null
-    >(null);
+  useState<string | null>(
+    null,
+  );
 
-  /* =======================================================
-     FILTERED SAVED BUSINESSES
-  ======================================================= */
+
+
 
   const visibleSaved =
-    useMemo(() => {
+    useMemo(()=>{
+
       const query =
         search
           .trim()
           .toLowerCase();
 
+
+
       return saved.filter(
-        (item) => {
+        (item)=>{
+
+
           const business =
             item.business;
 
-          const searchable =
+
+
+          const matchesSearch =
+            !query ||
             [
               business.name,
               business.address,
               business.barangay,
               business.city,
               business.province,
-            ];
-
-          const matchesSearch =
-            !query ||
-            searchable.some(
-              (value) =>
-                value
-                  ?.toLowerCase()
-                  .includes(
-                    query,
-                  ),
+            ]
+            .filter(Boolean)
+            .some(
+              value =>
+                value!
+                .toLowerCase()
+                .includes(query),
             );
 
-          if (
-            !matchesSearch
-          ) {
+
+
+          if(!matchesSearch){
             return false;
           }
 
-          if (
-            filter ===
-            "coffee"
-          ) {
+
+
+          if(filter==="coffee"){
+
             return COFFEE_CATEGORIES.includes(
               business.category,
             );
+
           }
 
-          if (
-            filter ===
-            "milk-tea"
-          ) {
+
+
+          if(filter==="milk-tea"){
+
             return (
               business.category ===
               "milk_tea"
             );
+
           }
 
+
+
           return true;
+
         },
       );
-    }, [
+
+    },[
       saved,
       search,
       filter,
     ]);
 
-  /* =======================================================
-     REMOVE SAVED BUSINESS
-  ======================================================= */
+
+
+
 
   async function handleRemove(
-    item: SavedBusiness,
-  ) {
-    if (removingId) {
+    item:SavedBusiness,
+  ){
+
+
+    if(removingId){
       return;
     }
+
+
 
     setRemovingId(
       item.savedId,
     );
 
-    const previousSaved =
+
+
+    const previous =
       saved;
 
-    /*
-     * Optimistic UI.
-     */
+
+
     setSaved(
-      (current) =>
+      current =>
         current.filter(
-          (savedItem) =>
+          savedItem =>
             savedItem.savedId !==
             item.savedId,
         ),
     );
 
-    try {
+
+
+    try{
+
+
       const supabase =
         createClient();
+
+
 
       const {
         error,
       } =
-        await supabase
-          .from(
-            "saved_businesses",
-          )
-          .delete()
-          .eq(
-            "id",
-            item.savedId,
-          );
+      await supabase
+      .from(
+        "saved_businesses",
+      )
+      .delete()
+      .eq(
+        "id",
+        item.savedId,
+      );
 
-      if (error) {
+
+
+      if(error){
         throw error;
       }
 
+
+
       toast.success(
         "Removed from saved",
-        {
-          description:
-            `${item.business.name} was removed from your saved places.`,
-        },
-      );
-    } catch (error) {
-      /*
-       * Restore if the delete fails.
-       */
-      setSaved(
-        previousSaved,
       );
 
-      console.error(
-        "[CAFÉTA] Failed to remove saved business:",
-        error,
+
+    }
+    catch(error){
+
+
+      setSaved(
+        previous,
       );
+
 
       toast.error(
         "Couldn't remove saved place",
-        {
-          description:
-            "Please try again.",
-        },
       );
-    } finally {
+
+
+      console.error(
+        error,
+      );
+
+
+    }
+    finally{
+
       setRemovingId(
         null,
       );
+
     }
+
+
   }
 
-  /* =======================================================
-     ERROR STATE
-  ======================================================= */
 
-  if (hasError) {
+
+
+
+  if(hasError){
+
     return (
-      <main className="flex min-h-[calc(100dvh-72px)] items-center justify-center bg-[#f7f8f6] px-5 pb-28 md:pb-8">
-        <div className="animate-in fade-in slide-in-from-bottom-2 max-w-sm text-center duration-300">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-[#e8f2ed]">
-            <Coffee className="size-5 text-[#006241]" />
-          </div>
+      <main className="flex min-h-[calc(100dvh-72px)] items-center justify-center bg-[#f7f8f6] px-5">
 
-          <h1 className="mt-5 text-xl font-bold tracking-[-0.035em] text-[#17211c]">
+        <div className="text-center">
+
+          <Coffee className="mx-auto size-10 text-[#006241]" />
+
+          <h1 className="mt-5 text-xl font-black text-[#17211c]">
             Saved places unavailable
           </h1>
 
-          <p className="mt-2 text-sm leading-6 text-black/45">
-            We couldn&apos;t load your
-            saved places right now.
-          </p>
-
           <button
-            type="button"
-            onClick={() => {
+            onClick={()=>{
               window.location.reload();
             }}
-            className="mt-5 rounded-full bg-[#006241] px-5 py-2.5 text-xs font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#00754a] active:translate-y-0 active:scale-[0.98]"
+            className="mt-5 rounded-full bg-[#006241] px-5 py-2 text-xs font-bold text-white"
           >
             Try again
           </button>
+
         </div>
+
       </main>
     );
+
   }
 
-  /* =======================================================
-     PAGE
-  ======================================================= */
+
+
+
 
   return (
-    <main className="min-h-[calc(100dvh-72px)] bg-[#f7f8f6] pb-28 md:pb-12">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 md:py-9 lg:px-8">
 
-        {/* Header */}
+    <main className="min-h-[calc(100dvh-72px)] bg-[#f7f8f6] pb-28">
 
-        <header className="animate-in fade-in slide-in-from-bottom-2 flex flex-col gap-5 duration-300 md:flex-row md:items-end md:justify-between">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+
+
+        <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+
           <div>
+
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#006241]">
               Your collection
             </p>
 
-            <h1 className="mt-2 text-[2rem] font-black tracking-[-0.055em] text-[#17211c] sm:text-[2.5rem]">
+
+            <h1 className="mt-2 text-[2rem] font-black tracking-[-0.055em] text-[#17211c]">
               Saved places
             </h1>
 
-            <p className="mt-2 max-w-lg text-sm leading-6 text-black/45">
-              Keep the cafés, coffee
-              shops, and milk-tea places
-              you want to visit again.
+
+            <p className="mt-2 text-sm text-black/45">
+              Keep your favorite CAFÉTA places.
             </p>
+
           </div>
 
-          {saved.length > 0 && (
-            <p className="text-sm text-black/40">
-              <span className="font-bold text-[#17211c]">
-                {saved.length}
-              </span>{" "}
-              {saved.length === 1
-                ? "place"
-                : "places"}{" "}
-              saved
-            </p>
-          )}
+
+
+          <p className="text-sm text-black/40">
+
+            <span className="font-bold text-[#17211c]">
+              {
+                pagination.totalItems
+              }
+            </span>
+
+            {" "}
+
+            saved
+
+          </p>
+
+
         </header>
 
-        {/* Search + filters */}
 
-        {saved.length > 0 && (
-          <section className="animate-in fade-in slide-in-from-bottom-2 mt-7 flex flex-col gap-3 duration-500 lg:flex-row lg:items-center lg:justify-between">
-            <div className="relative w-full lg:max-w-md">
-              <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-black/30" />
 
-              <input
-                type="search"
-                value={search}
-                onChange={(
-                  event,
-                ) => {
-                  setSearch(
-                    event.target
-                      .value,
-                  );
-                }}
-                placeholder="Search saved places..."
-                aria-label="Search saved places"
-                className="h-12 w-full rounded-full border border-black/[0.07] bg-white pl-11 pr-11 text-sm text-[#17211c] shadow-sm outline-none transition-all duration-200 placeholder:text-black/30 hover:border-black/[0.12] focus:border-[#006241]/30 focus:ring-4 focus:ring-[#006241]/[0.06]"
-              />
 
-              {search && (
+
+        <section className="mt-7 grid grid-cols-2 gap-4 lg:grid-cols-4">
+
+          <div className="relative w-full lg:max-w-md">
+
+            <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-black/30"/>
+
+
+            <input
+              value={search}
+              onChange={(e)=>
+                setSearch(
+                  e.target.value,
+                )
+              }
+              placeholder="Search saved places..."
+              className="h-12 w-full rounded-full border border-black/[0.07] bg-white pl-11 pr-11 text-sm outline-none"
+            />
+
+
+            {
+              search && (
                 <button
-                  type="button"
-                  onClick={() => {
-                    setSearch("");
-                  }}
-                  aria-label="Clear search"
-                  className="absolute right-3 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-black/35 transition-all hover:bg-black/[0.04] hover:text-black/60 active:scale-95"
+                  onClick={()=>
+                    setSearch("")
+                  }
+                  className="absolute right-4 top-1/2 -translate-y-1/2"
                 >
-                  <X className="size-3.5" />
+                  <X className="size-4"/>
                 </button>
-              )}
-            </div>
+              )
+            }
 
-            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:pb-0">
-              {FILTERS.map(
-                (item) => {
+
+          </div>
+
+
+
+          <div className="flex gap-2">
+
+            {
+              FILTERS.map(
+                item=>{
+
                   const Icon =
                     item.icon;
 
-                  const active =
-                    filter ===
-                    item.value;
 
                   return (
+
                     <button
                       key={
                         item.value
                       }
-                      type="button"
-                      onClick={() => {
+                      onClick={()=>
                         setFilter(
                           item.value,
-                        );
-                      }}
-                      aria-pressed={
-                        active
+                        )
                       }
-                      className={[
-                        "flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-4 text-xs font-bold transition-all duration-200 active:scale-95",
-
-                        active
-                          ? "border-[#006241] bg-[#006241] text-white shadow-[0_5px_14px_rgba(0,98,65,0.12)]"
-                          : "border-black/[0.07] bg-white text-[#455049] hover:-translate-y-0.5 hover:border-[#006241]/20 hover:text-[#006241] hover:shadow-sm",
-                      ].join(
-                        " ",
-                      )}
+                      className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold ${
+                        filter===item.value
+                        ?
+                        "bg-[#006241] text-white"
+                        :
+                        "bg-white text-black/50"
+                      }`}
                     >
-                      <Icon className="size-3.5" />
 
-                      {item.label}
+                      <Icon className="size-3.5"/>
+
+                      {
+                        item.label
+                      }
+
                     </button>
+
                   );
+
                 },
-              )}
-            </div>
-          </section>
-        )}
+              )
+            }
 
-        {/* No saved businesses */}
+          </div>
 
-        {saved.length ===
-        0 ? (
-          <SavedEmptyState />
-        ) : visibleSaved.length ===
-          0 ? (
-          <section className="animate-in fade-in py-24 text-center duration-300">
-            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-[#e8f2ed]">
-              <Search className="size-5 text-[#006241]" />
-            </div>
 
-            <h2 className="mt-4 text-base font-bold text-[#17211c]">
-              No matching places
-            </h2>
+        </section>
 
-            <p className="mt-2 text-sm text-black/40">
-              Try another search or
-              category.
-            </p>
 
-            <button
-              type="button"
-              onClick={() => {
-                setSearch("");
-                setFilter("all");
-              }}
-              className="mt-5 rounded-full px-4 py-2 text-sm font-bold text-[#006241] transition hover:bg-[#e8f2ed] active:scale-95"
-            >
-              Clear filters
-            </button>
-          </section>
-        ) : (
+
+
+
+        {
+          visibleSaved.length === 0
+          ?
+          <SavedEmptyState/>
+          :
           <section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {visibleSaved.map(
-              (
-                item,
-                index,
-              ) => (
-                <div
-                  key={
-                    item.savedId
-                  }
-                  className="animate-in fade-in slide-in-from-bottom-2 duration-500"
-                  style={{
-                    animationDelay:
-                      `${Math.min(
-                        index * 45,
-                        225,
-                      )}ms`,
 
-                    animationFillMode:
-                      "both",
-                  }}
-                >
+
+            {
+              visibleSaved.map(
+                item=>(
                   <SavedBusinessCard
-                    item={item}
+
+                    key={
+                      item.savedId
+                    }
+
+                    item={
+                      item
+                    }
+
                     removing={
                       removingId ===
                       item.savedId
                     }
-                    onRemove={() => {
+
+                    onRemove={()=>
                       void handleRemove(
                         item,
-                      );
-                    }}
+                      )
+                    }
+
                   />
-                </div>
-              ),
-            )}
+                ),
+              )
+            }
+
+
           </section>
-        )}
+        }
+
+
+
+
+{
+  pagination.totalPages > 1 && (
+
+    <div className="mt-12 flex items-center justify-center gap-2">
+
+
+      <button
+        disabled={
+          pagination.currentPage === 1
+        }
+        onClick={() =>
+          router.push(
+            `/saved?page=${pagination.currentPage - 1}`,
+          )
+        }
+        className="
+          flex
+          size-10
+          items-center
+          justify-center
+          rounded-full
+          bg-white
+          text-black/50
+          transition
+          hover:bg-[#006241]/10
+          disabled:opacity-30
+        "
+      >
+
+        <ChevronLeft className="size-4"/>
+
+      </button>
+
+
+
+      {
+        Array.from(
+          {
+            length:
+              pagination.totalPages,
+          },
+        )
+        .map(
+          (_,index)=>{
+
+            const page =
+              index + 1;
+
+
+            return (
+
+              <button
+                key={
+                  page
+                }
+
+                onClick={() =>
+                  router.push(
+                    `/saved?page=${page}`,
+                  )
+                }
+
+                className={`
+                  flex
+                  size-10
+                  items-center
+                  justify-center
+                  rounded-full
+                  text-xs
+                  font-black
+                  transition
+
+                  ${
+                    pagination.currentPage === page
+                    ?
+                    "bg-[#006241] text-white"
+                    :
+                    "bg-white text-black/50 hover:bg-[#006241]/10"
+                  }
+                `}
+              >
+
+                {
+                  page
+                }
+
+              </button>
+
+            );
+
+          },
+        )
+      }
+
+
+
+      <button
+        disabled={
+          pagination.currentPage === pagination.totalPages
+        }
+
+        onClick={() =>
+          router.push(
+            `/saved?page=${pagination.currentPage + 1}`,
+          )
+        }
+
+        className="
+          flex
+          size-10
+          items-center
+          justify-center
+          rounded-full
+          bg-white
+          text-black/50
+          transition
+          hover:bg-[#006241]/10
+          disabled:opacity-30
+        "
+      >
+
+        <ChevronRight className="size-4"/>
+
+      </button>
+
+
+    </div>
+
+  )
+}
+
+
       </div>
+
     </main>
+
   );
+
 }

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-
+import {
+  trackBusinessEvent,
+} from "@/lib/analytics/events";
 import {
   notFound,
   redirect,
@@ -439,22 +441,38 @@ export default async function BusinessPage({
       )
       .maybeSingle();
 
+ if (
+  businessError ||
+  !business
+) {
   if (
-    businessError ||
-    !business
+    businessError
   ) {
-    if (
-      businessError
-    ) {
-      console.error(
-        "[CAFÉTA] Failed to load business:",
-        businessError,
-      );
-    }
-
-    notFound();
+    console.error(
+      "[CAFÉTA] Failed to load business:",
+      businessError,
+    );
   }
 
+  notFound();
+}
+
+
+
+if(
+  business.created_by !== user.id
+){
+
+  await trackBusinessEvent(
+    business.id,
+    "profile_view",
+    {
+      source:
+        "business_profile",
+    },
+  );
+
+}
   let membership:
     | BusinessMember
     | null = null;
@@ -511,6 +529,11 @@ export default async function BusinessPage({
     isCreator ||
     isOwner ||
     isManager;
+
+  const canViewDashboard =
+  isCreator ||
+  isOwner ||
+  isManager;
 
   const [
     hoursResult,
@@ -1145,6 +1168,9 @@ export default async function BusinessPage({
         canEdit={
           canEdit
         }
+        canViewDashboard={
+  canViewDashboard
+}
       />
     </>
   );

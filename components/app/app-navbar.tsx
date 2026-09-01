@@ -54,7 +54,7 @@ const navigation = [
   },
   {
     name: "Memory",
-    href: "/memories/create",
+    href: "/memories",
     icon: PlusCircle,
   },
   {

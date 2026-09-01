@@ -133,12 +133,12 @@ export function ExploreBusinessCard({
         "
       >
         <Link
-          href={`/place/${business.slug}`}
-          className="
-            block
-            size-full
-          "
-        >
+  href={`/business/${business.slug}`}
+  className="
+    block
+    size-full
+  "
+>
           {business.cover_url ? (
             <img
               src={
@@ -277,9 +277,12 @@ export function ExploreBusinessCard({
               "
             >
               <Link
-                href={`/place/${business.slug}`}
-                className="min-w-0"
-              >
+  href={`/business/${business.slug}`}
+  className="
+    block
+    size-full
+  "
+>
                 <h3
                   className="
                     truncate

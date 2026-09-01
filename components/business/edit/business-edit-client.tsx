@@ -1,8 +1,6 @@
 "use client";
 
-import {
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
@@ -15,36 +13,27 @@ import {
   Menu as MenuIcon,
   Save,
   Settings2,
-  Store,
+  MapPin,
 } from "lucide-react";
 
-import {
-  toast,
-} from "sonner";
+import { toast } from "sonner";
 
-import {
-  createClient,
-} from "@/lib/supabase/client";
+import { BusinessLocationEdit } from "./business-location-edit";
 
-import {
-  BusinessEditForm,
-  EditProfileSection,
-} from "./edit-profile-section";
+import { createClient } from "@/lib/supabase/client";
 
-import {
-  EditableBusinessHour,
-  EditHoursSection,
-} from "./edit-hours-section";
+import { BusinessEditForm, EditProfileSection } from "./edit-profile-section";
+
+import { EditableBusinessHour, EditHoursSection } from "./edit-hours-section";
 
 import {
   EditableMenuCategory,
   EditableMenuItem,
+  EditableMenuVariant,
   EditMenuItemModal,
 } from "./edit-menu-item-modal";
 
-import {
-  EditMenuSection,
-} from "./edit-menu-section";
+import { EditMenuSection } from "./edit-menu-section";
 
 type Business = {
   id: string;
@@ -52,46 +41,27 @@ type Business = {
   name: string;
   slug: string;
 
-  category:
-    BusinessEditForm["category"];
+  category: BusinessEditForm["category"];
 
-  description:
-    | string
-    | null;
+  description: string | null;
 
-  logo_url:
-    | string
-    | null;
+  logo_url: string | null;
 
-  cover_url:
-    | string
-    | null;
+  cover_url: string | null;
 
-  phone:
-    | string
-    | null;
+  phone: string | null;
 
-  email:
-    | string
-    | null;
+  email: string | null;
 
-  facebook_url:
-    | string
-    | null;
+  facebook_url: string | null;
 
-  instagram_url:
-    | string
-    | null;
+  instagram_url: string | null;
 
-  website_url:
-    | string
-    | null;
+  website_url: string | null;
 
   address: string;
 
-  barangay:
-    | string
-    | null;
+  barangay: string | null;
 
   city: string;
   province: string;
@@ -110,27 +80,18 @@ type Props = {
   initialItems: EditableMenuItem[];
 };
 
-type Section =
-  | "profile"
-  | "hours"
-  | "menu";
+type Section = "profile" | "location" | "hours" | "menu";
 
-const EMPTY_ITEM: EditableMenuItem =
-  {
-    category_id: null,
-
-    name: "",
-
-    description: "",
-
-    price: "",
-
-    image_url: null,
-
-    is_available: true,
-
-    sort_order: 0,
-  };
+const EMPTY_ITEM: EditableMenuItem = {
+  category_id: null,
+  name: "",
+  description: "",
+  price: "",
+  image_url: null,
+  is_available: true,
+  sort_order: 0,
+  variants: [],
+};
 
 export function BusinessEditClient({
   business,
@@ -138,196 +99,156 @@ export function BusinessEditClient({
   initialCategories,
   initialItems,
 }: Props) {
-  const supabase =
-    createClient();
+  const supabase = createClient();
 
-  const [
-    section,
-    setSection,
-  ] =
-    useState<Section>(
-      "profile",
-    );
+  const [section, setSection] = useState<Section>("profile");
 
-  const [
-    form,
-    setForm,
-  ] =
-    useState<BusinessEditForm>(
-      {
-        name:
-          business.name,
+  const [form, setForm] = useState<BusinessEditForm>({
+    name: business.name,
 
-        category:
-          business.category,
+    category: business.category,
 
-        description:
-          business.description ??
-          "",
+    description: business.description ?? "",
 
-        phone:
-          business.phone ??
-          "",
+    phone: business.phone ?? "",
 
-        email:
-          business.email ??
-          "",
+    email: business.email ?? "",
 
-        website_url:
-          business.website_url ??
-          "",
+    website_url: business.website_url ?? "",
 
-        facebook_url:
-          business.facebook_url ??
-          "",
+    facebook_url: business.facebook_url ?? "",
 
-        instagram_url:
-          business.instagram_url ??
-          "",
+    instagram_url: business.instagram_url ?? "",
 
-        address:
-          business.address,
+    address: business.address,
 
-        barangay:
-          business.barangay ??
-          "",
+    barangay: business.barangay ?? "",
 
-        city:
-          business.city,
+    city: business.city,
 
-        province:
-          business.province,
+    province: business.province,
 
-        latitude:
-          String(
-            business.latitude,
-          ),
+    latitude: String(business.latitude),
 
-        longitude:
-          String(
-            business.longitude,
-          ),
-      },
-    );
+    longitude: String(business.longitude),
+  });
 
-  const [
-    hours,
-    setHours,
-  ] =
-    useState<
-      EditableBusinessHour[]
-    >(initialHours);
+  const [hours, setHours] = useState<EditableBusinessHour[]>(initialHours);
 
-  const [
-    categories,
-    setCategories,
-  ] =
-    useState<
-      EditableMenuCategory[]
-    >(initialCategories);
+  const [categories, setCategories] =
+    useState<EditableMenuCategory[]>(initialCategories);
 
-  const [
-    items,
-    setItems,
-  ] =
-    useState<
-      EditableMenuItem[]
-    >(initialItems);
+  const [items, setItems] = useState<EditableMenuItem[]>(
+    initialItems.map((item) => ({
+      ...item,
+      variants: item.variants ?? [],
+    })),
+  );
 
-  const [
-    logoFile,
-    setLogoFile,
-  ] =
-    useState<File | null>(
-      null,
-    );
+  const [variantsLoaded, setVariantsLoaded] = useState(false);
 
-  const [
-    coverFile,
-    setCoverFile,
-  ] =
-    useState<File | null>(
-      null,
-    );
+  const [logoFile, setLogoFile] = useState<File | null>(null);
 
-  const [
-    logoUrl,
-    setLogoUrl,
-  ] =
-    useState<
-      string | null
-    >(business.logo_url);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
 
-  const [
-    coverUrl,
-    setCoverUrl,
-  ] =
-    useState<
-      string | null
-    >(business.cover_url);
+  const [logoUrl, setLogoUrl] = useState<string | null>(business.logo_url);
 
-  const [
-    dirty,
-    setDirty,
-  ] = useState(false);
+  const [coverUrl, setCoverUrl] = useState<string | null>(business.cover_url);
 
-  const [
-    saving,
-    setSaving,
-  ] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
-  const [
-    modalOpen,
-    setModalOpen,
-  ] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const [
-    editingItem,
-    setEditingItem,
-  ] =
-    useState<EditableMenuItem>(
-      EMPTY_ITEM,
-    );
+  const [modalOpen, setModalOpen] = useState(false);
 
-  const [
-    menuImageFile,
-    setMenuImageFile,
-  ] =
-    useState<File | null>(
-      null,
-    );
+  const [editingItem, setEditingItem] = useState<EditableMenuItem>(EMPTY_ITEM);
 
-  const [
-    savingItem,
-    setSavingItem,
-  ] = useState(false);
+  const [menuImageFile, setMenuImageFile] = useState<File | null>(null);
 
-  function updateForm<
-    K extends keyof BusinessEditForm,
-  >(
+  const [savingItem, setSavingItem] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadVariants() {
+      const itemIds = initialItems
+        .map((item) => item.id)
+        .filter((id): id is string => Boolean(id));
+
+      if (itemIds.length === 0) {
+        setVariantsLoaded(true);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("menu_item_variants")
+        .select("id, menu_item_id, name, price, is_available, sort_order")
+        .in("menu_item_id", itemIds)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      if (cancelled) {
+        return;
+      }
+
+      if (error) {
+        console.error("[CAFÉTA] Failed to load menu variants:", error);
+        toast.error("Could not load menu pricing options.");
+        setVariantsLoaded(true);
+        return;
+      }
+
+      const variantsByItem = new Map<string, EditableMenuVariant[]>();
+
+      for (const variant of data ?? []) {
+        const current = variantsByItem.get(variant.menu_item_id) ?? [];
+
+        current.push({
+          id: variant.id,
+          name: variant.name,
+          price: String(variant.price),
+          is_available: variant.is_available,
+          sort_order: variant.sort_order,
+        });
+
+        variantsByItem.set(variant.menu_item_id, current);
+      }
+
+      setItems((current) =>
+        current.map((item) => ({
+          ...item,
+          variants: item.id ? variantsByItem.get(item.id) ?? [] : [],
+        })),
+      );
+
+      setVariantsLoaded(true);
+    }
+
+    void loadVariants();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function updateForm<K extends keyof BusinessEditForm>(
     key: K,
     value: BusinessEditForm[K],
   ) {
-    setForm(
-      (current) => ({
-        ...current,
-        [key]: value,
-      }),
-    );
+    setForm((current) => ({
+      ...current,
+      [key]: value,
+    }));
 
     setDirty(true);
   }
 
-  function updateHours(
-    value: EditableBusinessHour[],
-  ) {
+  function updateHours(value: EditableBusinessHour[]) {
     setHours(value);
     setDirty(true);
   }
 
-  function handleLogo(
-    file: File | null,
-  ) {
+  function handleLogo(file: File | null) {
     setLogoFile(file);
 
     if (!file) {
@@ -337,9 +258,7 @@ export function BusinessEditClient({
     setDirty(true);
   }
 
-  function handleCover(
-    file: File | null,
-  ) {
+  function handleCover(file: File | null) {
     setCoverFile(file);
 
     if (!file) {
@@ -357,249 +276,126 @@ export function BusinessEditClient({
     setSaving(true);
 
     try {
-      let nextLogoUrl =
-        logoUrl;
+      let nextLogoUrl = logoUrl;
 
-      let nextCoverUrl =
-        coverUrl;
+      let nextCoverUrl = coverUrl;
 
       if (logoFile) {
-        nextLogoUrl =
-          await uploadImage(
-            logoFile,
-            "logo",
-          );
+        nextLogoUrl = await uploadImage(logoFile, "logo");
       }
 
       if (coverFile) {
-        nextCoverUrl =
-          await uploadImage(
-            coverFile,
-            "cover",
-          );
+        nextCoverUrl = await uploadImage(coverFile, "cover");
       }
 
-      const latitude =
-        Number(
-          form.latitude,
-        );
+      const latitude = Number(form.latitude);
 
-      const longitude =
-        Number(
-          form.longitude,
-        );
+      const longitude = Number(form.longitude);
 
-      if (
-        Number.isNaN(
+      if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+        throw new Error("Latitude and longitude must be valid numbers.");
+      }
+
+      const { error: businessError } = await supabase
+        .from("businesses")
+        .update({
+          name: form.name.trim(),
+
+          category: form.category,
+
+          description: nullIfEmpty(form.description),
+
+          phone: nullIfEmpty(form.phone),
+
+          email: nullIfEmpty(form.email),
+
+          website_url: normalizeUrl(form.website_url),
+
+          facebook_url: normalizeUrl(form.facebook_url),
+
+          instagram_url: normalizeUrl(form.instagram_url),
+
+          address: form.address.trim(),
+
+          barangay: nullIfEmpty(form.barangay),
+
+          city: form.city.trim(),
+
+          province: form.province.trim(),
+
           latitude,
-        ) ||
-        Number.isNaN(
           longitude,
-        )
-      ) {
-        throw new Error(
-          "Latitude and longitude must be valid numbers.",
-        );
-      }
 
-      const {
-        error:
-          businessError,
-      } =
-        await supabase
-          .from(
-            "businesses",
-          )
-          .update({
-            name:
-              form.name.trim(),
+          logo_url: nextLogoUrl,
 
-            category:
-              form.category,
+          cover_url: nextCoverUrl,
+        })
+        .eq("id", business.id);
 
-            description:
-              nullIfEmpty(
-                form.description,
-              ),
-
-            phone:
-              nullIfEmpty(
-                form.phone,
-              ),
-
-            email:
-              nullIfEmpty(
-                form.email,
-              ),
-
-            website_url:
-              normalizeUrl(
-                form.website_url,
-              ),
-
-            facebook_url:
-              normalizeUrl(
-                form.facebook_url,
-              ),
-
-            instagram_url:
-              normalizeUrl(
-                form.instagram_url,
-              ),
-
-            address:
-              form.address.trim(),
-
-            barangay:
-              nullIfEmpty(
-                form.barangay,
-              ),
-
-            city:
-              form.city.trim(),
-
-            province:
-              form.province.trim(),
-
-            latitude,
-            longitude,
-
-            logo_url:
-              nextLogoUrl,
-
-            cover_url:
-              nextCoverUrl,
-          })
-          .eq(
-            "id",
-            business.id,
-          );
-
-      if (
-        businessError
-      ) {
+      if (businessError) {
         throw businessError;
       }
 
-      const {
-        error:
-          hoursError,
-      } =
-        await supabase
-          .from(
-            "business_hours",
-          )
-          .upsert(
-            hours.map(
-              (hour) => ({
-                business_id:
-                  business.id,
+      const { error: hoursError } = await supabase
+        .from("business_hours")
+        .upsert(
+          hours.map((hour) => ({
+            business_id: business.id,
 
-                day_of_week:
-                  hour.day_of_week,
+            day_of_week: hour.day_of_week,
 
-                opens_at:
-                  hour.is_closed
-                    ? null
-                    : hour.opens_at,
+            opens_at: hour.is_closed ? null : hour.opens_at,
 
-                closes_at:
-                  hour.is_closed
-                    ? null
-                    : hour.closes_at,
+            closes_at: hour.is_closed ? null : hour.closes_at,
 
-                is_closed:
-                  hour.is_closed,
-              }),
-            ),
-            {
-              onConflict:
-                "business_id,day_of_week",
-            },
-          );
+            is_closed: hour.is_closed,
+          })),
+          {
+            onConflict: "business_id,day_of_week",
+          },
+        );
 
-      if (
-        hoursError
-      ) {
+      if (hoursError) {
         throw hoursError;
       }
 
-      setLogoUrl(
-        nextLogoUrl,
-      );
+      setLogoUrl(nextLogoUrl);
 
-      setCoverUrl(
-        nextCoverUrl,
-      );
+      setCoverUrl(nextCoverUrl);
 
       setLogoFile(null);
       setCoverFile(null);
 
       setDirty(false);
 
-      toast.success(
-        "Business updated.",
-      );
+      toast.success("Business updated.");
     } catch (error) {
-      console.error(
-        "[CAFÉTA] Update failed:",
-        error,
-      );
+      console.error("[CAFÉTA] Update failed:", error);
 
-      toast.error(
-        getErrorMessage(
-          error,
-        ),
-      );
+      toast.error(getErrorMessage(error));
     } finally {
       setSaving(false);
     }
   }
 
-  async function uploadImage(
-    file: File,
-    type:
-      | "logo"
-      | "cover",
-  ) {
-    const path =
-      `${business.id}/${type}.webp`;
+  async function uploadImage(file: File, type: "logo" | "cover") {
+    const path = `${business.id}/${type}.webp`;
 
-    const {
-      error,
-    } =
-      await supabase.storage
-        .from(
-          "business-media",
-        )
-        .upload(
-          path,
-          file,
-          {
-            upsert: true,
+    const { error } = await supabase.storage
+      .from("business-media")
+      .upload(path, file, {
+        upsert: true,
 
-            contentType:
-              "image/webp",
+        contentType: "image/webp",
 
-            cacheControl:
-              "3600",
-          },
-        );
+        cacheControl: "3600",
+      });
 
     if (error) {
       throw error;
     }
 
-    const {
-      data,
-    } =
-      supabase.storage
-        .from(
-          "business-media",
-        )
-        .getPublicUrl(
-          path,
-        );
+    const { data } = supabase.storage.from("business-media").getPublicUrl(path);
 
     return `${data.publicUrl}?v=${Date.now()}`;
   }
@@ -608,174 +404,119 @@ export function BusinessEditClient({
     setEditingItem({
       ...EMPTY_ITEM,
 
-      category_id:
-        categories[0]
-          ?.id ??
-        null,
+      category_id: categories[0]?.id ?? null,
 
-      sort_order:
-        items.length,
+      sort_order: items.length,
     });
 
-    setMenuImageFile(
-      null,
-    );
+    setMenuImageFile(null);
 
     setModalOpen(true);
   }
 
-  function editItem(
-    item: EditableMenuItem,
-  ) {
+  function editItem(item: EditableMenuItem) {
     setEditingItem({
       ...item,
+      variants: item.variants ?? [],
     });
 
-    setMenuImageFile(
-      null,
-    );
+    setMenuImageFile(null);
 
     setModalOpen(true);
   }
 
   async function saveMenuItem() {
-    if (
-      !editingItem.name.trim()
-    ) {
-      toast.error(
-        "Enter an item name.",
-      );
-
+    if (!editingItem.name.trim()) {
+      toast.error("Enter an item name.");
       return;
     }
 
-    const price =
-      Number(
-        editingItem.price,
+    const hasVariants = editingItem.variants.length > 0;
+
+    if (hasVariants) {
+      const invalidVariant = editingItem.variants.find(
+        (variant) =>
+          !variant.name.trim() ||
+          variant.price === "" ||
+          Number(variant.price) < 0 ||
+          Number.isNaN(Number(variant.price)),
       );
 
-    if (
-      Number.isNaN(
-        price,
-      ) ||
-      price < 0
-    ) {
-      toast.error(
-        "Enter a valid price.",
-      );
+      if (invalidVariant) {
+        toast.error("Complete every pricing option.");
+        return;
+      }
+    } else {
+      const price = Number(editingItem.price);
 
-      return;
+      if (Number.isNaN(price) || price < 0 || editingItem.price === "") {
+        toast.error("Enter a valid price.");
+        return;
+      }
     }
 
     setSavingItem(true);
 
     try {
-      let imageUrl =
-        editingItem.image_url;
+      let imageUrl = editingItem.image_url;
+      const itemId = editingItem.id ?? crypto.randomUUID();
 
-      const itemId =
-        editingItem.id ??
-        crypto.randomUUID();
+      if (menuImageFile) {
+        const path = `${business.id}/menu/${itemId}.webp`;
 
-      if (
-        menuImageFile
-      ) {
-        const path =
-          `${business.id}/menu/${itemId}.webp`;
+        const { error: uploadError } = await supabase.storage
+          .from("business-media")
+          .upload(path, menuImageFile, {
+            upsert: true,
+            contentType: "image/webp",
+            cacheControl: "3600",
+          });
 
-        const {
-          error:
-            uploadError,
-        } =
-          await supabase.storage
-            .from(
-              "business-media",
-            )
-            .upload(
-              path,
-              menuImageFile,
-              {
-                upsert: true,
-
-                contentType:
-                  "image/webp",
-
-                cacheControl:
-                  "3600",
-              },
-            );
-
-        if (
-          uploadError
-        ) {
+        if (uploadError) {
           throw uploadError;
         }
 
-        const {
-          data,
-        } =
-          supabase.storage
-            .from(
-              "business-media",
-            )
-            .getPublicUrl(
-              path,
-            );
+        const { data } = supabase.storage
+          .from("business-media")
+          .getPublicUrl(path);
 
-        imageUrl =
-          `${data.publicUrl}?v=${Date.now()}`;
+        imageUrl = `${data.publicUrl}?v=${Date.now()}`;
       }
 
+      const primaryPrice = hasVariants
+        ? Number(editingItem.variants[0]?.price ?? 0)
+        : Number(editingItem.price);
+
       const payload = {
-        business_id:
-          business.id,
-
-        category_id:
-          editingItem.category_id,
-
-        name:
-          editingItem.name.trim(),
-
-        description:
-          nullIfEmpty(
-            editingItem.description,
-          ),
-
-        price,
-
-        image_url:
-          imageUrl,
-
-        is_available:
-          editingItem.is_available,
-
-        sort_order:
-          editingItem.sort_order,
+        business_id: business.id,
+        category_id: editingItem.category_id,
+        name: editingItem.name.trim(),
+        description: nullIfEmpty(editingItem.description),
+        price: primaryPrice,
+        image_url: imageUrl,
+        is_available: editingItem.is_available,
+        sort_order: editingItem.sort_order,
       };
 
-      if (
-        editingItem.id
-      ) {
-        const {
-          data,
-          error,
-        } =
-          await supabase
-            .from(
-              "menu_items",
-            )
-            .update(
-              payload,
-            )
-            .eq(
-              "id",
-              editingItem.id,
-            )
-            .eq(
-              "business_id",
-              business.id,
-            )
-            .select(`
+      let savedItem: {
+        id: string;
+        category_id: string | null;
+        name: string;
+        description: string | null;
+        price: number;
+        image_url: string | null;
+        is_available: boolean;
+        sort_order: number;
+      };
+
+      if (editingItem.id) {
+        const { data, error } = await supabase
+          .from("menu_items")
+          .update(payload)
+          .eq("id", editingItem.id)
+          .eq("business_id", business.id)
+          .select(
+            `
               id,
               category_id,
               name,
@@ -784,88 +525,147 @@ export function BusinessEditClient({
               image_url,
               is_available,
               sort_order
-            `)
-            .single();
+            `,
+          )
+          .single();
 
         if (error) {
           throw error;
         }
 
-        setItems(
-          (current) =>
-            current.map(
-              (item) =>
-                item.id ===
-                data.id
-                  ? {
-                      ...data,
+        savedItem = data;
+      } else {
+        const { data, error } = await supabase
+          .from("menu_items")
+          .insert({
+            id: itemId,
+            ...payload,
+          })
+          .select(
+            `
+              id,
+              category_id,
+              name,
+              description,
+              price,
+              image_url,
+              is_available,
+              sort_order
+            `,
+          )
+          .single();
 
-                      description:
-                        data.description ??
-                        "",
+        if (error) {
+          throw error;
+        }
 
-                      price:
-                        String(
-                          data.price,
-                        ),
-                    }
-                  : item,
-            ),
+        savedItem = data;
+      }
+
+      if (hasVariants) {
+        const existingVariantIds = editingItem.variants
+          .map((variant) => variant.id)
+          .filter((id): id is string => Boolean(id));
+
+        if (existingVariantIds.length > 0) {
+          const { error: deleteRemovedError } = await supabase
+            .from("menu_item_variants")
+            .delete()
+            .eq("menu_item_id", savedItem.id)
+            .not("id", "in", `(${existingVariantIds.join(",")})`);
+
+          if (deleteRemovedError) {
+            throw deleteRemovedError;
+          }
+        } else {
+          const { error: deleteAllError } = await supabase
+            .from("menu_item_variants")
+            .delete()
+            .eq("menu_item_id", savedItem.id);
+
+          if (deleteAllError) {
+            throw deleteAllError;
+          }
+        }
+
+        const variantsToUpsert = editingItem.variants.map(
+          (variant, index) => ({
+            ...(variant.id ? { id: variant.id } : {}),
+            menu_item_id: savedItem.id,
+            name: variant.name.trim(),
+            price: Number(variant.price),
+            is_available: variant.is_available,
+            sort_order: index,
+          }),
+        );
+
+        const { data: savedVariants, error: variantsError } = await supabase
+          .from("menu_item_variants")
+          .upsert(variantsToUpsert, {
+            onConflict: "id",
+          })
+          .select(
+            "id, name, price, is_available, sort_order",
+          );
+
+        if (variantsError) {
+          throw variantsError;
+        }
+
+        const normalizedVariants: EditableMenuVariant[] = (
+          savedVariants ?? []
+        )
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((variant) => ({
+            id: variant.id,
+            name: variant.name,
+            price: String(variant.price),
+            is_available: variant.is_available,
+            sort_order: variant.sort_order,
+          }));
+
+        const nextItem: EditableMenuItem = {
+          ...savedItem,
+          description: savedItem.description ?? "",
+          price: String(savedItem.price),
+          variants: normalizedVariants,
+        };
+
+        setItems((current) =>
+          editingItem.id
+            ? current.map((item) =>
+                item.id === savedItem.id ? nextItem : item,
+              )
+            : [...current, nextItem],
         );
       } else {
-        const {
-          data,
-          error,
-        } =
-          await supabase
-            .from(
-              "menu_items",
-            )
-            .insert({
-              id:
-                itemId,
+        const { error: deleteVariantsError } = await supabase
+          .from("menu_item_variants")
+          .delete()
+          .eq("menu_item_id", savedItem.id);
 
-              ...payload,
-            })
-            .select(`
-              id,
-              category_id,
-              name,
-              description,
-              price,
-              image_url,
-              is_available,
-              sort_order
-            `)
-            .single();
-
-        if (error) {
-          throw error;
+        if (deleteVariantsError) {
+          throw deleteVariantsError;
         }
 
-        setItems(
-          (current) => [
-            ...current,
-            {
-              ...data,
+        const nextItem: EditableMenuItem = {
+          ...savedItem,
+          description: savedItem.description ?? "",
+          price: String(savedItem.price),
+          variants: [],
+        };
 
-              description:
-                data.description ??
-                "",
-
-              price:
-                String(
-                  data.price,
-                ),
-            },
-          ],
+        setItems((current) =>
+          editingItem.id
+            ? current.map((item) =>
+                item.id === savedItem.id ? nextItem : item,
+              )
+            : [...current, nextItem],
         );
       }
 
       setModalOpen(false);
-      setMenuImageFile(
-        null,
-      );
+      setMenuImageFile(null);
 
       toast.success(
         editingItem.id
@@ -873,257 +673,150 @@ export function BusinessEditClient({
           : "Menu item added.",
       );
     } catch (error) {
-      console.error(
-        "[CAFÉTA] Menu item save failed:",
-        error,
-      );
-
-      toast.error(
-        getErrorMessage(
-          error,
-        ),
-      );
+      console.error("[CAFÉTA] Menu item save failed:", error);
+      toast.error(getErrorMessage(error));
     } finally {
       setSavingItem(false);
     }
   }
 
-  async function deleteItem(
-    item: EditableMenuItem,
-  ) {
+  async function deleteItem(item: EditableMenuItem) {
     if (!item.id) {
       return;
     }
 
-    const confirmed =
-      window.confirm(
-        `Delete "${item.name}"?`,
-      );
+    const confirmed = window.confirm(`Delete "${item.name}"?`);
 
     if (!confirmed) {
       return;
     }
 
-    const {
-      error,
-    } =
-      await supabase
-        .from(
-          "menu_items",
-        )
-        .delete()
-        .eq(
-          "id",
-          item.id,
-        )
-        .eq(
-          "business_id",
-          business.id,
-        );
+    const { error } = await supabase
+      .from("menu_items")
+      .delete()
+      .eq("id", item.id)
+      .eq("business_id", business.id);
 
     if (error) {
-      toast.error(
-        error.message,
-      );
+      toast.error(error.message);
 
       return;
     }
 
-    setItems(
-      (current) =>
-        current.filter(
-          (currentItem) =>
-            currentItem.id !==
-            item.id,
-        ),
+    setItems((current) =>
+      current.filter((currentItem) => currentItem.id !== item.id),
     );
 
-    toast.success(
-      "Menu item deleted.",
-    );
+    toast.success("Menu item deleted.");
   }
 
   async function addCategory() {
-    const name =
-      window.prompt(
-        "Category name",
-      );
+    const name = window.prompt("Category name");
 
     if (!name?.trim()) {
       return;
     }
 
-    const {
-      data,
-      error,
-    } =
-      await supabase
-        .from(
-          "menu_categories",
-        )
-        .insert({
-          business_id:
-            business.id,
+    const { data, error } = await supabase
+      .from("menu_categories")
+      .insert({
+        business_id: business.id,
 
-          name:
-            name.trim(),
+        name: name.trim(),
 
-          sort_order:
-            categories.length,
-        })
-        .select(`
+        sort_order: categories.length,
+      })
+      .select(
+        `
           id,
           name,
           sort_order
-        `)
-        .single();
+        `,
+      )
+      .single();
 
     if (error) {
-      toast.error(
-        error.message,
-      );
+      toast.error(error.message);
 
       return;
     }
 
-    setCategories(
-      (current) => [
-        ...current,
-        data,
-      ],
-    );
+    setCategories((current) => [...current, data]);
 
-    toast.success(
-      "Category added.",
+    toast.success("Category added.");
+  }
+
+  async function editCategory(category: EditableMenuCategory) {
+    const name = window.prompt("Category name", category.name);
+
+    if (!name?.trim() || name.trim() === category.name) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("menu_categories")
+      .update({
+        name: name.trim(),
+      })
+      .eq("id", category.id)
+      .eq("business_id", business.id);
+
+    if (error) {
+      toast.error(error.message);
+
+      return;
+    }
+
+    setCategories((current) =>
+      current.map((currentCategory) =>
+        currentCategory.id === category.id
+          ? {
+              ...currentCategory,
+
+              name: name.trim(),
+            }
+          : currentCategory,
+      ),
     );
   }
 
-  async function editCategory(
-    category: EditableMenuCategory,
-  ) {
-    const name =
-      window.prompt(
-        "Category name",
-        category.name,
-      );
-
-    if (
-      !name?.trim() ||
-      name.trim() ===
-        category.name
-    ) {
-      return;
-    }
-
-    const {
-      error,
-    } =
-      await supabase
-        .from(
-          "menu_categories",
-        )
-        .update({
-          name:
-            name.trim(),
-        })
-        .eq(
-          "id",
-          category.id,
-        )
-        .eq(
-          "business_id",
-          business.id,
-        );
-
-    if (error) {
-      toast.error(
-        error.message,
-      );
-
-      return;
-    }
-
-    setCategories(
-      (current) =>
-        current.map(
-          (currentCategory) =>
-            currentCategory.id ===
-            category.id
-              ? {
-                  ...currentCategory,
-
-                  name:
-                    name.trim(),
-                }
-              : currentCategory,
-        ),
+  async function deleteCategory(category: EditableMenuCategory) {
+    const confirmed = window.confirm(
+      `Delete "${category.name}"? Items will remain but become uncategorized.`,
     );
-  }
-
-  async function deleteCategory(
-    category: EditableMenuCategory,
-  ) {
-    const confirmed =
-      window.confirm(
-        `Delete "${category.name}"? Items will remain but become uncategorized.`,
-      );
 
     if (!confirmed) {
       return;
     }
 
-    const {
-      error,
-    } =
-      await supabase
-        .from(
-          "menu_categories",
-        )
-        .delete()
-        .eq(
-          "id",
-          category.id,
-        )
-        .eq(
-          "business_id",
-          business.id,
-        );
+    const { error } = await supabase
+      .from("menu_categories")
+      .delete()
+      .eq("id", category.id)
+      .eq("business_id", business.id);
 
     if (error) {
-      toast.error(
-        error.message,
-      );
+      toast.error(error.message);
 
       return;
     }
 
-    setCategories(
-      (current) =>
-        current.filter(
-          (currentCategory) =>
-            currentCategory.id !==
-            category.id,
-        ),
+    setCategories((current) =>
+      current.filter((currentCategory) => currentCategory.id !== category.id),
     );
 
-    setItems(
-      (current) =>
-        current.map(
-          (item) =>
-            item.category_id ===
-            category.id
-              ? {
-                  ...item,
-                  category_id:
-                    null,
-                }
-              : item,
-        ),
+    setItems((current) =>
+      current.map((item) =>
+        item.category_id === category.id
+          ? {
+              ...item,
+              category_id: null,
+            }
+          : item,
+      ),
     );
 
-    toast.success(
-      "Category deleted.",
-    );
+    toast.success("Category deleted.");
   }
 
   return (
@@ -1190,8 +883,7 @@ export function BusinessEditClient({
                 text-[#17211c]
               "
             >
-              Edit{" "}
-              {business.name}
+              Edit {business.name}
             </p>
 
             <div
@@ -1220,8 +912,7 @@ export function BusinessEditClient({
                       text-black/35
                     "
                   >
-                    Unsaved
-                    changes
+                    Unsaved changes
                   </span>
                 </>
               ) : (
@@ -1235,8 +926,7 @@ export function BusinessEditClient({
                       text-[#006241]
                     "
                   >
-                    All changes
-                    saved
+                    All changes saved
                   </span>
                 </>
               )}
@@ -1265,19 +955,13 @@ export function BusinessEditClient({
             "
           >
             <Eye className="size-3.5" />
-
             View profile
           </Link>
 
           <button
             type="button"
-            onClick={() =>
-              void saveAll()
-            }
-            disabled={
-              saving ||
-              !dirty
-            }
+            onClick={() => void saveAll()}
+            disabled={saving || !dirty}
             className="
               inline-flex
               h-9
@@ -1305,9 +989,7 @@ export function BusinessEditClient({
               <Save className="size-3.5" />
             )}
 
-            {saving
-              ? "Saving"
-              : "Save"}
+            {saving ? "Saving" : "Save"}
           </button>
         </div>
       </header>
@@ -1347,52 +1029,33 @@ export function BusinessEditClient({
             "
           >
             <NavButton
-              active={
-                section ===
-                "profile"
-              }
-              icon={
-                <Settings2 className="size-4" />
-              }
-              onClick={() =>
-                setSection(
-                  "profile",
-                )
-              }
+              active={section === "profile"}
+              icon={<Settings2 className="size-4" />}
+              onClick={() => setSection("profile")}
             >
               Profile
             </NavButton>
 
             <NavButton
-              active={
-                section ===
-                "hours"
-              }
-              icon={
-                <Clock3 className="size-4" />
-              }
-              onClick={() =>
-                setSection(
-                  "hours",
-                )
-              }
+              active={section === "location"}
+              icon={<MapPin className="size-4" />}
+              onClick={() => setSection("location")}
+            >
+              Location
+            </NavButton>
+
+            <NavButton
+              active={section === "hours"}
+              icon={<Clock3 className="size-4" />}
+              onClick={() => setSection("hours")}
             >
               Hours
             </NavButton>
 
             <NavButton
-              active={
-                section ===
-                "menu"
-              }
-              icon={
-                <MenuIcon className="size-4" />
-              }
-              onClick={() =>
-                setSection(
-                  "menu",
-                )
-              }
+              active={section === "menu"}
+              icon={<MenuIcon className="size-4" />}
+              onClick={() => setSection("menu")}
             >
               Menu
             </NavButton>
@@ -1400,9 +1063,7 @@ export function BusinessEditClient({
         </aside>
 
         <div
-          key={
-            section
-          }
+          key={section}
           className="
             min-w-0
             animate-in
@@ -1411,99 +1072,92 @@ export function BusinessEditClient({
             duration-300
           "
         >
-          {section ===
-            "profile" && (
+          {section === "profile" && (
             <EditProfileSection
               form={form}
-              logoUrl={
-                logoUrl
-              }
-              coverUrl={
-                coverUrl
-              }
-              onChange={
-                updateForm
-              }
-              onLogoChange={
-                handleLogo
-              }
-              onCoverChange={
-                handleCover
-              }
+              logoUrl={logoUrl}
+              coverUrl={coverUrl}
+              onChange={updateForm}
+              onLogoChange={handleLogo}
+              onCoverChange={handleCover}
             />
           )}
 
-          {section ===
-            "hours" && (
-            <EditHoursSection
-              hours={
-                hours
-              }
-              onChange={
-                updateHours
-              }
-            />
+          {section === "hours" && (
+            <EditHoursSection hours={hours} onChange={updateHours} />
           )}
 
-          {section ===
-            "menu" && (
+          {section === "menu" && !variantsLoaded && (
+            <div className="flex min-h-[240px] items-center justify-center rounded-[22px] border border-black/[0.055] bg-white">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-black/35">
+                <LoaderCircle className="size-4 animate-spin text-[#006241]" />
+                Loading menu pricing...
+              </div>
+            </div>
+          )}
+
+          {section === "menu" && variantsLoaded && (
             <EditMenuSection
-              categories={
-                categories
-              }
-              items={
-                items
-              }
-              onAddCategory={
-                addCategory
-              }
-              onEditCategory={
-                editCategory
-              }
-              onDeleteCategory={
-                deleteCategory
-              }
-              onAddItem={
-                addItem
-              }
-              onEditItem={
-                editItem
-              }
-              onDeleteItem={
-                deleteItem
-              }
+              categories={categories}
+              items={items}
+              onAddCategory={addCategory}
+              onEditCategory={editCategory}
+              onDeleteCategory={deleteCategory}
+              onAddItem={addItem}
+              onEditItem={editItem}
+              onDeleteItem={deleteItem}
+            />
+          )}
+
+          {section === "location" && (
+            <BusinessLocationEdit
+              data={{
+                address: form.address,
+                barangay: form.barangay,
+                city: form.city,
+                province: form.province,
+                latitude: Number(form.latitude),
+                longitude: Number(form.longitude),
+              }}
+              onChange={(values) => {
+                if (values.address !== undefined) {
+                  updateForm("address", values.address);
+                }
+
+                if (values.barangay !== undefined) {
+                  updateForm("barangay", values.barangay ?? "");
+                }
+
+                if (values.city !== undefined) {
+                  updateForm("city", values.city);
+                }
+
+                if (values.province !== undefined) {
+                  updateForm("province", values.province);
+                }
+
+                if (values.latitude !== undefined) {
+                  updateForm("latitude", String(values.latitude));
+                }
+
+                if (values.longitude !== undefined) {
+                  updateForm("longitude", String(values.longitude));
+                }
+              }}
             />
           )}
         </div>
       </div>
 
       <EditMenuItemModal
-        open={
-          modalOpen
-        }
-        item={
-          editingItem
-        }
-        categories={
-          categories
-        }
-        saving={
-          savingItem
-        }
-        onChange={
-          setEditingItem
-        }
-        onImageChange={
-          setMenuImageFile
-        }
-        onClose={() =>
-          setModalOpen(
-            false,
-          )
-        }
-        onSave={() =>
-          void saveMenuItem()
-        }
+        open={modalOpen}
+        item={editingItem}
+        categories={categories}
+        saving={savingItem}
+        onChange={setEditingItem}
+        onImageChange={setMenuImageFile}
+        onClose={() => setModalOpen(false)}
+        onSave={() => void saveMenuItem()}
       />
     </main>
   );
@@ -1526,9 +1180,7 @@ function NavButton({
   return (
     <button
       type="button"
-      onClick={
-        onClick
-      }
+      onClick={onClick}
       className={`
         flex
         h-10
@@ -1557,56 +1209,33 @@ function NavButton({
   );
 }
 
-function nullIfEmpty(
-  value: string,
-) {
-  const result =
-    value.trim();
+function nullIfEmpty(value: string) {
+  const result = value.trim();
 
-  return result ||
-    null;
+  return result || null;
 }
 
-function normalizeUrl(
-  value: string,
-) {
-  const result =
-    value.trim();
+function normalizeUrl(value: string) {
+  const result = value.trim();
 
   if (!result) {
     return null;
   }
 
-  if (
-    /^https?:\/\//i.test(
-      result,
-    )
-  ) {
+  if (/^https?:\/\//i.test(result)) {
     return result;
   }
 
   return `https://${result}`;
 }
 
-function getErrorMessage(
-  error: unknown,
-) {
-  if (
-    error instanceof
-    Error
-  ) {
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) {
     return error.message;
   }
 
-  if (
-    error &&
-    typeof error ===
-      "object" &&
-    "message" in error
-  ) {
-    return String(
-      error.message,
-    );
+  if (error && typeof error === "object" && "message" in error) {
+    return String(error.message);
   }
 
   return "Something went wrong.";
