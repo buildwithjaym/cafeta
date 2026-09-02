@@ -7,6 +7,8 @@ import { Toaster } from "sonner";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
+import { Analytics } from "@vercel/analytics/next"
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -172,6 +174,7 @@ export default function RootLayout({
               "font-sans",
           }}
         />
+        <Analytics/>
       </body>
     </html>
   );
