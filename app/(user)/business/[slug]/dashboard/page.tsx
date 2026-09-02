@@ -15,7 +15,8 @@ import {
   EngagementDonut,
 } from "@/components/business/dashboard/engagement-donut";
 
-
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 export const metadata = {
   title: "Business Dashboard | CAFÉTA",
   description: "Manage and track your CAFÉTA business.",
@@ -72,10 +73,26 @@ export default async function BusinessDashboardPage({
 
         <header>
 
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#006241]">
-            Business Dashboard
-          </p>
+  <Link
+    href={`/business/${access.business.slug}`}
+    className="
+      inline-flex
+      items-center
+      gap-2
+      text-xs
+      font-bold
+      text-[#006241]
+      hover:underline
+    "
+  >
+    <ArrowLeft className="size-4" />
+    Back to Business
+  </Link>
 
+
+  <p className="mt-4 text-xs font-black uppercase tracking-[0.18em] text-[#006241]">
+    Business Dashboard
+  </p>
 
           <div className="mt-2 flex items-start justify-between gap-4">
 

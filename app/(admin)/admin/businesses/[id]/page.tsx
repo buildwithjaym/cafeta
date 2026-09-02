@@ -139,8 +139,10 @@ export default async function AdminBusinessReviewPage({
     .maybeSingle();
 
   if (businessError) {
-    console.error("Failed to load admin business:", businessError);
-  }
+  console.error("Failed to load admin business:", businessError);
+
+  throw new Error("Failed to load business review");
+}
 
   if (!businessData) {
     notFound();
@@ -242,31 +244,25 @@ export default async function AdminBusinessReviewPage({
       }),
   ]);
 
-  if (ownerResult.error) {
-    console.error("Failed to load business owner:", ownerResult.error);
-  }
+ if (ownerResult.error) {
+  throw new Error("Failed to load business owner");
+}
 
-  if (hoursResult.error) {
-    console.error("Failed to load business hours:", hoursResult.error);
-  }
+if (hoursResult.error) {
+  throw new Error("Failed to load business hours");
+}
 
-  if (categoriesResult.error) {
-    console.error(
-      "Failed to load menu categories:",
-      categoriesResult.error,
-    );
-  }
+if (categoriesResult.error) {
+  throw new Error("Failed to load menu categories");
+}
 
-  if (menuItemsResult.error) {
-    console.error("Failed to load menu items:", menuItemsResult.error);
-  }
+if (menuItemsResult.error) {
+  throw new Error("Failed to load menu items");
+}
 
-  if (logsResult.error) {
-    console.error(
-      "Failed to load moderation history:",
-      logsResult.error,
-    );
-  }
+if (logsResult.error) {
+  throw new Error("Failed to load moderation history");
+}
 
   const owner = (ownerResult.data ?? null) as Owner | null;
 
