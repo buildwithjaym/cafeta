@@ -35,20 +35,33 @@ export async function trackBusinessEvent(
 
 
 
-  /*
-    Prevent duplicate views
+  if(user){
 
-    Same user
-    Same business
-    Same event
-    Within 30 minutes
-  */
+    const {
+      data:business,
+    } =
+    await supabase
+    .from(
+      "businesses",
+    )
+    .select(
+      "created_by",
+    )
+    .eq(
+      "id",
+      businessId,
+    )
+    .maybeSingle();
 
 
-  if(
-    user &&
-    eventType === "profile_view"
-  ){
+
+    if(
+      business?.created_by === user.id
+    ){
+
+      return;
+
+    }
 
 
     const thirtyMinutesAgo =
@@ -67,7 +80,9 @@ export async function trackBusinessEvent(
     .from(
       "business_analytics_events",
     )
-    .select("id")
+    .select(
+      "id",
+    )
     .eq(
       "business_id",
       businessId,
@@ -83,8 +98,7 @@ export async function trackBusinessEvent(
     .contains(
       "metadata",
       {
-        user_id:
-          user.id,
+        user_id:user.id,
       },
     )
     .maybeSingle();
@@ -98,7 +112,6 @@ export async function trackBusinessEvent(
     }
 
   }
-
 
 
 
@@ -135,11 +148,7 @@ export async function trackBusinessEvent(
 
     console.error(
       "[CAFÉTA ANALYTICS]",
-      {
-        message:error.message,
-        code:error.code,
-        details:error.details,
-      },
+      error,
     );
 
   }

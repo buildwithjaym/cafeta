@@ -82,23 +82,21 @@ export async function getBusinessDashboardAccess(
   )
   .maybeSingle();
 
+if(
+ businessError ||
+ !business
+){
 
+ console.log({
+   businessError,
+   business,
+   loggedInUser:user.id,
+   slug,
+ });
 
-  if(
-    businessError ||
-    !business
-  ){
+ return null;
 
-    console.error(
-      "[CAFÉTA DASHBOARD ACCESS]",
-      businessError,
-    );
-
-
-    return null;
-
-  }
-
+}
 
 
 
