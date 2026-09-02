@@ -44,7 +44,8 @@ export function BusinessShareModal({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
-  const url = `https://www.cafeta.online/business/${business.slug}`;
+  const url =
+  `https://www.cafeta.online/qr/${business.slug}`;
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;

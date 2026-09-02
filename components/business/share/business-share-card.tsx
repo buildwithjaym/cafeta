@@ -34,7 +34,7 @@ export const BusinessShareCard = forwardRef<
   ref,
 ) {
   const url =
-    `https://www.cafeta.online/business/${business.slug}`;
+  `https://www.cafeta.online/qr/${business.slug}`;
 
   const location = [
     business.city,
