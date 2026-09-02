@@ -35,6 +35,7 @@ import { BusinessMemories } from "@/components/business/memories/business-memori
 import { SaveBusinessButton } from "@/components/explore/save-business-button";
 
 import type { BusinessMemoryPreview } from "@/lib/memories/types";
+import { createBusinessAnalyticsEvent } from "@/lib/analytics/actions";
 
 type Business = {
   id: string;
@@ -151,6 +152,15 @@ export function BusinessProfileClient({
 
   const [shareOpen, setShareOpen] = useState(false);
 
+  async function trackEvent(
+    eventType: "menu_view" | "direction_click" | "qr_scan",
+  ) {
+    try {
+      await createBusinessAnalyticsEvent(business.id, eventType);
+    } catch (error) {
+      console.error("Analytics tracking failed:", error);
+    }
+  }
   const today = new Date().getDay();
 
   const todayHours = hours.find((hour) => hour.day_of_week === today);
@@ -649,7 +659,6 @@ export function BusinessProfileClient({
                   sm:justify-end
                 "
               >
-                
                 {canViewDashboard && (
                   <Link
                     href={`/business/${business.slug}/dashboard`}
@@ -685,39 +694,41 @@ inline-flex
                     Dashboard
                   </Link>
                 )}
-                <a
-                  href={mapUrl}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
                   className="
-                    inline-flex
-                    h-10
-                    flex-1
-                    items-center
-                    justify-center
-                    gap-2
+    inline-flex 
+    h-10 
+    flex-1 
+    items-center 
+    justify-center 
+    gap-2 
 
-                    rounded-[10px]
-                    bg-[#006241]
-                    px-4
+    rounded-[10px] 
+    bg-[#006241] 
+    px-4 
 
-                    text-[11px]
-                    font-bold
-                    text-white
+    text-[11px] 
+    font-bold 
+    text-white 
 
-                    shadow-sm
-                    transition-all
-                    duration-200
+    shadow-sm 
+    transition-all 
+    duration-200 
 
-                    hover:-translate-y-0.5
-                    hover:bg-[#00754a]
+    hover:-translate-y-0.5 
+    hover:bg-[#00754a] 
 
-                    sm:flex-none
-                  "
+    sm:flex-none 
+  "
+                  onClick={async () => {
+                    await trackEvent("direction_click");
+
+                    window.open(mapUrl, "_blank", "noopener,noreferrer");
+                  }}
                 >
                   <Navigation className="size-4" />
                   Directions
-                </a>
+                </button>
 
                 <div
                   className="
@@ -855,6 +866,7 @@ hover:bg-[#e8f2ed]
             reviewCount={reviewCount}
             canEdit={canEdit}
             onOpenReviews={() => setActiveTab("reviews")}
+            trackEvent={trackEvent}
           />
         )}
 
@@ -894,6 +906,7 @@ hover:bg-[#e8f2ed]
             business={business}
             menuGroups={menuGroups}
             canEdit={canEdit}
+            trackEvent={trackEvent}
           />
         )}
 
@@ -921,6 +934,7 @@ function HomeTab({
   averageRating,
   reviewCount,
   canEdit,
+  trackEvent,
   onOpenReviews,
 }: {
   business: Business;
@@ -938,6 +952,12 @@ function HomeTab({
   reviewCount: number;
   canEdit: boolean;
   onOpenReviews: () => void;
+  trackEvent: (
+  eventType:
+    | "menu_view"
+    | "direction_click"
+    | "qr_scan"
+) => Promise<void>;
 }) {
   return (
     <div
@@ -1301,22 +1321,11 @@ function HomeTab({
             {menuItems.length > 0 && (
               <Link
                 href={`/business/${encodeURIComponent(business.slug)}/menu`}
-                className="
-                  inline-flex
-                  shrink-0
-                  items-center
-                  gap-1
-
-                  text-[10px]
-                  font-black
-                  text-[#006241]
-
-                  transition
-                  hover:text-[#00754a]
-                "
+                onClick={async () => {
+                  await trackEvent("menu_view");
+                }}
               >
-                View menu
-                <ArrowRight className="size-3" />
+                View full menu
               </Link>
             )}
           </div>
@@ -1338,7 +1347,11 @@ function HomeTab({
               </div>
 
               <Link
-                href={`/business/${encodeURIComponent(business.slug)}/menu`}
+  href={`/business/${encodeURIComponent(business.slug)}/menu`}
+  onClick={async () => {
+    await trackEvent("menu_view");
+  }}
+
                 className="
                   group
 
@@ -1843,12 +1856,17 @@ function MenuTab({
   business,
   menuGroups,
   canEdit,
+  trackEvent,
 }: {
   business: Business;
 
   menuGroups: ReturnType<typeof buildMenuGroups>;
 
   canEdit: boolean;
+
+  trackEvent: (
+    eventType: "menu_view" | "direction_click" | "qr_scan",
+  ) => Promise<void>;
 }) {
   const totalItems = menuGroups.reduce(
     (total, group) => total + group.items.length,

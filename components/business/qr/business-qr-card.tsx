@@ -29,8 +29,8 @@ export function BusinessQrCard({
   ] = useState("");
 
 
-  const url =
-    `https://www.cafeta.online/business/${slug}`;
+ const url =
+  `https://www.cafeta.online/qr/${slug}`;
 
 
   useEffect(()=>{
