@@ -189,7 +189,7 @@ export function BusinessProfileClient({
 
     setSharing(true);
 
-    const url = `https://www.cafeta.online/qr/${encodeURIComponent(
+    const url = `https://www.cafeta.online/business/${encodeURIComponent(
       business.slug,
     )}`;
 

@@ -13,7 +13,6 @@ type EventType =
   | "share_click";
 
 
-
 export async function trackBusinessEvent(
   businessId:string,
   eventType:EventType,
@@ -63,11 +62,24 @@ export async function trackBusinessEvent(
 
     }
 
+  }
 
-    const thirtyMinutesAgo =
+
+
+  const visitorId =
+    metadata?.visitor_id ??
+    user?.id ??
+    null;
+
+
+
+  if(visitorId){
+
+
+    const limit =
       new Date(
         Date.now() -
-        30 * 60 * 1000,
+        15 * 60 * 1000,
       )
       .toISOString();
 
@@ -93,12 +105,12 @@ export async function trackBusinessEvent(
     )
     .gte(
       "created_at",
-      thirtyMinutesAgo,
+      limit,
     )
     .contains(
       "metadata",
       {
-        user_id:user.id,
+        visitor_id:visitorId,
       },
     )
     .maybeSingle();
@@ -115,9 +127,6 @@ export async function trackBusinessEvent(
 
 
 
-  const {
-    error,
-  } =
   await supabase
   .from(
     "business_analytics_events",
@@ -127,30 +136,23 @@ export async function trackBusinessEvent(
     business_id:
       businessId,
 
-
     event_type:
       eventType,
 
 
     metadata:{
+
       user_id:
         user?.id ??
         null,
 
+      visitor_id:
+        visitorId,
+
       ...metadata,
+
     },
 
   });
-
-
-
-  if(error){
-
-    console.error(
-      "[CAFÉTA ANALYTICS]",
-      error,
-    );
-
-  }
 
 }
