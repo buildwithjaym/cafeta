@@ -19,7 +19,6 @@ export async function trackBusinessEvent(
   metadata?:Record<string,any>,
 ){
 
-
   const supabase =
     await createClient();
 
@@ -66,17 +65,17 @@ export async function trackBusinessEvent(
 
 
 
-  const visitorId =
-    metadata?.visitor_id ??
+  const identifier =
     user?.id ??
+    metadata?.visitor_id ??
     null;
 
 
 
-  if(visitorId){
+  if(identifier){
 
 
-    const limit =
+    const fifteenMinutesAgo =
       new Date(
         Date.now() -
         15 * 60 * 1000,
@@ -85,35 +84,58 @@ export async function trackBusinessEvent(
 
 
 
+    let query =
+      supabase
+      .from(
+        "business_analytics_events",
+      )
+      .select(
+        "id",
+      )
+      .eq(
+        "business_id",
+        businessId,
+      )
+      .eq(
+        "event_type",
+        eventType,
+      )
+      .gte(
+        "created_at",
+        fifteenMinutesAgo,
+      );
+
+
+
+    if(user){
+
+      query =
+        query.contains(
+          "metadata",
+          {
+            user_id:user.id,
+          },
+        );
+
+    }
+    else{
+
+      query =
+        query.contains(
+          "metadata",
+          {
+            visitor_id:identifier,
+          },
+        );
+
+    }
+
+
+
     const {
       data:existing,
     } =
-    await supabase
-    .from(
-      "business_analytics_events",
-    )
-    .select(
-      "id",
-    )
-    .eq(
-      "business_id",
-      businessId,
-    )
-    .eq(
-      "event_type",
-      eventType,
-    )
-    .gte(
-      "created_at",
-      limit,
-    )
-    .contains(
-      "metadata",
-      {
-        visitor_id:visitorId,
-      },
-    )
-    .maybeSingle();
+    await query.maybeSingle();
 
 
 
@@ -127,6 +149,9 @@ export async function trackBusinessEvent(
 
 
 
+  const {
+    error,
+  } =
   await supabase
   .from(
     "business_analytics_events",
@@ -135,6 +160,7 @@ export async function trackBusinessEvent(
 
     business_id:
       businessId,
+
 
     event_type:
       eventType,
@@ -146,13 +172,27 @@ export async function trackBusinessEvent(
         user?.id ??
         null,
 
+
       visitor_id:
-        visitorId,
+        metadata?.visitor_id ??
+        null,
+
 
       ...metadata,
 
     },
 
   });
+
+
+
+  if(error){
+
+    console.error(
+      "[CAFÉTA ANALYTICS]",
+      error,
+    );
+
+  }
 
 }

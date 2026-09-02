@@ -207,13 +207,6 @@ if(
 }
 
 
-
-
-
-
-
-
-
 export async function getBusinessAnalyticsSummary(
   businessId:string,
 )
@@ -254,8 +247,6 @@ export async function getBusinessAnalyticsSummary(
 
 
 
-
-
   const {
     data,
     error,
@@ -267,8 +258,7 @@ export async function getBusinessAnalyticsSummary(
   .select(
     `
       event_type,
-      created_at,
-      metadata
+      created_at
     `,
   )
   .eq(
@@ -282,7 +272,6 @@ export async function getBusinessAnalyticsSummary(
 
 
 
-
   if(error){
 
     console.error(
@@ -290,18 +279,14 @@ export async function getBusinessAnalyticsSummary(
       error,
     );
 
-
     throw error;
 
   }
 
 
 
-
   const events =
     data ?? [];
-
-
 
 
 
@@ -311,10 +296,8 @@ export async function getBusinessAnalyticsSummary(
     end?:Date,
   ){
 
-
     return events.filter(
-      (event)=>{
-
+      event => {
 
         const created =
           new Date(
@@ -322,34 +305,16 @@ export async function getBusinessAnalyticsSummary(
           );
 
 
-
         return (
-
-          event.event_type === type
-
-          &&
-
-          created >= start
-
-          &&
-
-          (
-            !end ||
-            created < end
-          )
-
+          event.event_type === type &&
+          created >= start &&
+          (!end || created < end)
         );
-
 
       },
     ).length;
 
-
   }
-
-
-
-
 
 
 
@@ -358,10 +323,7 @@ export async function getBusinessAnalyticsSummary(
     previous:number,
   ){
 
-
-    if(
-      previous === 0
-    ){
+    if(previous === 0){
 
       return current > 0
         ? 100
@@ -370,9 +332,7 @@ export async function getBusinessAnalyticsSummary(
     }
 
 
-
     return Math.round(
-
       (
         (
           current -
@@ -381,18 +341,11 @@ export async function getBusinessAnalyticsSummary(
         /
         previous
       )
-
       *
       100
-
     );
 
-
   }
-
-
-
-
 
 
 
@@ -422,9 +375,6 @@ export async function getBusinessAnalyticsSummary(
       "direction_click",
       currentStart,
     );
-
-
-
 
 
 
@@ -461,25 +411,17 @@ export async function getBusinessAnalyticsSummary(
 
 
 
-
-
-
-
-
   const dailyMap =
     new Map<string,number>();
-
 
 
   events
   .filter(
     event =>
-      event.event_type ===
-      "profile_view",
+      event.event_type === "profile_view",
   )
   .forEach(
-    event=>{
-
+    event => {
 
       const date =
         new Date(
@@ -494,7 +436,6 @@ export async function getBusinessAnalyticsSummary(
         );
 
 
-
       dailyMap.set(
         date,
         (
@@ -506,11 +447,8 @@ export async function getBusinessAnalyticsSummary(
         1,
       );
 
-
     },
   );
-
-
 
 
 
@@ -523,7 +461,7 @@ export async function getBusinessAnalyticsSummary(
       ([
         date,
         views,
-      ])=>({
+      ]) => ({
 
         date,
 
@@ -534,17 +472,9 @@ export async function getBusinessAnalyticsSummary(
 
 
 
-
-
-
-
-
-
   return {
 
-
     views,
-
 
     qr_scans:
       qrScans,
@@ -556,8 +486,6 @@ export async function getBusinessAnalyticsSummary(
 
     direction_clicks:
       directions,
-
-
 
 
 
@@ -578,17 +506,13 @@ export async function getBusinessAnalyticsSummary(
 
 
 
-
-
     growth:{
-
 
       views:
         calculateGrowth(
           views,
           previousViews,
         ),
-
 
 
       qr_scans:
@@ -598,13 +522,11 @@ export async function getBusinessAnalyticsSummary(
         ),
 
 
-
       menu_views:
         calculateGrowth(
           menuViews,
           previousMenu,
         ),
-
 
 
       directions:
@@ -613,53 +535,36 @@ export async function getBusinessAnalyticsSummary(
           previousDirections,
         ),
 
-
     },
-
-
-
 
 
 
     action_distribution:[
 
-
       {
         name:"Views",
-
-        value:
-          views,
+        value:views,
       },
 
 
       {
         name:"Menu",
-
-        value:
-          menuViews,
+        value:menuViews,
       },
 
 
       {
         name:"QR",
-
-        value:
-          qrScans,
+        value:qrScans,
       },
 
 
       {
         name:"Directions",
-
-        value:
-          directions,
+        value:directions,
       },
 
-
     ],
-
-
-
 
 
 
@@ -667,11 +572,7 @@ export async function getBusinessAnalyticsSummary(
 
 
 
-
-
-
     funnel:{
-
 
       profile_views:
         views,
@@ -685,8 +586,6 @@ export async function getBusinessAnalyticsSummary(
 
     },
 
-
   };
-
 
 }
